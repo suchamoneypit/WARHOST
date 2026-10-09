@@ -57,7 +57,7 @@ From `.cursor/rules/agent-workflow.mdc`:
 Long chats slow down and cost more context. The project is designed so that a new chat starts informed:
 
 - The two always-on rules load automatically. The template rule loads when you open a template or wrapper file.
-- Durable facts are in `docs/`, not in chat history. Before closing a chat, run `/handoff`; it updates those docs and prints a short summary you can paste into the new chat.
+- Durable facts are in `docs/`, not in chat history. Before closing a chat, run `/handoff`. It updates those docs and prints a paste of under 400 words: what changed, what was checked, what is still open, the next step, leftover intent, sources the next chat must not fetch again, and git state. It points at `docs/` instead of restating them.
 - To carry a specific thread over, mention the old chat with `@Chats` in the new one, or use Cursor's fork-chat action to continue from a chosen message. In the CLI, `/summarize` compacts the current chat in place. Cursor also compacts old turns automatically.
 - Memories and Notepads are not in Cursor's current docs; do not rely on them.
 
