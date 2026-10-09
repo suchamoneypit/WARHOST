@@ -67,3 +67,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** The install docs tell users to copy the template XML to `/boot/config/plugins/dockerMan/templates-user/` and pick it from **Add Container → Template → User templates**, with the Community Applications `private/` folder as the alternative. The raw GitHub URL is only the download source.
 
 **Rationale:** The Community Applications author states that Unraid 6.10 removed the Template Repositories field, so the earlier "paste the template URL" instruction cannot be followed on Unraid 7. Neither route has been executed for this repository yet; the first real install should confirm it.
+
+## 2026-10-09 — Template icon
+
+**Decision:** `icon.png` is the Community Applications / Unraid Docker icon. The template and `ca_profile.xml` `<Icon>` tags point at the raw GitHub URL of `icon.png` on `main`. The asset is a generated NATO-vs-Pact themed illustration chosen for this repository (not an Eugen press-kit file).
+
+**Rationale:** Unraid and CA load the icon from that raw URL. Eugen's [Terms of Use](https://eugensystems.com/terms-of-use/) do not grant a trademark license; no official free logo kit was found. The chosen art is still fan/generated branding, not a Steam capsule or Eugen-distributed mark.
