@@ -35,7 +35,7 @@ Those files are written mode `600`. `WRITE_CONFIG=false` leaves existing copies 
 
 The form exposes login, key, public IP, port, server name, map, player counts, team size, combat rule, mod list, mod tags, and the write-config switch. The wrapper also writes fixed match values: `GameType = 0`, `MapRotationType = 0`, `InitMoney = 750`, `TimeLimit = 1200`, `ScoreLimit = 2000`, `WarmupCountdown = 60`, `LoadingTimeMax = 120`, `DeploiementTimeMax = 120`, `DebriefingTimeMax = 60`, `DeltaMaxTeamSize = 0`, `IncomeRate = 3`, `Upkeep = 0`, `AllowObservers = 1`, and `ObserverDelay = 120`.
 
-The preset in the template and sample is a 2v2 Conquest server (`NB_MAX_PLAYER=4`, `MAX_TEAM_SIZE=2`, `COMBAT_RULE=2`) for workshop item `3811913066`, with `MOD_TAG_LIST=Maps-Scenarios`. The Map field has an empty default. `Jungle Law` and `YOUR_*` placeholders are rejected. The scenario ID inside the mod is not stored in this repository.
+The preset in the template and sample is a 2v2 Conquest server (`NB_MAX_PLAYER=4`, `MAX_TEAM_SIZE=2`, `COMBAT_RULE=2`) for workshop item `3811913066`, with `MOD_TAG_LIST=Maps-Scenarios`. The Map default is `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected. Base-game scenario IDs are also accepted. For those, Workshop Mod List should be cleared.
 
 ## Paths
 
@@ -90,7 +90,9 @@ The manifest for `ghcr.io/suchamoneypit/warno-unraid:latest` was readable withou
 - Community Apps submission: https://ca.unraid.net/submit
 - Support: https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues
 
-The workshop page lists Jungle Law as a 2v2 Conquest scenario name and describes the pack as an unofficial conversion. It does not publish the scenario ID the server expects. The page showed a download size of 9.264 GB when fetched on 2026-10-09.
+The workshop page lists Jungle Law as a 2v2 Conquest scenario name and describes the pack as an unofficial conversion. It does not publish scenario IDs. The IDs in `README.md` were taken from the mod files for item `3811913066` and recorded on 2026-10-09. The page showed a download size of 9.264 GB when fetched on 2026-10-09.
+
+`ModList` on that same Docker Hub page tells joining clients to download and enable a missing workshop mod. `entrypoint2.sh` in image digest `sha256:fb498aa82d7b15e3978bac51240e1243be3e19232ba0e66a6d947ec4b4364fe5` does not download files. It runs `warno-server -listenport=$EXPOSEDPORT -ip=$EXPOSEDIP -port=$EXPOSEDPORT -ipmms 178.32.126.73 -portmms 10002`.
 
 Eugen's `variables.ini` reference gives `GameType` `0` as NATO vs PACT. A later sentence on the same page calls that mode Allies vs Axis. The enumerated table is the one this wrapper follows (`GameType = 0`). `NbMaxPlayer` maximum is 20, which the wrapper also enforces. Source: [Configuration file `variables.ini`](https://hub.docker.com/r/eugensystems/warno).
 
@@ -100,5 +102,6 @@ Eugen's `variables.ini` reference gives `GameType` `0` as NATO vs PACT. A later 
 - Whether the official server creates `admins.ini` and `banned_clients.ini` was not observed.
 - The exact client error for a sixth server was not observed. The documented limit is five.
 - The README's LAN exception for Eugen connectivity was not checked against Eugen.
+- Whether `warno-server` downloads workshop item `3811913066` onto the server was not observed. The binary contains `GetModPackMountingPoint` and `ModDownloadCanceled`, and it contains no `workshop` string.
 - Current Unraid handling of `<br>` inside Overview and Description was not tested. The [template schema thread](https://forums.unraid.net/topic/38619-docker-template-xml-schema/) says Unraid 6.10+ removes HTML tags from those fields.
 - `README.md` still says the GHCR image does not exist until the Action builds it. The 2026-10-09 registry read found a public manifest.

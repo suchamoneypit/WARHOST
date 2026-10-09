@@ -95,7 +95,7 @@ login="host-login"
 dedicated_key="host-key-value"
 EOF
 
-sed 's/YOUR_JUNGLE_LAW_SCENARIO_ID/TestScenario_2v2/' "${ROOT}/samples/variables.ini.example" > "${WORKDIR}/expected-variables.ini"
+sed 's/RDPort_JungleLaw_2v2_CONQ/TestScenario_2v2/' "${ROOT}/samples/variables.ini.example" > "${WORKDIR}/expected-variables.ini"
 cmp -s "${settings}/variables.ini" "${WORKDIR}/expected-variables.ini" || fail "variables.ini drifted from the sample"
 cmp -s "${settings}/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.example" || fail "params_for_ai.json drifted from the sample"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint did not run from the settings directory"

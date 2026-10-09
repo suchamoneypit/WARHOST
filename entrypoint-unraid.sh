@@ -139,18 +139,18 @@ if [ "$write_config" = "true" ]; then
     die "Workshop mod tags must look like Maps-Scenarios."
   fi
 
-  : "${MAP:?Set Map to the Jungle Law scenario ID from the workshop mod. The display name Jungle Law is not the scenario ID.}"
+  : "${MAP:?Set Map to a scenario ID. A base-game ID looks like _2x2_Hesse_2vs2_CONQ. Jungle Law is RDPort_JungleLaw_2v2_CONQ.}"
   require_single_line "Map" "$MAP"
   folded_map=$(printf '%s' "$MAP" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
   if [ "$folded_map" = "junglelaw" ]; then
-    die "Map must be the scenario ID from the workshop files, not the display name Jungle Law."
+    die "Map must be a scenario ID, not the display name Jungle Law. Jungle Law is RDPort_JungleLaw_2v2_CONQ."
   fi
   case "$MAP" in
     *[[:space:]]*|*"="*|*"\""*) die "Map cannot contain spaces, quotes, or =." ;;
   esac
   case "$MAP" in
     YOUR_*|REPLACE_WITH_*)
-      die "Replace Map with the Jungle Law scenario ID from workshop item 3811913066."
+      die "Replace Map with a scenario ID. A base-game ID looks like _2x2_Hesse_2vs2_CONQ. Jungle Law is RDPort_JungleLaw_2v2_CONQ."
       ;;
   esac
 

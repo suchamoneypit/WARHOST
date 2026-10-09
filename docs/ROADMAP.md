@@ -10,7 +10,7 @@ Confirmed from `README.md` and the repository state on 2026-10-09. No other goal
 ## Known issues
 
 - The repository has no record of a completed Unraid install test. The README defers the Community Apps listing until that test exists.
-- The Jungle Law scenario ID is not in this repo. The Map field default is empty. The workshop page publishes the display name only: https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066
+- Whether the dedicated server downloads workshop item `3811913066` by itself has not been observed. Eugen's docs only describe the client download prompt: https://hub.docker.com/r/eugensystems/warno
 - `README.md` says `ghcr.io/suchamoneypit/warno-unraid:latest` does not exist until the GitHub Action builds it. An anonymous read of that tag's manifest succeeded on 2026-10-09. See `docs/ARCHITECTURE.md` for the digest.
 
 ## Planned work

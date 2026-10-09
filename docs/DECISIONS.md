@@ -40,9 +40,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Jungle Law preset, RCON unset
 
-**Decision:** The published defaults are 2v2 Conquest for workshop item `3811913066`. The operator supplies the scenario ID. RCON is not on the form.
+**Decision:** The published defaults are 2v2 Conquest for workshop item `3811913066`, with Map `RDPort_JungleLaw_2v2_CONQ`. A base-game scenario ID is valid when Workshop Mod List is cleared. RCON is not on the form.
 
-**Rationale:** The first template commit (`6ee0739`) left RCON out. The current form and README keep that boundary and target the Red Dragon map pack.
+**Rationale:** The first template commit (`6ee0739`) left RCON out. The Map default was empty until the scenario IDs from the Red Dragon mod files were recorded.
 
 ## 2026-10-09 — Agent guidance and checks
 

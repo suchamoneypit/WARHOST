@@ -6,9 +6,9 @@ The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](
 
 ## Before you install
 
-Email `eugsupport@eugensystems.com` and ask for a dedicated-server login and key. Use the email on your EugNet account. Eugen answers manually, and one login/key pair can run five servers.
+Email `eugsupport@eugensystems.com` and ask for a dedicated-server key. Use the email on your EugNet account. That same email is the Eugen Login on the form. Eugen emails the key. Eugen answers manually, and one login/key pair can run five servers.
 
-Port forward the game port TCP/UDP to your Unraid server. The container uses host networking, so Unraid does not show a Docker port mapping. The server also needs outbound internet access so it can reach Eugen (not for LAN usage).
+Eugen recommends host networking, and this container uses it, so Unraid does not show a Docker port mapping. Port forward the game port TCP/UDP to your Unraid server. The server also needs outbound internet access so it can reach Eugen (not for LAN usage).
 
 ## Install
 
@@ -24,24 +24,47 @@ Fill in:
 
 | Field | What to enter |
 | --- | --- |
-| Eugen Login | The login Eugen sent you |
-| Eugen Dedicated Key | The key Eugen sent with that login |
-| Public WAN IP | The public address players connect to |
+| Eugen Login | The EugNet email you sent Eugen when you requested the key |
+| Eugen Dedicated Key | The key Eugen emailed back |
+| Public WAN IP | The address Eugen's lobby should advertise to players |
 | Game Port | `10400`, or another free port |
 | Server Name | The name in the server browser |
-| Map | The Jungle Law scenario ID from the workshop files |
+| Map | A scenario ID. The preset is `RDPort_JungleLaw_2v2_CONQ` |
 
 Advanced fields are already set for a 2v2 Conquest match on the Red Dragon map pack: 4 players, 2 per team, combat rule `2`, mod `3811913066/0`.
 
-### Jungle Law scenario ID
+### Map
 
-The workshop page shows the name Jungle Law. The server needs the scenario ID stored inside the mod. Subscribe on a PC, wait for Steam to finish the download (about 9.3 GB), and look in:
+**Map** is a scenario ID. Base-game IDs are the ones in Eugen's map table, such as `_2x2_Hesse_2vs2_CONQ`. Those maps are part of the dedicated server's own game data. For a base-game map, clear **Workshop Mod List**.
 
-```text
-steamapps/workshop/content/1611600/3811913066
-```
+A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
 
-Put that scenario ID in **Map**. `Jungle Law` and `YOUR_JUNGLE_LAW_SCENARIO_ID` are rejected. Vanilla map IDs in Eugen's documentation look like `_3x3_Airport_10vs10_CONQ`.
+The Red Dragon map pack scenario IDs, taken from the mod files for workshop item `3811913066`, are:
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| 38th Parallel | `RDPort_38thParallel_4v4_CONQ` | 4v4 |
+| 38th Perpendicular | `RDPort_38thPerpendicular_3v3_CONQ` | 3v3 |
+| Another D-Day | `RDPort_AnotherDDay_2v2_CONQ` | 2v2 |
+| Apocalypse Imminent | `RDPort_ApocalypseImminent_2v2_CONQ` | 2v2 |
+| Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
+| Back to Inchon | `RDPort_BackToInchon_3v3_CONQ` | 3v3 |
+| Chosin Reservoir | `RDPort_ChosinReservoir_2v2_CONQ` | 2v2 |
+| Floods | `RDPort_Floods_4v4_CONQ` | 4v4 |
+| Gunboat Diplomacy | `RDPort_GunboatDiplomacy_2v2_CONQ` | 2v2 |
+| Hop and Glory | `RDPort_HopAndGlory_2v2_CONQ` | 2v2 |
+| Jungle Law | `RDPort_JungleLaw_2v2_CONQ` | 2v2 |
+| Mud Fight | `RDPort_MudFight_1v1_CONQ` | 1v1 |
+| Operation Chromite | `RDPort_OperationChromite_2v2_CONQ` | 2v2 |
+| Paddy Field | `RDPort_PaddyField_2v2_CONQ` | 2v2 |
+| Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
+| Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
+| Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
+| Wonsan Native | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
+
+All of these are Conquest, so leave **Combat Rule** at `2`. Change **Max Players** and **Team Size** to match the map size. A 4v4 map needs 8 max players and a team size of 4. Asgard needs 20 and 10.
+
+Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `ModList` makes a joining player who is missing the mod get prompted to download and enable it. This container does not download workshop files itself. It writes `Map` and `ModList`, then starts Eugen's entrypoint. That entrypoint only launches `warno-server`. Whether the server binary then downloads workshop item `3811913066` has not been confirmed on a running server.
 
 ### A second server
 
