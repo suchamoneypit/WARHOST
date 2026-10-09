@@ -1,6 +1,6 @@
-# WARNO dedicated server for Unraid
+# WARHOST — WARNO Dedicated Server for Unraid
 
-Unraid template for one [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
+A mod-friendly WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
 The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`).
 
@@ -17,21 +17,21 @@ First install? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It cover
 
 Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown.
 
-In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints the command in step 1. In Cursor, `/unraid-template-installscript` runs that script and shows the same output. Paste it; the URL and the flash filename both come from the template.
+In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints the command in step 1. In Cursor, `/unraid-template-installscript` runs that script and shows the same output. Paste it; the URL and the flash filename both come from the template. The download URL uses the repository name `WARHOST` and the template file on `main`.
 
 1. Unraid web UI → terminal icon (`>_`):
 
    ```sh
    mkdir -p /boot/config/plugins/dockerMan/templates-user
-   curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml \
-     https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+   curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST.xml \
+     https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
    ```
 
-2. **Docker → Add Container → Template → User templates**, choose **WARNO-Dedicated-Server**, fill in the fields below, **Apply**.
+2. **Docker → Add Container → Template → User templates**, choose **WARHOST**, fill in the fields below, **Apply**.
 
-The dropdown label is the flash filename with `my-` removed, so `my-WARNO-Dedicated-Server.xml` shows **WARNO-Dedicated-Server**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARNO-Dedicated-Server`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARNO-Dedicated-Server**. An earlier download saved `warno-dedicated-server.xml` in that folder; delete that file or the lowercase entry stays. This route is the one the Community Applications author gives for Unraid 6.10 and later. The corrected filename has not been tried on a server yet. `sh scripts/print_template_fetch.sh --private` saves `warno-dedicated-server.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
+The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml` shows **WARHOST**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARHOST`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARHOST**. Delete an earlier download if it is still in that folder: `warno-dedicated-server.xml` or `my-WARNO-Dedicated-Server.xml`. This route is the one the Community Applications author gives for Unraid 6.10 and later. `my-WARHOST.xml` has not been tried on a server yet. `sh scripts/print_template_fetch.sh --private` saves `warhost.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
 
-The image is `ghcr.io/suchamoneypit/warno-unraid:latest`. It is published and publicly pullable (confirmed 2026-10-09; the check is in the install guide, step 2).
+The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. `ghcr.io/suchamoneypit/warno-unraid:latest` was publicly pullable on 2026-10-09, and the same workflow still pushes that tag so a container created under the old name can update. The pull check is in the install guide, step 2. The settings folder stays `/mnt/user/appdata/warno/settings`. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
 
 Fill in:
 
@@ -118,7 +118,7 @@ The dedicated key belongs in the Unraid form, which stores it for that container
 
 Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their server launch arguments. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image.
 
-`.github/workflows/rebuild-image.yml` checks Eugen's image once a day, and also runs when the Dockerfile or entrypoint changes. If the digest changed, it builds `ghcr.io/suchamoneypit/warno-unraid:latest`. In Unraid, update each server container. A failed Action leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
+`.github/workflows/rebuild-image.yml` checks Eugen's image once a day, and also runs when the Dockerfile or entrypoint changes. If the digest changed, it builds `ghcr.io/suchamoneypit/warhost:latest` and `ghcr.io/suchamoneypit/warno-unraid:latest`. In Unraid, update each server container. A failed Action leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
 
 Change the entrypoint only if Eugen renames `entrypoint2.sh` or the settings filenames. A normal game patch does not require an edit here.
 
@@ -128,8 +128,8 @@ The image is already published. If you fork this repository, repeat these steps 
 
 1. In the GitHub repository settings, enable Issues.
 2. Under Actions, allow GitHub Actions, and set workflow permissions to read and write.
-3. Run the **Rebuild WARNO image** workflow.
-4. Open the package `warno-unraid` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this, and the package page is the place to confirm it.
+3. Run the **Rebuild WARHOST image** workflow.
+4. Open the package `warhost` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this for `warhost` and for the previous `warno-unraid` tag, and the package page is the place to confirm it.
 
 Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and Jungle Law is the running scenario. Submit the repository to Community Apps after that test. The submission site is [https://ca.unraid.net/submit](https://ca.unraid.net/submit).
 
@@ -150,4 +150,4 @@ This project was built with AI coding assistants (mainly [Cursor](https://cursor
 
 ## Support
 
-Questions and problems go to [GitHub issues](https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues). Leave the Eugen key out of the issue.
+Questions and problems go to [GitHub issues](https://github.com/suchamoneypit/WARHOST/issues). Leave the Eugen key out of the issue.

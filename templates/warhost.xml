@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <Container version="2">
-  <Name>WARNO-Dedicated-Server</Name>
-  <Repository>ghcr.io/suchamoneypit/warno-unraid:latest</Repository>
-  <Registry>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/pkgs/container/warno-unraid</Registry>
+  <Name>WARHOST</Name>
+  <Repository>ghcr.io/suchamoneypit/warhost:latest</Repository>
+  <Registry>https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost</Registry>
   <Network>host</Network>
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues</Support>
-  <Project>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid</Project>
+  <Support>https://github.com/suchamoneypit/WARHOST/issues</Support>
+  <Project>https://github.com/suchamoneypit/WARHOST</Project>
   <Overview>
     <![CDATA[
-This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.
+WARHOST is a WARNO dedicated server manager for Unraid with mod support, server configuration, and deployment tools. This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.
 
 Request a dedicated login and key from eugsupport@eugensystems.com using the email of your EugNet account. Eugen replies with a login and a key. Type both exactly as written. One pair can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.
 
@@ -24,16 +24,17 @@ For another server, add a new container from this same template. Change the cont
 This template was built with AI coding assistants. Humans reviewed what shipped and remain responsible for it.]]>
   </Overview>
   <Category>GameServers:</Category>
+  <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
   <WebUI/>
-  <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/icon.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
   <Requires>An Eugen Systems WARNO dedicated-server login and key for the person hosting. Joining players need the game and, for Jungle Law, Steam Workshop item 3811913066.</Requires>
   <Description>
     <![CDATA[
-This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.
+WARHOST is a WARNO dedicated server manager for Unraid with mod support, server configuration, and deployment tools. This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.
 
 Request a dedicated login and key from eugsupport@eugensystems.com using the email of your EugNet account. Eugen replies with a login and a key. Type both exactly as written. One pair can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.
 

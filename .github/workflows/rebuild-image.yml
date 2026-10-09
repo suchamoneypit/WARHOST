@@ -1,4 +1,4 @@
-name: Rebuild WARNO image
+name: Rebuild WARHOST image
 
 on:
   schedule:
@@ -23,7 +23,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: rebuild-warno-image
+  group: rebuild-warhost-image
   cancel-in-progress: false
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
       - name: Decide whether to build
         id: plan
         env:
-          IMAGE: ghcr.io/suchamoneypit/warno-unraid:latest
+          IMAGE: ghcr.io/suchamoneypit/warhost:latest
           EVENT_NAME: ${{ github.event_name }}
           INPUT_FORCE: ${{ inputs.force }}
           UPSTREAM: ${{ steps.upstream.outputs.digest }}
@@ -88,7 +88,9 @@ jobs:
           platforms: linux/amd64
           provenance: false
           sbom: false
-          tags: ghcr.io/suchamoneypit/warno-unraid:latest
+          tags: |
+            ghcr.io/suchamoneypit/warhost:latest
+            ghcr.io/suchamoneypit/warno-unraid:latest
           build-args: |
             UPSTREAM_DIGEST=${{ steps.upstream.outputs.digest }}
 
@@ -98,4 +100,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          gh api --method PUT /user/packages/container/warhost/visibility -f visibility=public
           gh api --method PUT /user/packages/container/warno-unraid/visibility -f visibility=public

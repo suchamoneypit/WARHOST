@@ -33,7 +33,7 @@ def parse_xml(relative):
     return tree.getroot()
 
 
-template = parse_xml("templates/warno-dedicated-server.xml")
+template = parse_xml("templates/warhost.xml")
 profile = parse_xml("ca_profile.xml")
 
 if template is not None:
@@ -66,12 +66,12 @@ if template is not None:
         fail("EUGEN_DEDICATED_KEY must be a Config with Mask=true")
     if not settings_target:
         fail("settings Config target must be /server/settings")
-    text = (root / "templates/warno-dedicated-server.xml").read_text()
+    text = (root / "templates/warhost.xml").read_text()
     for number, line in enumerate(text.splitlines(), 1):
         if "<Config " in line and "</Config>" not in line:
-            fail(f"templates/warno-dedicated-server.xml:{number}: Config must stay on one line")
+            fail(f"templates/warhost.xml:{number}: Config must stay on one line")
         if "<Networking" in line or "<Environment" in line or "<Data>" in line:
-            fail(f"templates/warno-dedicated-server.xml:{number}: legacy template block")
+            fail(f"templates/warhost.xml:{number}: legacy template block")
 
 if profile is not None:
     if profile.tag != "CommunityApplications":

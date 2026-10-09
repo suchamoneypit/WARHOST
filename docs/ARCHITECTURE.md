@@ -1,14 +1,14 @@
 # Architecture
 
-This repository is an Unraid template and a settings wrapper around Eugen Systems' official WARNO dedicated-server image. The game server itself stays in `eugensystems/warno`.
+This repository is WARHOST: an Unraid template and a settings wrapper around Eugen Systems' official WARNO dedicated-server image. The game server itself stays in `eugensystems/warno`.
 
-Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugensystems/warno](https://hub.docker.com/r/eugensystems/warno), and anonymous registry reads of `eugensystems/warno:latest` and `ghcr.io/suchamoneypit/warno-unraid:latest`. Digests below are from that day and will change when the images are rebuilt.
+Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugensystems/warno](https://hub.docker.com/r/eugensystems/warno), and anonymous registry reads of `eugensystems/warno:latest` and `ghcr.io/suchamoneypit/warno-unraid:latest`. Digests below are from that day and will change when the images are rebuilt. `ghcr.io/suchamoneypit/warhost:latest` is the image the template installs. That tag was not read in this check; it is published when the rebuild workflow runs on `main`.
 
 ## Layout
 
 | Path | Role |
 | --- | --- |
-| `templates/warno-dedicated-server.xml` | Unraid container template |
+| `templates/warhost.xml` | Unraid container template. Container name `WARHOST`. |
 | `ca_profile.xml` | Community Apps repository profile |
 | `Dockerfile` | `FROM eugensystems/warno:latest`, then replaces the entrypoint |
 | `entrypoint-unraid.sh` | Writes settings, then execs Eugen's entrypoint |
@@ -28,7 +28,7 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 
 ## Template behavior
 
-Unraid installs `ghcr.io/suchamoneypit/warno-unraid:latest` from `templates/warno-dedicated-server.xml`. The template is `<Container version="2">`. Paths and variables are `<Config>` entries. There is no WebUI.
+Unraid installs `ghcr.io/suchamoneypit/warhost:latest` from `templates/warhost.xml`. The template is `<Container version="2">`. `<Name>` is `WARHOST`. `<ExtraSearchTerms>` is `WARNO WARNO server dedicated server game server mods modded`. Paths and variables are `<Config>` entries. The default host folder stays `/mnt/user/appdata/warno/settings`. There is no WebUI.
 
 On start, `WRITE_CONFIG` defaults to true. The wrapper then rewrites these files under the settings directory:
 
@@ -76,14 +76,14 @@ Registry config for `eugensystems/warno:latest` on 2026-10-09:
 
 That entrypoint plus the working directory is the absolute path `/server/entrypoint2.sh` used by this wrapper. The script body was read from the image layer; its `warno-server` command line is quoted under External dependencies below.
 
-The manifest for `ghcr.io/suchamoneypit/warno-unraid:latest` was readable without credentials on 2026-10-09 (anonymous token, HTTP 200), so Unraid can pull it. The image layers were not downloaded. Values from the rebuild that followed commit `848a5a4`:
+The manifest for `ghcr.io/suchamoneypit/warno-unraid:latest` was readable without credentials on 2026-10-09 (anonymous token, HTTP 200). The template now installs `ghcr.io/suchamoneypit/warhost:latest`. That tag was not read here. The rebuild workflow pushes both tags from the same build. The image layers were not downloaded. Values from the rebuild that followed commit `848a5a4`, which published `warno-unraid`:
 
 - Manifest digest `sha256:67ea75b2542f2ed924958ba087b6598d5a3b2632885655d523a9187e39138095`
 - Created `2026-10-09T08:12:08Z`
 - Entrypoint `/server/entrypoint-unraid.sh`, working directory `/server`, no `ExposedPorts`
 - Label `warno.upstream.digest` equal to the Eugen digest above
 
-Both GitHub workflows (`Check repository`, `Rebuild WARNO image`) completed successfully for that commit. The repository is public with Issues enabled.
+Both GitHub workflows (`Check repository`, `Rebuild WARNO image`) completed successfully for that commit. The workflow file is now named `Rebuild WARHOST image`. The repository is public with Issues enabled. The GitHub repository is `WARHOST`. `https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09.
 
 `.github/workflows/rebuild-image.yml` rebuilds that GHCR tag on a daily schedule, on manual dispatch, and on pushes to `main` that change the Dockerfile, wrapper, or workflow. Those pushes always rebuild. The daily schedule, and a manual run with force left false, skip the build when the published image's `warno.upstream.digest` label already matches Eugen's digest.
 
@@ -97,7 +97,7 @@ Both GitHub workflows (`Check repository`, `Rebuild WARNO image`) completed succ
 - Conversions named on the form, without a `Config.ini` `Version` in this repo: [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) (`3595948209`) and [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) (`3388575848`). Pages fetched on 2026-10-09. Galactic Divide's page calls it a total conversion and links the tags Gameplay, Interface, Sound, Scenarios, and Maps. A World in Flames's page calls it an overhaul for the modern day and links Gameplay and Interface. Neither page states a scenario ID.
 - Workshop files on a subscribed PC: `steamapps/workshop/content/1611600/3811913066`
 - Community Apps submission: https://ca.unraid.net/submit
-- Support: https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues
+- Support: https://github.com/suchamoneypit/WARHOST/issues
 
 The workshop page lists Jungle Law as a 2v2 Conquest scenario name and describes the pack as an unofficial conversion. It does not publish scenario IDs. The 18 IDs in `README.md` are the file names in the mod's `Scenarios/` folder (`<ID>_Assets.dat`, `_Definition.dat`, `_Details.dat`, `_GameData.dat`) as downloaded by Steam to `steamapps/workshop/content/1611600/3811913066/`; they were re-read from those files on 2026-10-09 and matched the README exactly. The page lists "Wonsan Harbour" where the file is `RDPort_WonsanNative_2v2_CONQ`. The mod's `Config.ini` shows `ID = 3811913066` and `Version = 15`, re-read on 2026-10-09; the comment says to increment `Version` when an update is incompatible. The template's `ModList` is `3811913066/15`. Eugen's Docker Hub page says the `ModList` version "is usually always 0". On 2026-10-09 the operator started with `3811913066/0`: the log showed `Variable ModList set to "3811913066/0"` and `Connection to match making server validated`, and no line about the rejected join. The operator reported that `3811913066/15` is what let a client join. The page showed a download size of 9.264 GB when fetched on 2026-10-09.
 
@@ -116,4 +116,4 @@ Eugen's `variables.ini` reference gives `GameType` `0` as NATO vs PACT. A later 
 - Whether `warno-server` downloads workshop item `3811913066` onto the server was not observed. The binary contains `GetModPackMountingPoint` and `ModDownloadCanceled`, and it contains no `workshop` string.
 - The Overview no longer contains `<br>`. [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read on 2026-10-09, converts `[` `]` to tags, replaces `<br>` with a newline, runs `strip_tags`, and the basic view then turns newlines into line breaks. The operator had seen the letters `br` in the previous Overview. Whether the new paragraphs break correctly on their Unraid screen has not been checked. The [template schema thread](https://forums.unraid.net/topic/38619-docker-template-xml-schema/) says Community Applications ignores `<Description>` when `<Overview>` is present.
 - Scenario IDs and `Config.ini` `Version` for workshop items `3363584349`, `3474588989`, `3705706772`, `3415339374`, `3762638679`, `3595948209`, and `3388575848`. Their pages, fetched on 2026-10-09, do not publish either. Only `3811913066` is present under the local Steam library.
-- The install route in `docs/INSTALL-UNRAID.md` follows the Community Applications author's [statement](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/) that Unraid 6.10 removed the Template Repositories field. `scripts/print_template_fetch.sh` prints the download. The Template dropdown label is the flash filename with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php)); Unraid's own save path is `my-<Name>.xml` and keeps that case ([DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). Both files were read from webgui `master` on 2026-10-09. The operator reported that `warno-dedicated-server.xml` showed up lowercase. Saving `my-WARNO-Dedicated-Server.xml` has not been confirmed on a server.
+- The install route in `docs/INSTALL-UNRAID.md` follows the Community Applications author's [statement](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/) that Unraid 6.10 removed the Template Repositories field. `scripts/print_template_fetch.sh` prints the download. The Template dropdown label is the flash filename with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php)); Unraid's own save path is `my-<Name>.xml` and keeps that case ([DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). Both files were read from webgui `master` on 2026-10-09. The operator reported that `warno-dedicated-server.xml` showed up lowercase. Saving `my-WARHOST.xml` has not been confirmed on a server.

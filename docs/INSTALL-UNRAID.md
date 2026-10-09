@@ -1,11 +1,11 @@
 # First install on Unraid 7.x
 
-A step-by-step guide from nothing to a WARNO dedicated server that players can join. It is written for someone who has never installed a container outside Community Applications.
+A step-by-step guide from nothing to a WARHOST container running a WARNO dedicated server that players can join. It is written for someone who has never installed a container outside Community Applications.
 
 What this guide rests on, checked on 2026-10-09:
 
 - Eugen's instructions on [Docker Hub](https://hub.docker.com/r/eugensystems/warno) (key request, settings files, host networking, TCP and UDP).
-- The published image `ghcr.io/suchamoneypit/warno-unraid:latest`: readable without credentials, entrypoint `/server/entrypoint-unraid.sh`.
+- The image the template installs, `ghcr.io/suchamoneypit/warhost:latest`, after **Rebuild WARHOST image** has published it. Entrypoint `/server/entrypoint-unraid.sh`. `ghcr.io/suchamoneypit/warno-unraid:latest` was readable without credentials on 2026-10-09, and the workflow still publishes that tag.
 - Unraid's [container management docs](https://docs.unraid.net/unraid-os/manual/docker-management/) and the Community Applications author's statement that Unraid 6.10 [removed the Template Repositories field](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/).
 - The Red Dragon map pack files on a PC subscribed to Steam Workshop item `3811913066`.
 
@@ -32,27 +32,27 @@ What you get back is a **login** and a **key**. Enter the login exactly as it ap
 
 ## 2. Confirm the image and template are published
 
-Both were confirmed on 2026-10-09; repeat the check if months have passed or you forked the repository.
+`ghcr.io/suchamoneypit/warno-unraid:latest` was confirmed on 2026-10-09. The repository is `WARHOST` (`https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09). Repeat the checks below if months have passed or you forked the repository.
 
-- The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml>
-- The image must be pullable without logging in. Open <https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/pkgs/container/warno-unraid>; the package must be **Public**. From any Linux or macOS terminal, this must print `200`:
+- The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. GitHub redirects the old repository URL. It does not redirect the old template filename.
+- The image must be pullable without logging in. Open <https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost>; the package must be **Public**. From any Linux or macOS terminal, this must print `200`:
 
   ```sh
-  TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:suchamoneypit/warno-unraid:pull" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+  TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:suchamoneypit/warhost:pull" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
   curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
     -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json" \
-    https://ghcr.io/v2/suchamoneypit/warno-unraid/manifests/latest
+    https://ghcr.io/v2/suchamoneypit/warhost/manifests/latest
   ```
 
-- The last **Rebuild WARNO image** run under the repository's **Actions** tab should be green. A red run means the published image is older than the repository; it still installs, but open an issue.
-
+  `ghcr.io/suchamoneypit/warno-unraid:latest` was publicly pullable on 2026-10-09. The rebuild workflow still pushes that tag. A new install uses `warhost`.
+- The last **Rebuild WARHOST image** run under the repository's **Actions** tab should be green. A red run means the published image is older than the repository; it still installs, but open an issue.
 ## 3. Network preparation
 
 The container uses **host networking**, which Eugen recommends. That has three consequences:
 
 1. Unraid shows **no port mapping** for this container. That is correct, not a missing field.
 2. The game port must be free on the Unraid server itself. `10400` is this template's default; Eugen's docs use a placeholder. If something else on Unraid already uses `10400`, pick another port and use it everywhere below.
-3. Every additional WARNO container needs a different port.
+3. Every additional WARHOST container needs a different port.
 
 On your router, forward the game port **as both TCP and UDP** to your Unraid server's LAN IP. Eugen: "make sure you forward both UDP and the TCP to the exposed port because the server needs both." Give Unraid a fixed LAN IP (DHCP reservation) so the forward does not break.
 
@@ -98,26 +98,27 @@ Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, s
 
 ```sh
 mkdir -p /boot/config/plugins/dockerMan/templates-user
-curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST.xml \
+  https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
 ```
 
-Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARNO-Dedicated-Server** under **User templates**. Every field prefills.
+Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** under **User templates**. Every field prefills.
 
-Unraid labels that menu from the filename, with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read 2026-10-09). The `<Name>` in the XML is already `WARNO-Dedicated-Server`; the earlier file `warno-dedicated-server.xml` is why the menu showed `warno-dedicated-server`. If that file is still in the folder, delete it:
+Unraid labels that menu from the filename, with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read 2026-10-09). The `<Name>` in the XML is `WARHOST`. That string is the Docker container name. It cannot contain spaces, so the Apps and dropdown title is `WARHOST`, and WARNO stays in the overview. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`. If an earlier download is still in the folder, delete it:
 
 ```sh
-rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml
+rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
+  /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml
 ```
 
-The corrected filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). That filename has not been tried on a server yet.
+The filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). `my-WARHOST.xml` has not been tried on a server yet. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 
 Alternative, still until Community Applications lists it: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
 
 ```sh
 mkdir -p /boot/config/plugins/community.applications/private/suchamoneypit
-curl -fsSL -o /boot/config/plugins/community.applications/private/suchamoneypit/warno-dedicated-server.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+curl -fsSL -o /boot/config/plugins/community.applications/private/suchamoneypit/warhost.xml \
+  https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
 ```
 
 It then appears in the **Apps** tab under **Private**. The user-template download was tried with the lowercase filename, and the dropdown showed that name. The private-folder route has not been executed for this repository.
@@ -128,7 +129,7 @@ Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. C
 
 | Field | Default | Enter |
 | --- | --- | --- |
-| Name | `WARNO-Dedicated-Server` | Keep, or any unique container name. |
+| Name | `WARHOST` | Keep, or any unique container name. The settings folder stays `/mnt/user/appdata/warno/settings`. |
 | Network Type | `Host` | Keep. |
 | Settings Folder | `/mnt/user/appdata/warno/settings` | Keep. Unraid creates it. One folder per server. |
 | Eugen Login | empty | The login from Eugen's reply. |
@@ -192,7 +193,7 @@ Start WARNO on a PC on the same network with the Workshop mod enabled. Look for 
 
 Have someone outside your LAN find and join the server. Only this step proves the port forward, the WAN IP, and your ISP are all right. A TCP port checker website can confirm the TCP half of the forward; UDP cannot be checked that way.
 
-When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the Name on the form. With Name left as `WARNO-Dedicated-Server`, that is the same file as the download. A different Name leaves the downloaded file in the dropdown as a second entry labeled **WARNO-Dedicated-Server**. Compare Unraid's saved copy with `templates/warno-dedicated-server.xml`; dockerMan's formatting is the one Community Applications expects.
+When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the Name on the form. With Name left as `WARHOST`, that is the same file as the download. A different Name leaves the downloaded file in the dropdown as a second entry labeled **WARHOST**. Compare Unraid's saved copy with `templates/warhost.xml`; dockerMan's formatting is the one Community Applications expects.
 
 ## Troubleshooting
 
@@ -216,7 +217,7 @@ When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid wr
 
 These need a real Unraid install with a real key. They are listed so nobody mistakes this guide for a test record.
 
-- That Unraid 7 shows `my-WARNO-Dedicated-Server.xml` in the Template dropdown as **WARNO-Dedicated-Server** and prefills every field as written here. A file named `warno-dedicated-server.xml` was reported to show that lowercase name. The corrected filename and the prefill have not been recorded.
+- That Unraid 7 shows `my-WARHOST.xml` in the Template dropdown as **WARHOST** and prefills every field as written here. A file named `warno-dedicated-server.xml` was reported to show that lowercase name. `my-WARHOST.xml` and the prefill have not been recorded.
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.
 - Which sockets (TCP, UDP, or both) `warno-server` opens on the game port.
 - Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to.
