@@ -15,7 +15,7 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses the next port.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
@@ -32,7 +32,7 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses the next port.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/settings" Mode="rw" Description="Ini files for this container only. The next server needs its own folder, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/settings</Config>
