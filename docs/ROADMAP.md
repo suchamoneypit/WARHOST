@@ -13,6 +13,7 @@ Confirmed from `README.md` and the repository state on 2026-10-09. No other goal
 - Whether the dedicated server downloads workshop item `3811913066` by itself has not been observed. Eugen's docs only describe the client download prompt: https://hub.docker.com/r/eugensystems/warno
 - The GHCR image `ghcr.io/suchamoneypit/warno-unraid:latest` was confirmed publicly pullable on 2026-10-09 (see `docs/ARCHITECTURE.md`). The template now installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when the rebuild workflow runs on `main`. The workflow still pushes the old tag.
 - First-start duration and which sockets `warno-server` opens are still unrecorded. `ModList` for the Red Dragon pack is the mod's own `Version`: `3811913066/0` registered and did not log the rejected join; `3811913066/15` is the preset. See `docs/DECISIONS.md`.
+- Eight slots on a 2v2 scenario (`NbMaxPlayer=8`, `MaxTeamSize=4`, Map `RDPort_JungleLaw_2v2_CONQ`) has not been tried. Eugen's page does not lock lobby size to the scenario ID. See `docs/ARCHITECTURE.md`.
 
 ## Planned work
 

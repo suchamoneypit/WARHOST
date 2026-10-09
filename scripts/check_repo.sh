@@ -62,6 +62,12 @@ if template is not None:
             key_masked = config.attrib.get("Mask") == "true"
         if config.attrib.get("Target") == "/server/settings":
             settings_target = True
+        description = config.attrib.get("Description", "")
+        if len(description) > 240:
+            fail(f"templates/warhost.xml: {name} description is {len(description)} characters")
+        folded = description.lower()
+        if "<br" in folded or "&lt;br" in folded:
+            fail(f"templates/warhost.xml: {name} description contains a br tag")
     if not key_masked:
         fail("EUGEN_DEDICATED_KEY must be a Config with Mask=true")
     if not settings_target:

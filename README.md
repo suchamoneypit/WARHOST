@@ -37,25 +37,135 @@ Fill in:
 
 | Field | What to enter |
 | --- | --- |
-| Eugen Login | The login Eugen sent back with your dedicated key. This is unique and must be obtained from Eugen.|
-| Eugen Dedicated Key | The key from the same reply from Eugen |
+| Eugen Login | The login Eugen sent back with your dedicated key. This is unique and must be obtained from Eugen. |
+| Eugen Dedicated Key | The key from the same reply. Unraid hides this box. |
+| Key last 4 | The last 4 characters of that key, shown in clear text so you can tell keys apart. A start that rewrites settings stops if they do not match. |
 | Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
-| Game Port | `10400`, or another free port. You can change it later by editing the container. Forward the same number as TCP and UDP. |
+| Game Port | `10400`, or another free port. Forward the same number to this Unraid server as TCP and UDP. |
 | Server Name | The name in the server browser |
-| Max Players | `4` for this 2v2 preset. Use 2, 4, 6, 8, or 20 for 1v1, 2v2, 3v3, 4v4, or 10v10. |
+| Max Players | `4` for this 2v2 preset. Usual sizes are under Map. The lobby is not locked to the size in the scenario ID. |
 | Minimum Players | `2`, and not above Max Players |
-| Team Size | `2` for this 2v2 preset. One team: 1, 2, 3, 4, or 10 for 1v1 through 4v4 and 10v10. |
+| Team Size | `2` for this 2v2 preset. Slots on one side, usually half of Max Players. |
 | Combat Rule | `2` for Conquest, `1` for Destruction |
 
-**Show more settings** holds Write Config From Form, Workshop Mod Tags, Workshop Mod List, and Map. Workshop Mod Tags are browser icons only and do not download mods. Map and Workshop Mod List are at the bottom because their descriptions are long. The preset is already Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match. Open **Show more settings** to pick a different map or mod. The Map description lists the scenario IDs. The Workshop Mod List description has two sections: mods and conversions, then maps.
+**Show more settings** holds Write Config From Form, Workshop Mod Tags, Workshop Mod List, and Map. Workshop Mod Tags are browser icons only and do not download mods. The preset is Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match. Scenario IDs and named mods are in the tables below.
 
 ### Map
 
-**Map** is a scenario ID. Base-game IDs are the ones in Eugen's map table, such as `_2x2_Hesse_2vs2_CONQ`. Those maps are part of the dedicated server's own game data. For a base-game map, clear **Workshop Mod List**. The Map field under **Show more settings** lists Eugen's table, read on 2026-10-09, from 1v1 to 10v10. That list is not copied here.
+**Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Those maps are part of the dedicated server's own game data, so clear **Workshop Mod List** for them. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
 
-A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
+The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. A 1v1 ID usually uses Max Players 2 and Team Size 1, a 2v2 uses 4 and 2, a 3v3 uses 6 and 3, a 4v4 uses 8 and 4, and a 10v10 uses 20 and 10. Setting Max Players to 8 on a 2v2 map has not been tested. Combat Rule is `2` when the ID contains `CONQ`, and `1` when it contains `DEST`.
 
-The Red Dragon map pack scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-09 and is repeated in the Map field, after the base-game IDs. The procedure is in the install guide, step 4.
+#### Base game
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| Airport (duel) | `_3x3_Airport_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Black Forest Storm (duel) | `_2x3_BlackForestStorm_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Chemical (duel) | `_4x2_Chemical_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Death Row (training) | `_2x3_Death_Row_1vs1_CONQ_TRAINING` | 1v1 Conquest |
+| Geisa (training) | `_4x3_geisa_1vs1_CONQ_TRAINING` | 1v1 Conquest |
+| Hesse (duel) | `_2x2_Hesse_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Kreide (duel) | `_3x3_Kreide_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Mount River (duel) | `_3x3_MountRiver_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Mount River (training) | `_3x3_MountRiver_1vs1_CONQ_TRAINING` | 1v1 Conquest |
+| Ohmen (duel) | `_2x3_Ohmen_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Two Lakes (duel) | `_2x3_Two_lakes_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Urban Frontlines (duel) | `_3x3_UrbanFrontlines_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Vertigo (duel) | `_2x3_Vertigo_1vs1_CONQ_DUEL` | 1v1 Conquest |
+| Albion Military Base | `_2x3_Albion_Military_Base_2vs2_CONQ` | 2v2 Conquest |
+| Black Forest Storm | `_2x3_BlackForestStorm_2vs2_CONQ` | 2v2 Conquest |
+| Chemical (training) | `_4x2_Chemical_2vs2_CONQ_TRAINING` | 2v2 Conquest |
+| Death Row | `_2x3_Death_Row_2vs2_CONQ` | 2v2 Conquest |
+| Hesse | `_2x2_Hesse_2vs2_CONQ` | 2v2 Conquest |
+| Loop | `_5x2_Loop_2vs2_CONQ` | 2v2 Conquest |
+| Mount River (assault) | `_3x3_MountRiver_2vs2_CONQ_ASSAULT` | 2v2 Conquest |
+| Ripple | `_2x3_Ripple_2vs2_CONQ` | 2v2 Conquest |
+| Tension | `_2x2_Tension_2vs2_CONQ` | 2v2 Conquest |
+| Teufelsmoor | `_2x2_Teufelsmoor_2vs2_CONQ` | 2v2 Conquest |
+| Two Lakes | `_2x3_Two_lakes_2vs2_CONQ` | 2v2 Conquest |
+| Two Ways | `_2x3_TwoWays_2vs2_CONQ` | 2v2 Conquest |
+| Urban Frontlines | `_3x3_UrbanFrontlines_2vs2_CONQ` | 2v2 Conquest |
+| Vertigo | `_2x3_Vertigo_2vs2_CONQ` | 2v2 Conquest |
+| Death Row | `_2x3_Death_Row_2vs2_DEST` | 2v2 Destruction |
+| Ripple | `_2x3_Ripple_2vs2_DEST` | 2v2 Destruction |
+| Two Lakes | `_2x3_Two_lakes_2vs2_DEST` | 2v2 Destruction |
+| Two Ways | `_2x3_TwoWays_2vs2_DEST` | 2v2 Destruction |
+| Vertigo | `_2x3_Vertigo_2vs2_DEST` | 2v2 Destruction |
+| Airport | `_3x3_Airport_3vs3_CONQ` | 3v3 Conquest |
+| Cliff | `_4x3_Cliff_3vs3_CONQ` | 3v3 Conquest |
+| Cyrus | `_3x3_Cyrus_3vs3_CONQ` | 3v3 Conquest |
+| Danger Hills | `_3x3_DangerHills_3vs3_CONQ` | 3v3 Conquest |
+| Eiche | `_3x3_Eiche_3vs3_CONQ` | 3v3 Conquest |
+| Factory | `_3x3_Factory_3vs3_CONQ` | 3v3 Conquest |
+| Kreide | `_3x3_Kreide_3vs3_CONQ` | 3v3 Conquest |
+| Mount River | `_3x3_MountRiver_3vs3_CONQ` | 3v3 Conquest |
+| Railway | `_3x3_Railway_3vs3_CONQ` | 3v3 Conquest |
+| Rift | `_3x3_Rift_3vs3_CONQ` | 3v3 Conquest |
+| Rocks | `_3x3_Rocks_3vs3_CONQ` | 3v3 Conquest |
+| Rocks (assault) | `_3x3_Rocks_3vs3_CONQ_ASSAULT` | 3v3 Conquest |
+| Stoneware | `_3x3_Stoneware_3vs3_CONQ` | 3v3 Conquest |
+| Surrounded | `_3x3_Surrounded_3vs3_CONQ` | 3v3 Conquest |
+| Triple Strike | `_3x3_TripleStrike_3vs3_CONQ` | 3v3 Conquest |
+| Twin Cities | `_3x3_TwinCities_3vs3_CONQ` | 3v3 Conquest |
+| Two Ways | `_2x3_TwoWays_3vs3_CONQ` | 3v3 Conquest |
+| Urban Frontlines | `_3x3_UrbanFrontlines_3vs3_CONQ` | 3v3 Conquest |
+| Valley | `_3x3_Valley_3vs3_CONQ` | 3v3 Conquest |
+| Volcano | `_3x3_Volcano_3vs3_CONQ` | 3v3 Conquest |
+| Airport | `_3x3_Airport_3vs3_DEST` | 3v3 Destruction |
+| Cyrus | `_3x3_Cyrus_3vs3_DEST` | 3v3 Destruction |
+| Danger Hills | `_3x3_DangerHills_3vs3_DEST` | 3v3 Destruction |
+| Eiche | `_3x3_Eiche_3vs3_DEST` | 3v3 Destruction |
+| Factory | `_3x3_Factory_3vs3_DEST` | 3v3 Destruction |
+| Kreide | `_3x3_Kreide_3vs3_DEST` | 3v3 Destruction |
+| Mount River | `_3x3_MountRiver_3vs3_DEST` | 3v3 Destruction |
+| Railway | `_3x3_Railway_3vs3_DEST` | 3v3 Destruction |
+| Rift | `_3x3_Rift_3vs3_DEST` | 3v3 Destruction |
+| Rocks | `_3x3_Rocks_3vs3_DEST` | 3v3 Destruction |
+| Stoneware | `_3x3_Stoneware_3vs3_DEST` | 3v3 Destruction |
+| Surrounded | `_3x3_Surrounded_3vs3_DEST` | 3v3 Destruction |
+| Triple Strike | `_3x3_TripleStrike_3vs3_DEST` | 3v3 Destruction |
+| Twin Cities | `_3x3_TwinCities_3vs3_DEST` | 3v3 Destruction |
+| Urban Frontlines | `_3x3_UrbanFrontlines_3vs3_DEST` | 3v3 Destruction |
+| Valley | `_3x3_Valley_3vs3_DEST` | 3v3 Destruction |
+| Volcano | `_3x3_Volcano_3vs3_DEST` | 3v3 Destruction |
+| Chemical | `_4x2_Chemical_4vs4_CONQ` | 4v4 Conquest |
+| Dark Stream | `_4x2_DarkStream_4vs4_CONQ` | 4v4 Conquest |
+| Chemical | `_4x2_Chemical_4vs4_DEST` | 4v4 Destruction |
+| Airport | `_3x3_Airport_10vs10_CONQ` | 10v10 Conquest |
+| Crown | `_5x2_crown_10vs10_CONQ` | 10v10 Conquest |
+| Cyrus | `_3x3_Cyrus_10vs10_CONQ` | 10v10 Conquest |
+| Danger Hills | `_3x3_DangerHills_10vs10_CONQ` | 10v10 Conquest |
+| Dark Stream | `_4x2_DarkStream_10vs10_CONQ` | 10v10 Conquest |
+| Factory | `_3x3_Factory_10vs10_CONQ` | 10v10 Conquest |
+| Geisa | `_4x3_geisa_10vs10_CONQ` | 10v10 Conquest |
+| Iron Waters | `_3x3_IronWaters_10vs10_CONQ` | 10v10 Conquest |
+| Kreide | `_3x3_Kreide_10vs10_CONQ` | 10v10 Conquest |
+| Loop | `_5x2_Loop_10vs10_CONQ` | 10v10 Conquest |
+| Railway | `_3x3_Railway_10vs10_CONQ` | 10v10 Conquest |
+| Rift | `_3x3_Rift_10vs10_CONQ` | 10v10 Conquest |
+| Rocks | `_3x3_Rocks_10vs10_CONQ` | 10v10 Conquest |
+| Stoneware | `_3x3_Stoneware_10vs10_CONQ` | 10v10 Conquest |
+| Surrounded | `_3x3_Surrounded_10vs10_CONQ` | 10v10 Conquest |
+| Triple Strike | `_3x3_TripleStrike_10vs10_CONQ` | 10v10 Conquest |
+| Twin Cities | `_3x3_TwinCities_10vs10_CONQ` | 10v10 Conquest |
+| Urban Frontlines | `_3x3_UrbanFrontlines_10vs10_CONQ` | 10v10 Conquest |
+| Valley | `_3x3_Valley_10vs10_CONQ` | 10v10 Conquest |
+| Volcano | `_3x3_Volcano_10vs10_CONQ` | 10v10 Conquest |
+| Airport | `_3x3_Airport_10vs10_DEST` | 10v10 Destruction |
+| Crown | `_5x2_crown_10vs10_DEST` | 10v10 Destruction |
+| Cyrus | `_3x3_Cyrus_10vs10_DEST` | 10v10 Destruction |
+| Danger Hills | `_3x3_DangerHills_10vs10_DEST` | 10v10 Destruction |
+| Geisa | `_4x3_geisa_10vs10_DEST` | 10v10 Destruction |
+| Iron Waters | `_3x3_IronWaters_10vs10_DEST` | 10v10 Destruction |
+| Kreide | `_3x3_Kreide_10vs10_DEST` | 10v10 Destruction |
+| Loop | `_5x2_Loop_10vs10_DEST` | 10v10 Destruction |
+| Rocks | `_3x3_Rocks_10vs10_DEST` | 10v10 Destruction |
+| Volcano | `_3x3_Volcano_10vs10_DEST` | 10v10 Destruction |
+
+#### Red Dragon map pack
+
+The Red Dragon scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-09. The procedure is in the install guide, step 4. The Workshop page says Wonsan Harbour; the file name is `WonsanNative`.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -78,11 +188,32 @@ The Red Dragon map pack scenario IDs are the file names in the mod's `Scenarios/
 | Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
 | Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
 
-Every map in that table is Conquest, so leave **Combat Rule** at `2` for them. Change **Max Players** and **Team Size** to match the size column. A 1v1 map needs 2 and 1. A 2v2 needs 4 and 2. A 3v3 needs 6 and 3. A 4v4 needs 8 and 4. Asgard needs 20 and 10.
+Every map in that table is Conquest, so leave **Combat Rule** at `2` for them.
 
-**Workshop Mod List** also names two conversions, [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) (`3595948209`) and [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) (`3388575848`). Their pages, read on 2026-10-09, call them a total conversion and a modern-day overhaul. They are not maps, so **Map** stays a scenario ID. Neither page publishes a `Config.ini` `Version`. Galactic Divide's page tags are Gameplay, Interface, Sound, Scenarios, and Maps. A World in Flames's page tags are Gameplay and Interface. The Workshop Mod List description gives the tag words: Galactic Divide is `Gameplay-Interface-Sound-Scenarios-Maps`, and A World in Flames is `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` when a map pack is also required.
+#### Workshop mods
 
-The maps section also names five more packs: [WEST FULDA 1.0](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349), [Highway to Oslo](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989), [Ramstein Air Base](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772), [Arsenal](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374), and [Helbe](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679). Those pages do not publish scenario IDs or a `Config.ini` `Version`. The Map field says so and does not invent IDs. After you subscribe, use the filename before `_Definition.dat` as **Map**, and `workshopId/Version` from `Config.ini` as **Workshop Mod List**. WEST FULDA 1.0, Highway to Oslo, Ramstein Air Base, and Arsenal list both Conquest and Destruction. Use Combat Rule `2` when the scenario ID contains `CONQ`, and `1` when it contains `DEST`. Helbe's page lists Conquest only, so leave Combat Rule at `2` for Helbe.
+| Mod | Workshop id | Workshop Mod List | Workshop Mod Tags |
+| --- | --- | --- | --- |
+| [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) | `3595948209` | Read `Version` in `Config.ini`. The page does not publish it. | `Gameplay-Interface-Sound-Scenarios-Maps` |
+| [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) | `3388575848` | Read `Version` in `Config.ini`. The page does not publish it. | `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` with a map pack |
+| [WARNO: Red Dragon - Map Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) | `3811913066` | `3811913066/15` | `Maps-Scenarios` |
+| [WEST FULDA 1.0](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349) | `3363584349` | Read `Version` in `Config.ini`. The page does not publish it. | `Maps-Scenarios` |
+| [Highway to Oslo](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989) | `3474588989` | Read `Version` in `Config.ini`. The page does not publish it. | `Maps-Scenarios` |
+| [Ramstein Air Base](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772) | `3705706772` | Read `Version` in `Config.ini`. The page does not publish it. | `Maps-Scenarios` |
+| [Arsenal](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374) | `3415339374` | Read `Version` in `Config.ini`. The page does not publish it. | `Maps-Scenarios` |
+| [Helbe](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679) | `3762638679` | Read `Version` in `Config.ini`. The page does not publish it. | `Maps-Scenarios` |
+
+Galactic Divide and A World in Flames, read on 2026-10-09, are a total conversion and a modern-day overhaul. They are not maps, so **Map** stays a scenario ID. Join a conversion and a map pack with a hyphen only after each `Version` comes from that mod's `Config.ini`.
+
+The five map packs do not publish scenario IDs. After you subscribe, use the filename before `_Definition.dat` as **Map**. WEST FULDA 1.0, Highway to Oslo, Ramstein Air Base, and Arsenal list both Conquest and Destruction. Helbe's page lists Conquest only.
+
+| Pack | What the Workshop page lists |
+| --- | --- |
+| WEST FULDA 1.0 | A full map at 4v4 and 10v10, Neuenberg 2v2, Kammerzell 1v1 and 2v2, Grossenluder 1v1, Bimbach 2v2, Malkes 3v3, in Conquest and Destruction, plus 9 Army General maps |
+| Highway to Oslo | 1v1 Conquest, 1v1 Destruction, and the same two with no sidespawn |
+| Ramstein Air Base | 3v3 Conquest and 3v3 Destruction |
+| Arsenal | 2v2 and 3v3, each in Conquest and Destruction |
+| Helbe | Conquest only: a full map at 4v4 and 10v10, ZENTRUM 3v3 and 10v10, WIDE 4v4 and 10v10, STREAM 2v2, 3v3, and 10v10, NORDEN 3v3, HOCHLAND 2v2, and SUDEN DUEL 1v1 |
 
 Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `ModList` makes a joining player who is missing the mod get prompted to download and enable it. This container does not download workshop files itself. It writes `Map` and `ModList`, then starts Eugen's entrypoint. That entrypoint only launches `warno-server`. Whether the server binary then downloads workshop item `3811913066` has not been confirmed on a running server.
 
@@ -112,7 +243,7 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 ## Keys
 
-The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. It does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
+The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. **Key last 4** is the last 4 characters of that key, shown in clear text. It is checked against the key when Write Config From Form is true, and it is not written to `login.ini`. The key does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
 
 ## Updates
 

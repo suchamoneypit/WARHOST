@@ -113,6 +113,17 @@ if [ "$write_config" = "true" ]; then
       die "Eugen dedicated key cannot contain spaces, quotes, or backslashes."
       ;;
   esac
+  if [ "${#EUGEN_DEDICATED_KEY}" -lt 4 ]; then
+    die "Eugen dedicated key must be at least 4 characters."
+  fi
+  if [ -z "${EUGEN_KEY_LAST4:-}" ]; then
+    die "Set Key last 4 to the last 4 characters of the Eugen dedicated key."
+  fi
+  require_single_line "Key last 4" "$EUGEN_KEY_LAST4"
+  key_tail=$(printf '%s' "$EUGEN_DEDICATED_KEY" | tail -c 4)
+  if [ "$EUGEN_KEY_LAST4" != "$key_tail" ]; then
+    die "Key last 4 does not match the Eugen dedicated key."
+  fi
 
   if [ -z "${SERVER_NAME:-}" ]; then
     SERVER_NAME="WARNO Jungle Law 2v2"
@@ -229,9 +240,9 @@ if [ "$write_config" = "true" ]; then
   umask 022
 
   if [ -n "$MOD_LIST" ]; then
-    printf 'Wrote WARNO settings for %s on port %s. Map %s. ModList %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$MOD_LIST"
+    printf 'Wrote WARNO settings for %s on port %s. Map %s. ModList %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$MOD_LIST" "$key_tail"
   else
-    printf 'Wrote WARNO settings for %s on port %s. Map %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP"
+    printf 'Wrote WARNO settings for %s on port %s. Map %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$key_tail"
   fi
   note_workshop_mod_list "$MOD_LIST"
 else

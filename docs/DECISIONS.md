@@ -88,7 +88,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Template icon
 
-**Decision:** `icon.png` is the Community Applications / Unraid Docker icon. The template and `ca_profile.xml` `<Icon>` tags point at the raw GitHub URL of `icon.png` on `main`. The asset is a generated NATO-vs-Pact themed illustration chosen for this repository (not an Eugen press-kit file).
+**Decision:** `icon.png` is the Community Applications / Unraid Docker icon. The template and `ca_profile.xml` `<Icon>` tags point at the raw GitHub URL of `icon.png` on `main`. The asset is a generated NATO-vs-Pact illustration with a WARHOST wordmark and a server-rack motif, chosen for this repository (not an Eugen press-kit file).
 
 **Rationale:** Unraid and CA load the icon from that raw URL. Eugen's [Terms of Use](https://eugensystems.com/terms-of-use/) do not grant a trademark license; no official free logo kit was found. The chosen art is still fan/generated branding, not a Steam capsule or Eugen-distributed mark.
 
@@ -103,3 +103,21 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** The product name is WARHOST. The Unraid `<Name>` is `WARHOST`, which is the Docker container name and the user-template label `my-WARHOST.xml`. The template file is `templates/warhost.xml`. The image the template installs is `ghcr.io/suchamoneypit/warhost:latest`. WARNO stays in the overview, `<ExtraSearchTerms>` (`WARNO WARNO server dedicated server game server mods modded`), the README title, and descriptive text. The host settings folder stays `/mnt/user/appdata/warno/settings`. Ports, map, mod list, and the other form defaults stay as they were. The rebuild also pushes `ghcr.io/suchamoneypit/warno-unraid:latest` so a container still pointed at that name keeps receiving game updates.
 
 **Rationale:** `<Name>` is one field. Docker container names, and `scripts/print_template_fetch.sh`, allow letters, digits, dots, underscores, and hyphens. `WARHOST - WARNO Dedicated Server` cannot be that field. Community Apps searches `<ExtraSearchTerms>` as well as the name and overview, so WARNO remains a search term without renaming saved appdata. The GitHub repository is `WARHOST`. URLs in the template point at `suchamoneypit/WARHOST`. GitHub redirects the old repository URL. The template path change does not: `templates/warhost.xml` replaces `templates/warno-dedicated-server.xml` on `main`.
+
+## 2026-10-09 — Show the last 4 characters of the dedicated key
+
+**Decision:** The Eugen dedicated key stays `Mask="true"`. A second always-visible field, Key last 4 (`EUGEN_KEY_LAST4`), must equal the last 4 characters of that key when Write Config From Form is true, or that start stops. It is not written to `login.ini`. The startup line names those 4 characters and not the rest of the key.
+
+**Rationale:** One login can run five servers, and an operator may have two keys across several containers. Unraid's masked field hides the whole value, so the form cannot reveal four characters inside that box. The companion field is what stays readable when the container is opened later.
+
+## 2026-10-09 — Keep scenario and mod catalogs in the README
+
+**Decision:** Base-game scenario IDs and the named workshop mods live in `README.md`. Unraid field descriptions are one or two sentences and point at that README. `scripts/check_repo.sh` fails a Config description longer than 240 characters or one that contains a `br` tag.
+
+**Rationale:** Unraid prints each description under its field. The Map and Workshop Mod List descriptions rendered as walls of IDs on 2026-10-09, including after `<br>` broke them into sections. A README table can be scanned. The form cannot.
+
+## 2026-10-09 — Do not claim a 2v2 map accepts eight players
+
+**Decision:** Max Players says the lobby is not locked to the map and that 8 slots on a 2v2 map is untested. Team Size stays the per-side count. The README gives the usual lobby for each size once, and says the same untested sentence once. The wrapper still accepts any Max Players from 1 to 20.
+
+**Rationale:** Eugen's Docker Hub text, fetched 2026-10-09, defines `NbMaxPlayer` as how many players can join (maximum 20) and `MaxTeamSize` as the maximum on one side. It never says those must match the size in the scenario ID. Whether `RDPort_JungleLaw_2v2_CONQ` with 8 and 4 opens a 4v4 lobby has not been run.

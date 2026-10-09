@@ -84,6 +84,7 @@ expect_ok "writes settings and execs Eugen entrypoint" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
@@ -101,6 +102,7 @@ cmp -s "${settings}/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.exam
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint did not run from the settings directory"
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
 grep -q 'ModList 3811913066/15' "${WORKDIR}/stdout.txt" || fail "default log did not name the mod list"
+grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not name the key last 4"
 if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the old mod version"
 fi
@@ -121,6 +123,7 @@ expect_fail "rejects the Jungle Law display name" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP="Jungle Law"
@@ -130,6 +133,7 @@ expect_fail "rejects a placeholder map" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=YOUR_JUNGLE_LAW_SCENARIO_ID
@@ -138,6 +142,7 @@ expect_fail "rejects an empty map" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=
@@ -149,10 +154,38 @@ expect_fail "rejects a missing dedicated key" \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
 
+expect_fail "rejects a missing key last 4" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+
+expect_fail "rejects a key last 4 that does not match" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=wxyz \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+grep -q 'dedicated_key="host-key-value"' "${settings}/login.ini" || fail "mismatched key last 4 rewrote login.ini"
+
+expect_fail "rejects a dedicated key shorter than 4 characters" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=abc \
+  EUGEN_KEY_LAST4=abc \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+
 expect_fail "rejects a bad workshop mod list" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
@@ -162,6 +195,7 @@ expect_fail "rejects minimum players above the maximum" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
@@ -172,6 +206,7 @@ expect_fail "rejects a combat rule other than 1 or 2" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
@@ -181,6 +216,7 @@ expect_fail "rejects port 0" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=0 \
   MAP=TestScenario_2v2
@@ -189,6 +225,7 @@ expect_fail "rejects an equals sign in the server name" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
@@ -199,6 +236,7 @@ expect_ok "omits an empty workshop mod list" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
@@ -219,6 +257,7 @@ expect_ok "warns when the Red Dragon mod list is version 0" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
@@ -232,6 +271,7 @@ expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
+  EUGEN_KEY_LAST4=alue \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
