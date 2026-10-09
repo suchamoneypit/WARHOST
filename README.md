@@ -43,7 +43,7 @@ Fill in:
 | Eugen Dedicated Key | The key from the same reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
 | Game Port | `10400`, or another free port. Forward the same number to this Unraid server as TCP and UDP. |
-| Server Name | The name in the server browser |
+| Server Name | `WARHOST - Red Dragon 4v4`, the name in the server browser |
 | Max Players | `4` for this 2v2 preset. Usual sizes are under Map. The lobby is not locked to the size in the scenario ID. |
 | Minimum Players | `2`, and not above Max Players |
 | Team Size | `2` for this 2v2 preset. Slots on one side, usually half of Max Players. |

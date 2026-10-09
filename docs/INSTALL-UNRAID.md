@@ -139,7 +139,7 @@ Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. C
 | Eugen Dedicated Key | empty | The key from Eugen's reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | empty | Your public IP address from step 3. |
 | Game Port | `10400` | Keep unless the port is taken. You can change it later by editing the container; the router forward must use the same number, TCP and UDP. |
-| Server Name | `WARNO Jungle Law 2v2` | What players see in the browser. No `=` sign. |
+| Server Name | `WARHOST - Red Dragon 4v4` | What players see in the browser. No `=` sign. |
 | Max Players | `4` | Total slots. Preset 4 for this 2v2. Usual sizes are in the README. Not locked to the map. |
 | Minimum Players | `2` | Players needed before the countdown. Not above Max Players. |
 | Team Size | `2` | Slots on one side. Usually half of Max Players. |
@@ -157,10 +157,10 @@ Work through these in order. Each one proves something different.
 
 ### 7a. The container started
 
-On the **Docker** tab the container shows as started. Click its icon → **Logs**. The first wrapper line is `Wrote WARNO settings for WARNO Jungle Law 2v2 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4` and the last 4 characters of the key. The wrapper then prints the Config.ini comparison line, and `warning: Workshop Mod List contains 3811913066/0` when that pair is set, before Eugen's output.
+On the **Docker** tab the container shows as started. Click its icon → **Logs**. The first wrapper line is `Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4` and the last 4 characters of the key. The wrapper then prints the Config.ini comparison line, and `warning: Workshop Mod List contains 3811913066/0` when that pair is set, before Eugen's output.
 
 ```text
-Wrote WARNO settings for WARNO Jungle Law 2v2 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4 XXXX.
+Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4 XXXX.
 Clients compare each Workshop id/version with Version in that mod's Config.ini. The client message "At least one mod version doesnt match" does not appear in this log.
 ```
 

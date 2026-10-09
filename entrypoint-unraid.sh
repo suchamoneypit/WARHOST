@@ -119,7 +119,7 @@ if [ "$write_config" = "true" ]; then
   key_tail=$(printf '%s' "$EUGEN_DEDICATED_KEY" | tail -c 4)
 
   if [ -z "${SERVER_NAME:-}" ]; then
-    SERVER_NAME="WARNO Jungle Law 2v2"
+    SERVER_NAME="WARHOST - Red Dragon 4v4"
   fi
   require_single_line "Server name" "$SERVER_NAME"
   case "$SERVER_NAME" in
