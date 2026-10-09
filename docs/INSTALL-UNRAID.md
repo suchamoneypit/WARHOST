@@ -136,8 +136,7 @@ Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. C
 | Network Type | `Host` | Keep. |
 | Settings Folder | `/mnt/user/appdata/warno/settings` | Keep. Unraid creates it. One folder per server. |
 | Eugen Login | empty | The login from Eugen's reply. |
-| Eugen Dedicated Key | empty, masked | The key from Eugen's reply. |
-| Key last 4 | empty | The last 4 characters of that key. Shown in clear text. Must match when Write Config From Form is true. |
+| Eugen Dedicated Key | empty | The key from Eugen's reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | empty | Your public IP address from step 3. |
 | Game Port | `10400` | Keep unless the port is taken. You can change it later by editing the container; the router forward must use the same number, TCP and UDP. |
 | Server Name | `WARNO Jungle Law 2v2` | What players see in the browser. No `=` sign. |
@@ -205,7 +204,7 @@ When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid wr
 | --- | --- | --- |
 | Pull fails on Apply (`denied`, `unauthorized`, `not found`) | Package is private or image name is wrong | Step 2. |
 | Container stops at once; log ends with `Set Public WAN IP.`, `Set your Eugen login.`, `Set your Eugen dedicated key.`, or `Set Map to a scenario ID...` | A required field is empty | Edit the container, fill the field, Apply. |
-| Container stops at once; log ends with `Set Key last 4 to the last 4 characters of the Eugen dedicated key.`, `Key last 4 does not match the Eugen dedicated key.`, or `Eugen dedicated key must be at least 4 characters.` | Key last 4 is empty or does not match, or the key is shorter than 4 characters | Type the last 4 characters of the dedicated key into Key last 4, and Apply. |
+| Container stops at once; log ends with `Eugen dedicated key must be at least 4 characters.` | The key is shorter than 4 characters | Paste the full key from Eugen's reply, and Apply. |
 | Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Replace Map with a scenario ID...` | A map name or placeholder was entered | Step 4. |
 | Log ends with `Workshop mod list must look like 3811913066/15...` | Mod list format | Use `id/version`, hyphen between mods, or clear it. |
 | Log ends with `Official WARNO entrypoint was not found at /server/entrypoint2.sh.` | Eugen changed their image layout | Open a GitHub issue; the wrapper needs an update. |

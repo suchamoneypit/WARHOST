@@ -49,7 +49,7 @@ if template is not None:
     configs = list(template.findall("Config"))
     if not configs:
         fail("template has no Config entries")
-    key_masked = False
+    key_visible = False
     settings_target = False
     for config in configs:
         name = config.attrib.get("Name", "")
@@ -58,8 +58,10 @@ if template is not None:
         for attr in ("Name", "Target", "Type"):
             if not config.attrib.get(attr):
                 fail(f"Config {name or '(unnamed)'} is missing {attr}")
+        if config.attrib.get("Target") == "EUGEN_KEY_LAST4":
+            fail("EUGEN_KEY_LAST4 must not be a template field")
         if config.attrib.get("Target") == "EUGEN_DEDICATED_KEY":
-            key_masked = config.attrib.get("Mask") == "true"
+            key_visible = config.attrib.get("Mask") == "false"
         if config.attrib.get("Target") == "/server/settings":
             settings_target = True
         description = config.attrib.get("Description", "")
@@ -68,8 +70,8 @@ if template is not None:
         folded = description.lower()
         if "<br" in folded or "&lt;br" in folded:
             fail(f"templates/warhost.xml: {name} description contains a br tag")
-    if not key_masked:
-        fail("EUGEN_DEDICATED_KEY must be a Config with Mask=true")
+    if not key_visible:
+        fail("EUGEN_DEDICATED_KEY must be a Config with Mask=false")
     if not settings_target:
         fail("settings Config target must be /server/settings")
     text = (root / "templates/warhost.xml").read_text()

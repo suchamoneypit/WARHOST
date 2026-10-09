@@ -9,7 +9,7 @@ alwaysApply: false
 Full guidance with sources: `@docs/UNRAID-TEMPLATE-GUIDE.md`. The short version:
 
 - `<Container version="2">`. Every path, variable, and port is a one-line `<Config>`. No legacy `<Networking>`, `<Data>`, or `<Environment>` blocks.
-- `Type="Path"` maps a host folder; `Type="Variable"` sets an environment variable; `Type="Port"` only under bridge networking. `Mask="true"` on secrets, with an empty default.
+- `Type="Path"` maps a host folder; `Type="Variable"` sets an environment variable; `Type="Port"` only under bridge networking. `Mask="true"` on secrets, with an empty default. The Eugen dedicated key is `Mask="false"`: Unraid cannot show the last four characters inside a password field, and the edit form is how servers are told apart. Logs still name only those four characters.
 - Host networking means no `Type="Port"` entries, so the README and the port field's description must spell out the TCP/UDP forwards and that the port must be free on the Unraid host.
 - `<Overview>` is what users see; keep `<Description>`, field descriptions, and `README.md` consistent with it. Escape `&` as `&amp;`.
 - `<TemplateURL>`, `<Icon>`, `<Support>`, `<Project>`, and the `ca_profile.xml` URLs point at this repository's `main` branch.

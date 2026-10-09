@@ -40,8 +40,7 @@ Fill in:
 | Field | What to enter |
 | --- | --- |
 | Eugen Login | The login from Eugen's reply, exactly as written, not your Steam name. This login and the key are a matching pair good for five containers. |
-| Eugen Dedicated Key | The key from the same reply. Unraid hides this box. |
-| Key last 4 | The last 4 characters of that key, shown in clear text so you can tell keys apart. A start that rewrites settings stops if they do not match. |
+| Eugen Dedicated Key | The key from the same reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
 | Game Port | `10400`, or another free port. Forward the same number to this Unraid server as TCP and UDP. |
 | Server Name | The name in the server browser |
@@ -247,7 +246,7 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
-The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. **Key last 4** is the last 4 characters of that key, shown in clear text. It is checked against the key when Write Config From Form is true, and it is not written to `login.ini`. The key does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
+The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. The form shows the key in clear text so servers can be told apart. The startup log names only the last 4 characters. A key shorter than 4 characters stops the start with `Eugen dedicated key must be at least 4 characters.` The key does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
 
 ## Updates
 

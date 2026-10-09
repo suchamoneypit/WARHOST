@@ -116,14 +116,7 @@ if [ "$write_config" = "true" ]; then
   if [ "${#EUGEN_DEDICATED_KEY}" -lt 4 ]; then
     die "Eugen dedicated key must be at least 4 characters."
   fi
-  if [ -z "${EUGEN_KEY_LAST4:-}" ]; then
-    die "Set Key last 4 to the last 4 characters of the Eugen dedicated key."
-  fi
-  require_single_line "Key last 4" "$EUGEN_KEY_LAST4"
   key_tail=$(printf '%s' "$EUGEN_DEDICATED_KEY" | tail -c 4)
-  if [ "$EUGEN_KEY_LAST4" != "$key_tail" ]; then
-    die "Key last 4 does not match the Eugen dedicated key."
-  fi
 
   if [ -z "${SERVER_NAME:-}" ]; then
     SERVER_NAME="WARNO Jungle Law 2v2"

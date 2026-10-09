@@ -19,7 +19,7 @@ Sources checked on 2026-10-09:
 | `Dockerfile`, `entrypoint-*.sh` | Optional wrapper image when the upstream image needs settings files generated from form fields. Prefer wrapping the official image over copying its launch logic. |
 | `samples/` | Placeholder copies of generated files. Never real credentials. |
 | `tests/` | Wrapper tests that run against a fake upstream entrypoint, never the real game server. |
-| `scripts/check_repo.sh` | Local invariants: XML well-formed, required tags, masked secrets, placeholder scan, shell syntax. |
+| `scripts/check_repo.sh` | Local invariants: XML well-formed, required tags, the dedicated key shown in clear text, placeholder scan, shell syntax. |
 | `scripts/print_template_fetch.sh` | Prints the Unraid terminal command that downloads the template from `<TemplateURL>` before Community Applications lists it. |
 | `.github/workflows/` | Run the checks on push and PR. Optionally rebuild the wrapper image when upstream changes. |
 
@@ -27,7 +27,7 @@ Sources checked on 2026-10-09:
 
 - Use `<Container version="2">`. Express every path, variable, and port as a one-line `<Config>` element. Unraid 6.10+ no longer writes the legacy `<Networking>`, `<Data>`, and `<Environment>` blocks; leave them out.
 - `<Config>` attributes: `Name` (label), `Target` (container path, variable name, or container port), `Default`, `Mode` (`rw`/`ro` for paths, `tcp`/`udp` for ports), `Description`, `Type` (`Path`, `Variable`, `Port`, `Device`, `Label`), `Display` (`always` or `advanced`), `Required`, `Mask`. Put the default in both `Default="..."` and the element text.
-- Set `Mask="true"` on every secret. Give secrets an empty default so a fresh install never ships a placeholder into a live server.
+- Set `Mask="true"` on every secret. Give secrets an empty default so a fresh install never ships a placeholder into a live server. The Eugen dedicated key is the exception: `Mask="false"`, because Unraid's password input hides every character and this form is how an operator tells servers apart. The startup log still names only the last four characters.
 - `Display="advanced"` hides fields behind Unraid's **Show more settings** toggle. Put the fields a first-time user must fill under `always` and tuning values under `advanced`.
 - `<Overview>` is what the Apps tab and the Add Container page show. Community Applications ignores `<Description>` when `<Overview>` exists, so if both are present keep them in agreement.
 - `<Requires>` is a free-text line for things the user must obtain outside Unraid (accounts, keys, client-side mods).
@@ -110,7 +110,7 @@ Submit at [https://ca.unraid.net/submit](https://ca.unraid.net/submit) after at 
 When copying this layout for another game server:
 
 1. Rename the template file, container `<Name>`, `<Repository>`, `<Registry>`, `<TemplateURL>`, `<Icon>`, `<Support>`, `<Project>`, and the paths in `ca_profile.xml`.
-2. Replace every form field with the new game's variables; keep secrets masked and empty by default.
+2. Replace every form field with the new game's variables; keep secrets masked and empty by default, except a key the operator must read on the form, as with the Eugen dedicated key.
 3. Decide bridge vs host and update the Overview, README, and port descriptions together.
 4. Rewrite the wrapper entrypoint and `tests/` for the new settings files, and update the expected-file assertions.
 5. Update `scripts/check_repo.sh` for the new secret variable names and settings path.

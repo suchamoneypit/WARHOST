@@ -24,7 +24,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 **Decision:** Dedicated keys belong in the Unraid container settings on the server. `.gitignore` ignores `login.ini` and `/settings/`. Samples keep placeholders.
 
-**Rationale:** A key committed once remains in git history after deletion. `EUGEN_DEDICATED_KEY` is masked in the template.
+**Rationale:** A key committed once remains in git history after deletion. The Unraid form shows the key in clear text. That display stays on the server, not in this repository.
 
 ## 2026-10-09 — One container per server
 
@@ -127,3 +127,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** `.github/workflows/rebuild-image.yml` pushes `ghcr.io/suchamoneypit/warhost:latest` and does not tag `ghcr.io/suchamoneypit/warno-unraid`.
 
 **Rationale:** The project is still pre-alpha and the only operator already uses WARHOST. The second package was an alias for a container still pointed at the previous image name.
+
+## 2026-10-09 — Show the dedicated key in clear text
+
+**Decision:** `EUGEN_DEDICATED_KEY` uses `Mask="false"`. There is no Key last 4 field. This supersedes "Show the last 4 characters of the dedicated key." The key still never enters git. The startup line still names only the last 4 characters.
+
+**Rationale:** Unraid's `Mask="true"` hides every character of a password input. [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read on 2026-10-09, has no control that reveals four characters inside that box. The edit page is how an operator tells servers apart. A companion field had to be typed by hand and could stop a start when it did not match.

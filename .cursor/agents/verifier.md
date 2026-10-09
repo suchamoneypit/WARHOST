@@ -11,7 +11,7 @@ When invoked:
 
 1. Read the claim and the files that should satisfy it. If the parent did not list them, run `git status --short` and `git diff --stat`.
 2. Run `sh scripts/check_repo.sh`.
-3. Probe the edge cases the change can break. Typical ones here: missing or placeholder variables, host networking versus published ports, masked secrets, placeholder map IDs, and docs that cite a path, command, or internal link that does not exist. Check an external URL only when the claim depends on it.
+3. Probe the edge cases the change can break. Typical ones here: missing or placeholder variables, host networking versus published ports, the dedicated key shown in clear text while the startup log names only the last four characters, placeholder map IDs, and docs that cite a path, command, or internal link that does not exist. Check an external URL only when the claim depends on it.
 4. Report only what you executed or read.
 
 Return, in under 400 words, three lists:
