@@ -54,7 +54,7 @@ This template was built with AI coding assistants. Humans reviewed what shipped 
 
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Dedicated key from Eugen's reply. It is written to login.ini on this server only. One login and key pair can run five servers." Type="Variable" Display="always" Required="true" Mask="true"></Config>
 
-  <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Address Eugen's lobby tells players to connect to. The server does not look this up. Use your router's public WAN address for internet play, and forward the game port to Unraid. A LAN address only works for players on that LAN." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Address Eugen's lobby tells players to connect to. Use your router's public WAN address for internet play, and forward the game port to Unraid. Domain names won't work." Type="Variable" Display="always" Required="true" Mask="false"></Config>
 
   <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="Port the server listens on. Host networking: the port must be free on the Unraid server itself. Forward this same port as both TCP and UDP to the Unraid server. Each server container needs its own port." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
 
