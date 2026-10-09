@@ -34,7 +34,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Rebuild when Eugen publishes
 
-**Decision:** `.github/workflows/rebuild-image.yml` publishes `ghcr.io/suchamoneypit/warhost:latest` when the Eugen manifest digest changes, or when the wrapper build inputs change on `main`. The same build also tags `ghcr.io/suchamoneypit/warno-unraid:latest`.
+**Decision:** `.github/workflows/rebuild-image.yml` publishes `ghcr.io/suchamoneypit/warhost:latest` when the Eugen manifest digest changes, or when the wrapper build inputs change on `main`.
 
 **Rationale:** Players on a new WARNO patch need a rebuilt dedicated server. A normal game patch should not require an edit to this repo.
 
@@ -94,13 +94,13 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Day-to-day commits stay on dev
 
-**Decision:** Commits land on `dev` and are pushed to `origin/dev` when the maintainer asks to commit. `main` changes only when the maintainer explicitly asks to publish the accumulated work. Community Apps reads the template, icon, and `ca_profile.xml` from `main`. `.github/workflows/rebuild-image.yml` rebuilds `ghcr.io/suchamoneypit/warhost:latest` and `ghcr.io/suchamoneypit/warno-unraid:latest` from `main` only.
+**Decision:** Commits land on `dev` and are pushed to `origin/dev` when the maintainer asks to commit. `main` changes only when the maintainer explicitly asks to publish the accumulated work. Community Apps reads the template, icon, and `ca_profile.xml` from `main`. `.github/workflows/rebuild-image.yml` rebuilds `ghcr.io/suchamoneypit/warhost:latest` from `main` only.
 
 **Rationale:** `main` is the snapshot strangers install. Template and doc commits there update the Apps listing on the Community Apps feed. `Dockerfile`, `entrypoint-unraid.sh`, and the rebuild workflow on `main` publish an image Unraid offers as a container update. Rapid work stays on `dev`, which neither feed reads.
 
 ## 2026-10-09 — Brand the project WARHOST
 
-**Decision:** The product name is WARHOST. The Unraid `<Name>` is `WARHOST`, which is the Docker container name and the user-template label `my-WARHOST.xml`. The template file is `templates/warhost.xml`. The image the template installs is `ghcr.io/suchamoneypit/warhost:latest`. WARNO stays in the overview, `<ExtraSearchTerms>` (`WARNO WARNO server dedicated server game server mods modded`), the README title, and descriptive text. The host settings folder stays `/mnt/user/appdata/warno/settings`. Ports, map, mod list, and the other form defaults stay as they were. The rebuild also pushes `ghcr.io/suchamoneypit/warno-unraid:latest` so a container still pointed at that name keeps receiving game updates.
+**Decision:** The product name is WARHOST. The Unraid `<Name>` is `WARHOST`, which is the Docker container name and the user-template label `my-WARHOST.xml`. The template file is `templates/warhost.xml`. The image the template installs is `ghcr.io/suchamoneypit/warhost:latest`. WARNO stays in the overview, `<ExtraSearchTerms>` (`WARNO WARNO server dedicated server game server mods modded`), the README title, and descriptive text. The host settings folder stays `/mnt/user/appdata/warno/settings`. Ports, map, mod list, and the other form defaults stay as they were.
 
 **Rationale:** `<Name>` is one field. Docker container names, and `scripts/print_template_fetch.sh`, allow letters, digits, dots, underscores, and hyphens. `WARHOST - WARNO Dedicated Server` cannot be that field. Community Apps searches `<ExtraSearchTerms>` as well as the name and overview, so WARNO remains a search term without renaming saved appdata. The GitHub repository is `WARHOST`. URLs in the template point at `suchamoneypit/WARHOST`. GitHub redirects the old repository URL. The template path change does not: `templates/warhost.xml` replaces `templates/warno-dedicated-server.xml` on `main`.
 
@@ -121,3 +121,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** Max Players says the lobby is not locked to the map and that 8 slots on a 2v2 map is untested. Team Size stays the per-side count. The README gives the usual lobby for each size once, and says the same untested sentence once. The wrapper still accepts any Max Players from 1 to 20.
 
 **Rationale:** Eugen's Docker Hub text, fetched 2026-10-09, defines `NbMaxPlayer` as how many players can join (maximum 20) and `MaxTeamSize` as the maximum on one side. It never says those must match the size in the scenario ID. Whether `RDPort_JungleLaw_2v2_CONQ` with 8 and 4 opens a 4v4 lobby has not been run.
+
+## 2026-10-09 — Publish only the warhost image
+
+**Decision:** `.github/workflows/rebuild-image.yml` pushes `ghcr.io/suchamoneypit/warhost:latest` and does not tag `ghcr.io/suchamoneypit/warno-unraid`.
+
+**Rationale:** The project is still pre-alpha and the only operator already uses WARHOST. The second package was an alias for a container still pointed at the previous image name.

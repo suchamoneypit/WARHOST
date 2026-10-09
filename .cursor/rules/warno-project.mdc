@@ -11,7 +11,7 @@ Durable knowledge lives in `@docs/ARCHITECTURE.md` (what exists and what was ver
 
 ## Do not change unless the task asks for it
 
-Server settings and the fixed `variables.ini` values, launch arguments, template defaults (`EXPOSEDPORT` `10400`, Map `RDPort_JungleLaw_2v2_CONQ`, Mod List `3811913066/15`), host networking, the settings path `/server/settings`, the host folder `/mnt/user/appdata/warno/settings`, image build logic, and the image name `ghcr.io/suchamoneypit/warhost:latest`. The rebuild workflow also tags `ghcr.io/suchamoneypit/warno-unraid:latest` until that alias is removed.
+Server settings and the fixed `variables.ini` values, launch arguments, template defaults (`EXPOSEDPORT` `10400`, Map `RDPort_JungleLaw_2v2_CONQ`, Mod List `3811913066/15`), host networking, the settings path `/server/settings`, the host folder `/mnt/user/appdata/warno/settings`, image build logic, and the image name `ghcr.io/suchamoneypit/warhost:latest`.
 
 ## Evidence
 

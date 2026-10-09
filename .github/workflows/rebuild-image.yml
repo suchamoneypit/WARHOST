@@ -88,9 +88,7 @@ jobs:
           platforms: linux/amd64
           provenance: false
           sbom: false
-          tags: |
-            ghcr.io/suchamoneypit/warhost:latest
-            ghcr.io/suchamoneypit/warno-unraid:latest
+          tags: ghcr.io/suchamoneypit/warhost:latest
           build-args: |
             UPSTREAM_DIGEST=${{ steps.upstream.outputs.digest }}
 
@@ -101,4 +99,3 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api --method PUT /user/packages/container/warhost/visibility -f visibility=public
-          gh api --method PUT /user/packages/container/warno-unraid/visibility -f visibility=public

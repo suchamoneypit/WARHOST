@@ -5,7 +5,7 @@ A step-by-step guide from nothing to a WARHOST container running a WARNO dedicat
 What this guide rests on, checked on 2026-10-09:
 
 - Eugen's instructions on [Docker Hub](https://hub.docker.com/r/eugensystems/warno) (key request, settings files, host networking, TCP and UDP).
-- The image the template installs, `ghcr.io/suchamoneypit/warhost:latest`, after **Rebuild WARHOST image** has published it. Entrypoint `/server/entrypoint-unraid.sh`. `ghcr.io/suchamoneypit/warno-unraid:latest` was readable without credentials on 2026-10-09, and the workflow still publishes that tag.
+- The image the template installs, `ghcr.io/suchamoneypit/warhost:latest`, after **Rebuild WARHOST image** has published it. Entrypoint `/server/entrypoint-unraid.sh`.
 - Unraid's [container management docs](https://docs.unraid.net/unraid-os/manual/docker-management/) and the Community Applications author's statement that Unraid 6.10 [removed the Template Repositories field](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/).
 - The Red Dragon map pack files on a PC subscribed to Steam Workshop item `3811913066`.
 
@@ -32,7 +32,7 @@ What you get back is a **login** and a **key**. Enter the login exactly as it ap
 
 ## 2. Confirm the image and template are published
 
-`ghcr.io/suchamoneypit/warno-unraid:latest` was confirmed on 2026-10-09. The repository is `WARHOST` (`https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09). Repeat the checks below if months have passed or you forked the repository.
+The image to confirm is `ghcr.io/suchamoneypit/warhost:latest`. The repository is `WARHOST` (`https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09). Repeat the checks below if months have passed or you forked the repository.
 
 - The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. GitHub redirects the old repository URL. It does not redirect the old template filename.
 - The image must be pullable without logging in. Open <https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost>; the package must be **Public**. From any Linux or macOS terminal, this must print `200`:
@@ -44,7 +44,6 @@ What you get back is a **login** and a **key**. Enter the login exactly as it ap
     https://ghcr.io/v2/suchamoneypit/warhost/manifests/latest
   ```
 
-  `ghcr.io/suchamoneypit/warno-unraid:latest` was publicly pullable on 2026-10-09. The rebuild workflow still pushes that tag. A new install uses `warhost`.
 - The last **Rebuild WARHOST image** run under the repository's **Actions** tab should be green. A red run means the published image is older than the repository; it still installs, but open an issue.
 ## 3. Network preparation
 

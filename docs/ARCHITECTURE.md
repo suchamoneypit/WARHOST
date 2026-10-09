@@ -2,7 +2,7 @@
 
 This repository is WARHOST: an Unraid template and a settings wrapper around Eugen Systems' official WARNO dedicated-server image. The game server itself stays in `eugensystems/warno`.
 
-Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugensystems/warno](https://hub.docker.com/r/eugensystems/warno), and anonymous registry reads of `eugensystems/warno:latest` and `ghcr.io/suchamoneypit/warno-unraid:latest`. Digests below are from that day and will change when the images are rebuilt. `ghcr.io/suchamoneypit/warhost:latest` is the image the template installs. That tag was not read in this check; it is published when the rebuild workflow runs on `main`.
+Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugensystems/warno](https://hub.docker.com/r/eugensystems/warno), and an anonymous registry read of `eugensystems/warno:latest`. Digests below are from that day and will change when the images are rebuilt. The rebuild workflow publishes `ghcr.io/suchamoneypit/warhost:latest` only. That tag was not read in this check.
 
 ## Layout
 
@@ -76,7 +76,7 @@ Registry config for `eugensystems/warno:latest` on 2026-10-09:
 
 That entrypoint plus the working directory is the absolute path `/server/entrypoint2.sh` used by this wrapper. The script body was read from the image layer; its `warno-server` command line is quoted under External dependencies below.
 
-The manifest for `ghcr.io/suchamoneypit/warno-unraid:latest` was readable without credentials on 2026-10-09 (anonymous token, HTTP 200). The template now installs `ghcr.io/suchamoneypit/warhost:latest`. That tag was not read here. The rebuild workflow pushes both tags from the same build. The image layers were not downloaded. Values from the rebuild that followed commit `848a5a4`, which published `warno-unraid`:
+The wrapper image manifest was readable without credentials on 2026-10-09 at `ghcr.io/suchamoneypit/warno-unraid:latest` (anonymous token, HTTP 200). The rebuild workflow no longer publishes that name. It publishes `ghcr.io/suchamoneypit/warhost:latest`. That tag was not read here. The image layers were not downloaded. Values below are from that `warno-unraid` read, the rebuild that followed commit `848a5a4`:
 
 - Manifest digest `sha256:67ea75b2542f2ed924958ba087b6598d5a3b2632885655d523a9187e39138095`
 - Created `2026-10-09T08:12:08Z`

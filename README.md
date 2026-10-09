@@ -31,7 +31,7 @@ In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints th
 
 The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml` shows **WARHOST**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARHOST`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARHOST**. Delete an earlier download if it is still in that folder: `warno-dedicated-server.xml` or `my-WARNO-Dedicated-Server.xml`. This route is the one the Community Applications author gives for Unraid 6.10 and later. `my-WARHOST.xml` has not been tried on a server yet. `sh scripts/print_template_fetch.sh --private` saves `warhost.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
 
-The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. `ghcr.io/suchamoneypit/warno-unraid:latest` was publicly pullable on 2026-10-09, and the same workflow still pushes that tag so a container created under the old name can update. The pull check is in the install guide, step 2. The settings folder stays `/mnt/user/appdata/warno/settings`. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
+The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. The pull check is in the install guide, step 2. The settings folder stays `/mnt/user/appdata/warno/settings`. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
 
 Fill in:
 
@@ -249,7 +249,7 @@ The dedicated key belongs in the Unraid form, which stores it for that container
 
 Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their server launch arguments. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image.
 
-`.github/workflows/rebuild-image.yml` checks Eugen's image once a day, and also runs when the Dockerfile or entrypoint changes. If the digest changed, it builds `ghcr.io/suchamoneypit/warhost:latest` and `ghcr.io/suchamoneypit/warno-unraid:latest`. In Unraid, update each server container. A failed Action leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
+`.github/workflows/rebuild-image.yml` checks Eugen's image once a day, and also runs when the Dockerfile or entrypoint changes. If the digest changed, it builds `ghcr.io/suchamoneypit/warhost:latest`. In Unraid, update each server container. A failed Action leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
 
 Change the entrypoint only if Eugen renames `entrypoint2.sh` or the settings filenames. A normal game patch does not require an edit here.
 
@@ -260,7 +260,7 @@ The image is already published. If you fork this repository, repeat these steps 
 1. In the GitHub repository settings, enable Issues.
 2. Under Actions, allow GitHub Actions, and set workflow permissions to read and write.
 3. Run the **Rebuild WARHOST image** workflow.
-4. Open the package `warhost` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this for `warhost` and for the previous `warno-unraid` tag, and the package page is the place to confirm it.
+4. Open the package `warhost` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this for `warhost`, and the package page is the place to confirm it.
 
 Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and Jungle Law is the running scenario. Submit the repository to Community Apps after that test. The submission site is [https://ca.unraid.net/submit](https://ca.unraid.net/submit).
 
