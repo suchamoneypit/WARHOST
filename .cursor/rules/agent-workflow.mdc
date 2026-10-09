@@ -16,12 +16,13 @@ Subagents live in `.cursor/agents/`. They run only when you launch them or the u
 | the project researcher (here `warno-researcher`) | The task depends on an upstream fact that `docs/ARCHITECTURE.md` does not record with a source URL, or an upstream fact may have changed: image entrypoint, settings keys, ports, mod or map IDs, vendor key process. | The fact is already recorded with a source and the task does not change upstream-facing behavior. Typos, wording, structure of docs. |
 | `unraid-template-reviewer` | You changed `templates/*.xml`, `ca_profile.xml`, `Dockerfile`, the entrypoint, networking or port statements, volume paths, form variables, or install instructions in `README.md` or `docs/INSTALL-*.md`. | The change only touches `.cursor/`, `docs/CURSOR-*`, tests, or workflow YAML. |
 | `verifier` | A nontrivial implementation is "done": new or changed scripts, entrypoint logic, checks, or docs that make testable claims (URLs, commands, paths). | A one-line edit you already checked by running the relevant command yourself. |
+| `docs-consistency` | A functional change altered a user-facing name, default, description, port, path, image, or command, including a template field description whose README or install-doc pair may be stale. | Tests, CI, `.cursor/` edits, formatting, or wording no other file restates. |
 
-Order: research before implementing when needed; reviewer and verifier after, launched in parallel because they are independent. One task rarely needs all three; a small task needs none.
+Order: research before implementing when needed. After the functional edit, launch `docs-consistency` and apply only the sentences it names, then launch reviewer and verifier in parallel. The reviewer still checks template structure; do not ask it to reconcile field wording. One task rarely needs all four; a small task needs none.
 
 ## What a subagent must return
 
-Ask for exactly this shape and hold the result to it: findings as short bullets; a source URL or `file:line` for each; affected files; commands run with their result; remaining uncertainty. No transcripts, no restating the repository. A finding without evidence is "unverified", not a fact.
+Ask for exactly this shape and hold the result to it: findings as short bullets; a source URL or `file:line` for each; affected files; commands run with their result; remaining uncertainty. No transcripts, no restating the repository. A finding without evidence is "unverified", not a fact. `docs-consistency` is the exception: ask only for the short shape in its file, and do not send it on a second pass.
 
 ## Context hygiene
 

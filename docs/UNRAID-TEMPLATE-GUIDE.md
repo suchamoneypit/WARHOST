@@ -110,4 +110,4 @@ When copying this layout for another game server:
 3. Decide bridge vs host and update the Overview, README, and port descriptions together.
 4. Rewrite the wrapper entrypoint and `tests/` for the new settings files, and update the expected-file assertions.
 5. Update `scripts/check_repo.sh` for the new secret variable names and settings path.
-6. Replace the game-specific docs (`README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`) and the game-specific Cursor rule and researcher agent. The generic rule, reviewer, verifier, commands, and this guide carry over.
+6. Replace the game-specific docs (`README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`) and the game-specific Cursor rule and researcher agent. The generic rule, docs-consistency agent, reviewer, verifier, commands, and this guide carry over.
