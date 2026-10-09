@@ -15,7 +15,7 @@ This container runs Eugen's official WARNO dedicated server. The form writes log
 <br>
 Request access from eugsupport@eugensystems.com with the email of your EugNet account. Eugen replies with a login and key pair; enter both exactly as written. One pair can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.<br>
 <br>
-The preset is a 2v2 Conquest server for Jungle Law from the Red Dragon map pack, Steam Workshop item 3811913066. Map is RDPort_JungleLaw_2v2_CONQ. A base-game scenario ID works too if you clear Workshop Mod List. Players subscribe to the mod in Steam and enable it in WARNO.<br>
+The preset is a 2v2 Conquest server for Jungle Law from the Red Dragon map pack, Steam Workshop item 3811913066. Map is RDPort_JungleLaw_2v2_CONQ. A base-game scenario ID works too if you clear Workshop Mod List. When players join the server, they are prompted to add to the mod.<br>
 <br>
 Eugen recommends host networking, and this container uses it, so there is no Docker port mapping. Forward the game port as both TCP and UDP to this Unraid server. The server also needs outbound internet access to reach Eugen.<br>
 <br>
