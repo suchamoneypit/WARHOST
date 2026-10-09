@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CommunityApplications>
   <Profile>
-    Unraid template for one WARNO dedicated server per container. The install form asks for your own Eugen login and dedicated key and writes the server settings for you. Support is through GitHub issues on this repository.
+    Unraid template for one WARNO dedicated server per container. The install form asks for your own Eugen login and dedicated key and writes the server settings for you. Built with AI coding assistants; humans reviewed what shipped. Support is through GitHub issues on this repository.
   </Profile>
   <Icon>https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/icon.png</Icon>
   <WebPage>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid</WebPage>

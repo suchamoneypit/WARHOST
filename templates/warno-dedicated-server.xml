@@ -19,7 +19,9 @@ The preset is a 2v2 Conquest server for Jungle Law from the Red Dragon map pack,
 <br>
 Eugen recommends host networking, and this container uses it, so there is no Docker port mapping. Forward the game port as both TCP and UDP to this Unraid server. The server also needs outbound internet access to reach Eugen.<br>
 <br>
-For another server, add a new container from this same template. Change the container name, the game port, and the settings folder. Use the same login and key.]]>
+For another server, add a new container from this same template. Change the container name, the game port, and the settings folder. Use the same login and key.<br>
+<br>
+This template was built with AI coding assistants. Humans reviewed what shipped and remain responsible for it.]]>
   </Overview>
   <Category>GameServers:</Category>
   <WebUI/>
@@ -41,7 +43,9 @@ Eugen recommends host networking, and this container uses it, so there is no Doc
 <br>
 For another server, add a new container from this same template. Change the container name, the game port, and the settings folder. Use the same login and key. Updating the image updates the game files. Update each container after that.<br>
 <br>
-Write Config From Form rewrites the three settings files on every start. Set it to false only when you need to edit those files by hand. Hand edits are overwritten while it is true. RCON and AI decks are not on this form.]]>
+Write Config From Form rewrites the three settings files on every start. Set it to false only when you need to edit those files by hand. Hand edits are overwritten while it is true. RCON and AI decks are not on this form.<br>
+<br>
+This template was built with AI coding assistants. Humans reviewed what shipped and remain responsible for it.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/settings" Mode="rw" Description="Generated settings for this server, including login.ini. Use a different folder for each server, such as /mnt/user/appdata/warno2/settings. Do not commit this folder to a public repository." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/settings</Config>

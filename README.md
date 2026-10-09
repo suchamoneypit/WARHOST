@@ -135,6 +135,10 @@ Then install the template on your Unraid server and confirm the container stays 
 | [docs/UNRAID-TEMPLATE-GUIDE.md](docs/UNRAID-TEMPLATE-GUIDE.md) | Generic Unraid template guidance, reusable for other game servers |
 | [docs/CURSOR-QUICKSTART.md](docs/CURSOR-QUICKSTART.md) | Working on this repository with Cursor's agents |
 
+## Made with AI tools
+
+This project was built with AI coding assistants (mainly [Cursor](https://cursor.com)). Humans directed the work, reviewed what shipped, and remain responsible for it. Treat the template like any other community Docker or Unraid project: verify on your own server, and open an issue if something is wrong. Notes for working on the Cursor setup in this repository are in [docs/CURSOR-QUICKSTART.md](docs/CURSOR-QUICKSTART.md).
+
 ## Support
 
 Questions and problems go to [GitHub issues](https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues). Leave the Eugen key out of the issue.
