@@ -143,7 +143,7 @@ Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. C
 | Max Players | `4` | Total slots. Preset 4 for this 2v2. Usual sizes are in the README. Not locked to the map. |
 | Minimum Players | `2` | Players needed before the countdown. Not above Max Players. |
 | Team Size | `2` | Slots on one side. Usually half of Max Players. |
-| Combat Rule | `2` | `2` Conquest, `1` Destruction. |
+| Combat Rule | `2` | `2` when the ID contains `CONQ` or `Conquest`, `1` when it contains `DEST` or `Destruction`. |
 | Write Config From Form (Show more) | `true` | Keep. |
 | Workshop Mod Tags (Show more) | `Maps-Scenarios` | Browser icons only. It does not download mods. Leave this for the Red Dragon pack. A conversion uses the tag string in step 4. |
 | Workshop Mod List (Show more) | `3811913066/15` | Keep for Red Dragon maps unless `Config.ini` `Version` has changed. Clear for a base-game map with no workshop mod. Named mods are in the README. |

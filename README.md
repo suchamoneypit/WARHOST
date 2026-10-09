@@ -83,7 +83,7 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Combat Rule</td>
-<td><code>2</code> for Conquest, <code>1</code> for Destruction</td>
+<td><code>2</code> when the scenario ID contains <code>CONQ</code> or <code>Conquest</code>, <code>1</code> when it contains <code>DEST</code> or <code>Destruction</code></td>
 </tr>
 </tbody>
 </table>

@@ -14,11 +14,12 @@ A cheat sheet for working on this project with Cursor's Agent. It describes what
 | `agents/verifier.md` | Subagent, generic | Same. |
 | `agents/docs-consistency.md` | Subagent, generic | Same. |
 | `agents/credential-reviewer.md` | Subagent, WARNO-specific | When the main agent launches it, or you type `/credential-review`. Not part of ordinary review. |
+| `agents/workshop-mod-reader.md` | Subagent, WARNO-specific | When the main agent launches it, or you type `/workshop-mods`. |
 | `commands/*.md` | Slash commands | Only when you type `/<name>`. |
 
 Rules are injected into the prompt. Subagents run in their own context window and return one final message. Commands are reusable prompts. Nothing in `.cursor/` runs on a timer or on every file save; a subagent runs only when the main agent delegates to it or you invoke it.
 
-## The five subagents
+## The six subagents
 
 | Agent | Purpose | Main agent uses it when | Call it yourself |
 | --- | --- | --- | --- |
@@ -27,10 +28,11 @@ Rules are injected into the prompt. Subagents run in their own context window an
 | `verifier` | Runs `sh scripts/check_repo.sh`, re-reads changed files against the claim, probes edge cases, reports Passed / Failed / Unverified. Does not fix. | A nontrivial change is marked done. | `/verifier confirm the entrypoint still rejects placeholder map IDs` |
 | `docs-consistency` | Compares the facts this change altered (name, default, description, port, path, image, command) with the template, README, and install docs. Read-only; names the one sentence to fix. Does not reread untouched docs. | The functional edit is done and one of those facts changed, so a pair such as a template field description and the README may disagree. | `/docs-consistency the template field description changed; check the README pair` |
 | `credential-reviewer` | Adversarial review of the Eugen login and dedicated key. Read-only. Clear text on those two form fields is accepted. | You run `/credential-review`, or a change writes, logs, templates, or documents the login, the key, or `login.ini`. | `/credential-review` |
+| `workshop-mod-reader` | Reads the local Steam Workshop folder for WARNO and reports `Config.ini` versions, tags, and scenario IDs that differ from `README.md`. Read-only. | You run `/workshop-mods`, or you ask to refresh those facts from the subscribed PC. | `/workshop-mods` |
 
 Cursor also ships built-in subagents (for example `explore` for codebase search, `bugbot` and `security-review` for diff review, `cursor-guide` for Cursor questions). The main agent may use those too; they are not part of this repository.
 
-`warno-researcher`, `unraid-template-reviewer`, and `verifier` return findings as bullets with a source or `file:line`, affected files, commands run with results, and remaining uncertainty. `docs-consistency` returns only Consistent, Mismatches, and Skipped, in under 200 words. `credential-reviewer` returns Findings, Accepted, and Unverified, in under 400 words. If you get a wall of text instead, ask for that shape.
+`warno-researcher`, `unraid-template-reviewer`, and `verifier` return findings as bullets with a source or `file:line`, affected files, commands run with results, and remaining uncertainty. `docs-consistency` returns only Consistent, Mismatches, and Skipped, in under 200 words. `credential-reviewer` returns Findings, Accepted, and Unverified, in under 400 words. `workshop-mod-reader` returns the `scripts/list_workshop_mods.py --diff` report, including full scenario lists for mods that differ. If you get a wall of text instead, ask for that shape.
 
 ## Routing rules
 
@@ -42,6 +44,7 @@ From `.cursor/rules/agent-workflow.mdc`:
 - `docs-consistency` after a functional edit that changed a name, default, description, port, path, image, or command. Skip tests, CI, `.cursor/` edits, and wording no other file restates.
 - Researcher before implementation when needed. `docs-consistency` next, and its sentences are applied before review. Reviewer and verifier then run in parallel. A small task uses none of them.
 - `credential-reviewer` only for `/credential-review`, or when a change writes, logs, templates, or documents the Eugen login, dedicated key, or `login.ini`. Skip it on ordinary feature work and on `/review-and-verify`.
+- `workshop-mod-reader` only for `/workshop-mods`, or when the task is to refresh workshop versions and scenario IDs from the local Steam library. Skip it on the review pass.
 
 ## Normal workflow
 
@@ -77,6 +80,7 @@ Project commands in `.cursor/commands/` (name = file name):
 | `/implement-feature <what>` | A change that touches code, template, or docs and should end with checks and updated docs. |
 | `/review-and-verify` | You want an independent review of uncommitted changes before committing. |
 | `/credential-review` | You want an adversarial review of the Eugen login and dedicated key. Clear text on the Unraid form is accepted. |
+| `/workshop-mods` | You want the local WARNO workshop mods compared with the README: versions, tags, and scenario IDs. It reports only, unless you also ask it to apply the report. |
 | `/handoff` | You are about to close a chat or hand the work to someone else. |
 
 Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `/plan` to switch to Plan mode, `/create-rule`, `/create-subagent`, `/create-skill`, `/review` for a diff review, `/summarize` (CLI) to compact context. Cursor's docs now treat skills (`.cursor/skills/<name>/SKILL.md`) as the successor to commands and offer `/migrate-to-skills`; the commands above are small enough that migrating them is optional.
@@ -85,4 +89,4 @@ Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `
 
 Generic, ready to copy into another game-server template repository: `rules/agent-workflow.mdc`, `rules/unraid-template.mdc`, `agents/unraid-template-reviewer.md` (replace its project-specifics paragraph), `agents/verifier.md`, `agents/docs-consistency.md`, the commands in `.cursor/commands/` except `credential-review.md` (rename `first-unraid-install` targets), `docs/UNRAID-TEMPLATE-GUIDE.md`, `scripts/print_template_fetch.sh`, and this file's structure.
 
-WARNO-specific: `rules/warno-project.mdc`, `agents/warno-researcher.md`, `agents/credential-reviewer.md`, `commands/credential-review.md`, `README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, the template, the wrapper, samples, and tests.
+WARNO-specific: `rules/warno-project.mdc`, `agents/warno-researcher.md`, `agents/credential-reviewer.md`, `agents/workshop-mod-reader.md`, `commands/credential-review.md`, `commands/workshop-mods.md`, `scripts/list_workshop_mods.py`, `README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, the template, the wrapper, samples, and tests.

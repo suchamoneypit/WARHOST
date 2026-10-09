@@ -174,6 +174,7 @@ sh -n scripts/check_repo.sh
 sh -n scripts/print_template_fetch.sh
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").read_text(), "scripts/upstream_digest.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/next_version.py").read_text(), "scripts/next_version.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("scripts/list_workshop_mods.py").read_text(), "scripts/list_workshop_mods.py", "exec")'
 echo "syntax ok"
 
 expect_version() {
@@ -198,5 +199,7 @@ if python3 scripts/next_version.py --tags v0.94 --set 0.90 >/dev/null 2>&1; then
   exit 1
 fi
 echo "version numbering ok"
+
+python3 scripts/list_workshop_mods.py --self-test
 
 sh tests/entrypoint_test.sh

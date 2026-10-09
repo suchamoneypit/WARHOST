@@ -18,12 +18,13 @@ Subagents live in `.cursor/agents/`. They run only when you launch them or the u
 | `verifier` | A nontrivial implementation is "done": new or changed scripts, entrypoint logic, checks, or docs that make testable claims (URLs, commands, paths). | A one-line edit you already checked by running the relevant command yourself. |
 | `docs-consistency` | A functional change altered a user-facing name, default, description, port, path, image, or command, including a template field description whose README or install-doc pair may be stale. | Tests, CI, `.cursor/` edits, formatting, or wording no other file restates. |
 | `credential-reviewer` | The user runs `/credential-review`, or a change writes, logs, templates, or documents the Eugen login, dedicated key, or `login.ini`. | Ordinary feature work, map or mod edits, and `/review-and-verify`. |
+| `workshop-mod-reader` | The user runs `/workshop-mods`, or asks to refresh workshop versions and scenario IDs from the local Steam library. | The versions are already recorded and the task is wording. Not part of the review pass. |
 
-Order: research before implementing when needed. After the functional edit, launch `docs-consistency` and apply only the sentences it names, then launch reviewer and verifier in parallel. The reviewer still checks template structure; do not ask it to reconcile field wording. One task rarely needs all four; a small task needs none. Do not add `credential-reviewer` to that pass.
+Order: research before implementing when needed. After the functional edit, launch `docs-consistency` and apply only the sentences it names, then launch reviewer and verifier in parallel. The reviewer still checks template structure; do not ask it to reconcile field wording. One task rarely needs all four; a small task needs none. Do not add `credential-reviewer` or `workshop-mod-reader` to that pass.
 
 ## What a subagent must return
 
-Ask for exactly this shape and hold the result to it: findings as short bullets; a source URL or `file:line` for each; affected files; commands run with their result; remaining uncertainty. No transcripts, no restating the repository. A finding without evidence is "unverified", not a fact. `docs-consistency` and `credential-reviewer` are the exceptions: ask only for the short shape in each file, and do not send either on a second pass.
+Ask for exactly this shape and hold the result to it: findings as short bullets; a source URL or `file:line` for each; affected files; commands run with their result; remaining uncertainty. No transcripts, no restating the repository. A finding without evidence is "unverified", not a fact. `docs-consistency` and `credential-reviewer` are the exceptions: ask only for the short shape in each file, and do not send either on a second pass. `workshop-mod-reader` is also an exception: ask for the script report in its file, and do not shorten scenario lists.
 
 ## Context hygiene
 
