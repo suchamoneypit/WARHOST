@@ -8,7 +8,7 @@ First install? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It cover
 
 ## What you need
 
-- A dedicated-server **login and key** from Eugen. Email `eugsupport@eugensystems.com` with the email address of your EugNet account; Eugen replies with a login and key pair ([Docker Hub](https://hub.docker.com/r/eugensystems/warno)). A dedicated key from another Eugen game also works. One pair can run up to five servers.
+- A dedicated-server **login and key** from Eugen. Email `eugsupport@eugensystems.com` with the email address of your EugNet account politely requesting a dedicated servery key; Eugen replies with a login and key pair ([Docker Hub](https://hub.docker.com/r/eugensystems/warno)). A dedicated key from another Eugen game also works. One pair can run up to five servers.
 - Your **public WAN IP**, and the game port forwarded on your router **as both TCP and UDP** to the Unraid server. Eugen recommends host networking and this container uses it, so Unraid shows no Docker port mapping.
 - Outbound internet from the Unraid server, so the game server can reach Eugen's master server.
 - Players need WARNO and, for the Red Dragon maps, Workshop item `3811913066` subscribed and enabled in WARNO's Mod Center.
