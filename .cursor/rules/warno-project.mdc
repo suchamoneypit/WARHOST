@@ -1,0 +1,35 @@
+---
+description: Unraid template conventions, evidence, secrets, validation, and git safety for the WARNO dedicated server
+alwaysApply: true
+---
+
+# WARNO Unraid repository
+
+This repo is an Unraid template plus a settings wrapper around `eugensystems/warno`. Leave server settings, launch arguments, and published defaults unchanged unless the task asks for that change.
+
+## Template
+
+- Edit `templates/warno-dedicated-server.xml` for the container and `ca_profile.xml` for the Community Apps profile.
+- Use `<Container version="2">`. Express paths and variables as one-line `<Config>` entries. Leave out legacy `<Networking>`, `<Data>`, and `<Environment>` blocks.
+- `Type="Path"` maps a host folder. `Type="Variable"` sets an environment variable. Set `Mask="true"` on secrets.
+- This server uses `<Network>host</Network>`. The game port is `EXPOSEDPORT`, forwarded as TCP and UDP. There is no Docker port mapping.
+- Keep Overview, Description, and `README.md` in agreement.
+
+## Evidence
+
+- Cite a source URL for Eugen or Docker Hub claims. Label anything not checked in this session as unverified.
+- `10400` is this repo's default game port. Eugen's docs show a placeholder port.
+- A parsed XML file is only well-formed. Unraid behavior still needs a server test.
+- `entrypoint-unraid.sh` writes settings, then runs `/server/entrypoint2.sh`. Leave Eugen's server arguments in their image.
+
+## Secrets
+
+- Keep Eugen logins, dedicated keys, `login.ini`, and real `settings/` directories out of git, examples, issues, and chat.
+- Samples may use `YOUR_EUGEN_LOGIN_HERE` and `YOUR_EUGEN_DEDICATED_KEY_HERE` only.
+- A key that reaches git history stays compromised after a later delete.
+
+## Validation and git
+
+- After template, entrypoint, or check changes, run `sh scripts/check_repo.sh`.
+- Tests must not start the real WARNO server.
+- Commit only when asked. Do not push to `main`, force-push, deploy, publish the image, or merge a pull request unless explicitly asked.
