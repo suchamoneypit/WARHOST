@@ -173,6 +173,30 @@ sh -n tests/entrypoint_test.sh
 sh -n scripts/check_repo.sh
 sh -n scripts/print_template_fetch.sh
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").read_text(), "scripts/upstream_digest.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("scripts/next_version.py").read_text(), "scripts/next_version.py", "exec")'
 echo "syntax ok"
+
+expect_version() {
+  expected=$1
+  shift
+  actual=$(python3 scripts/next_version.py "$@")
+  if [ "$actual" != "$expected" ]; then
+    echo "next_version.py $* expected ${expected} got ${actual}" >&2
+    exit 1
+  fi
+}
+
+expect_version 0.90 --tags
+expect_version 0.91 --tags v0.90
+expect_version 1.00 --tags v0.99
+expect_version 1.00 --tags v0.94 --set 1.0
+expect_version 1.01 --tags v1.00 --set 1.00
+expect_version 0.90 --points-at v0.90 --tags v0.90
+expect_version 0.90 --points-at v0.90 v0.91 --tags v0.91
+if python3 scripts/next_version.py --tags v0.94 --set 0.90 >/dev/null 2>&1; then
+  echo "next_version.py accepted a downgrade" >&2
+  exit 1
+fi
+echo "version numbering ok"
 
 sh tests/entrypoint_test.sh

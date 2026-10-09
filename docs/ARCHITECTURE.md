@@ -16,8 +16,10 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 | `tests/entrypoint_test.sh` | Runs the wrapper against a fake upstream entrypoint |
 | `scripts/upstream_digest.py` | Prints the Eugen image manifest digest |
 | `scripts/check_repo.sh` | Local XML and repository checks |
+| `scripts/next_version.py` | Prints the next `MAJOR.MINOR` release number |
 | `scripts/print_template_fetch.sh` | Prints the Unraid terminal command that downloads the template as `my-<Name>.xml` before it is in Community Applications |
 | `.github/workflows/rebuild-image.yml` | Rebuilds the GHCR image when Eugen's digest changes |
+| `.github/workflows/release.yml` | Tags each `main` push and opens a GitHub Release |
 | `.github/workflows/check-repo.yml` | Runs `scripts/check_repo.sh` |
 | `docs/INSTALL-UNRAID.md` | First-install walkthrough for Unraid 7 with verification and troubleshooting |
 | `docs/UNRAID-TEMPLATE-GUIDE.md` | Generic Unraid template guidance, reusable for other game servers |
@@ -90,6 +92,8 @@ A later anonymous read of `ghcr.io/suchamoneypit/warhost:latest`, after [Actions
 Both GitHub workflows (`Check repository`, `Rebuild WARNO image`) completed successfully for commit `848a5a4`. The workflow file is now named `Rebuild WARHOST image`. The repository is public with Issues enabled. The GitHub repository is `WARHOST`. `https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09.
 
 `.github/workflows/rebuild-image.yml` rebuilds that GHCR tag on a daily schedule, on manual dispatch, and on pushes to `main` that change the Dockerfile, wrapper, or workflow. Those pushes always rebuild. The daily schedule, and a manual run with force left false, skip the build when the published image's `warno.upstream.digest` label already matches Eugen's digest.
+
+`.github/workflows/release.yml` runs on every push to `main`. It reads git tags and the optional `VERSION` file. With no version tags the first release is `v0.90`. Otherwise it adds one to the minor part (`v0.90` then `v0.91`, `v0.99` then `v1.00`, `v1.00` then `v1.01`). A `VERSION` file higher than the latest tag is used as written (`1.0` is `v1.00`). A file that still matches the latest tag increments. A file below the latest tag stops the release. The workflow creates an annotated tag when that tag is missing, then opens a GitHub Release. A later run on a commit that already has a version tag keeps the lowest of those tags and does not mint another number. It does not push a commit. Daily and manual image rebuilds do not bump this number. The template keeps installing `ghcr.io/suchamoneypit/warhost:latest`.
 
 ## External dependencies
 

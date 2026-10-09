@@ -1,0 +1,64 @@
+name: Tag WARHOST release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-warhost-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Decide version
+        id: version
+        run: |
+          set -eu
+          points="$(git tag --points-at "$GITHUB_SHA")"
+          if [ -n "$points" ]; then
+            # Tags are one per line. Word splitting is the argument list.
+            # shellcheck disable=SC2086
+            version="$(python3 scripts/next_version.py --points-at $points)"
+          else
+            version="$(python3 scripts/next_version.py)"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Tag and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -eu
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            existing="$(git rev-parse "${TAG}^{}")"
+            if [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "Tag ${TAG} already points at ${existing}." >&2
+              exit 1
+            fi
+            echo "Tag ${TAG} already points at this commit."
+          else
+            git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              tag -a "${TAG}" -m "WARHOST ${TAG}"
+            git push origin "refs/tags/${TAG}"
+          fi
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists."
+          else
+            gh release create "${TAG}" --generate-notes --target "${GITHUB_SHA}"
+          fi

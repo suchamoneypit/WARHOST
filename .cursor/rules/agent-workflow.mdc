@@ -37,6 +37,8 @@ Day-to-day commits go on `dev`. When the user asks to commit, commit on `dev` an
 
 `main` is the published snapshot. Update it only when the user explicitly asks to publish the accumulated work to `main`. That means merge `dev` into `main` and push `origin/main`. Do not force-push, deploy, or publish images unless that same request authorizes it.
 
+If that publish request names a version, normalize it (`1.0` is `1.00`) into `VERSION`, commit that file on `dev`, and include it in the merge. Otherwise leave `VERSION` unchanged. `.github/workflows/release.yml` tags the `main` commit after the push: `v0.90` when no version tag exists yet, otherwise one minor step past the latest tag (`v0.90` then `v0.91`, and `v1.00` then `v1.01`). A `VERSION` file higher than that tag is the tag for this publish. A file that still matches the latest tag does not freeze the number; the workflow increments. A file below the latest tag stops the release. The tag is created only when that name is missing. A later run on a commit that already has a version tag keeps the lowest of those tags. Do not create the tag locally. Pushing the tag does not push another commit.
+
 A push of wording, docs, or the Unraid template to `main` is what Community Apps reads. A push of `Dockerfile`, `entrypoint-unraid.sh`, or `.github/workflows/rebuild-image.yml` to `main` also publishes `ghcr.io/suchamoneypit/warhost:latest`, which Unraid offers as a container update. Commits on `dev` do neither.
 
 ## Safety
