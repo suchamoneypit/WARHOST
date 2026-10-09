@@ -15,7 +15,7 @@ Port forward the game port TCP/UDP to your Unraid server. The container uses hos
 Community Apps listing comes after this template has been tested on a running server. Until then, add the container in Unraid with **Docker**, **Add Container**, and a template URL of:
 
 ```text
-https://raw.githubusercontent.com/suchamoneypit/Warno-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
 ```
 
 The image is `ghcr.io/suchamoneypit/warno-unraid:latest`. It does not exist until the GitHub Action has built it. See [Publishing the image](#publishing-the-image).
@@ -92,4 +92,4 @@ Then install the template on your Unraid server and confirm the container stays 
 
 ## Support
 
-Questions and problems go to [GitHub issues](https://github.com/suchamoneypit/Warno-Dedicated-Server-Unraid/issues). Leave the Eugen key out of the issue.
+Questions and problems go to [GitHub issues](https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues). Leave the Eugen key out of the issue.

@@ -3,7 +3,7 @@
 FROM eugensystems/warno:latest
 
 ARG UPSTREAM_DIGEST=unknown
-LABEL org.opencontainers.image.source="https://github.com/suchamoneypit/Warno-Dedicated-Server-Unraid" \
+LABEL org.opencontainers.image.source="https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid" \
       org.opencontainers.image.description="Writes WARNO dedicated-server settings from Unraid form fields, then starts Eugen's official entrypoint." \
       org.opencontainers.image.licenses="MIT" \
       warno.upstream.digest="${UPSTREAM_DIGEST}"

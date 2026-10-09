@@ -2,13 +2,13 @@
 <Container version="2">
   <Name>WARNO-Dedicated-Server</Name>
   <Repository>ghcr.io/suchamoneypit/warno-unraid:latest</Repository>
-  <Registry>https://github.com/suchamoneypit/Warno-Dedicated-Server-Unraid/pkgs/container/warno-unraid</Registry>
+  <Registry>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/pkgs/container/warno-unraid</Registry>
   <Network>host</Network>
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/suchamoneypit/Warno-Dedicated-Server-Unraid/issues</Support>
-  <Project>https://github.com/suchamoneypit/Warno-Dedicated-Server-Unraid</Project>
+  <Support>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/issues</Support>
+  <Project>https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid</Project>
   <Overview>
     <![CDATA[
 This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.<br>
@@ -23,8 +23,8 @@ For another server, add a new container from this same template. Change the cont
   </Overview>
   <Category>GameServers:</Category>
   <WebUI/>
-  <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/Warno-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/suchamoneypit/Warno-Dedicated-Server-Unraid/main/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/icon.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
