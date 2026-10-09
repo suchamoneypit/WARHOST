@@ -35,7 +35,7 @@ Fill in:
 
 | Field | What to enter |
 | --- | --- |
-| Eugen Login | Your Eugen username. The same username/email you gave Eugen to get your server key |
+| Eugen Login | The login Eugen sent back with your dedicated key, entered exactly as written. This is unique and must be obtained from Eugen.|
 | Eugen Dedicated Key | The key from the same reply |
 | Public WAN IP | The address Eugen's lobby should advertise to players |
 | Game Port | `10400`, or another free port. Forward it TCP and UDP. |
