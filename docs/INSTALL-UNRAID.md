@@ -92,19 +92,35 @@ Pick a size that fits the ID: the `2v2` in the ID means Max Players 4 and Team S
 
 ## 5. Put the template into Unraid
 
-Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so there is no place to paste a template URL in Unraid 7. Until this template is in Community Applications, use the flash drive:
+Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so there is no place to paste a template URL in Unraid 7. Until this template is in Community Applications, copy it onto the flash drive.
 
-1. In the Unraid web UI, open the terminal (the `>_` icon top right) and run:
+`sh scripts/print_template_fetch.sh`, run in a checkout of this repository, prints the command below. `/unraid-template-installscript` prints the same thing. In the Unraid web UI, open the terminal (the `>_` icon top right) and paste it:
 
-   ```sh
-   mkdir -p /boot/config/plugins/dockerMan/templates-user
-   curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
-     https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
-   ```
+```sh
+mkdir -p /boot/config/plugins/dockerMan/templates-user
+curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml \
+  https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+```
 
-2. Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick the WARNO entry under **User templates**. Every field prefills.
+Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARNO-Dedicated-Server** under **User templates**. Every field prefills.
 
-Alternative: save the same file under `/boot/config/plugins/community.applications/private/suchamoneypit/` and install it from the **Apps** tab, where it appears under **Private**. Both routes were stated by the Community Applications author; neither has been executed for this repository yet.
+Unraid labels that menu from the filename, with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read 2026-10-09). The `<Name>` in the XML is already `WARNO-Dedicated-Server`; the earlier file `warno-dedicated-server.xml` is why the menu showed `warno-dedicated-server`. If that file is still in the folder, delete it:
+
+```sh
+rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml
+```
+
+The corrected filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). That filename has not been tried on a server yet.
+
+Alternative, still until Community Applications lists it: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
+
+```sh
+mkdir -p /boot/config/plugins/community.applications/private/suchamoneypit
+curl -fsSL -o /boot/config/plugins/community.applications/private/suchamoneypit/warno-dedicated-server.xml \
+  https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+```
+
+It then appears in the **Apps** tab under **Private**. The user-template download was tried with the lowercase filename, and the dropdown showed that name. The private-folder route has not been executed for this repository.
 
 ## 6. Fill in the form
 
@@ -175,7 +191,7 @@ Start WARNO on a PC on the same network with the Workshop mod enabled. Look for 
 
 Have someone outside your LAN find and join the server. Only this step proves the port forward, the WAN IP, and your ISP are all right. A TCP port checker website can confirm the TCP half of the forward; UDP cannot be checked that way.
 
-When 7e works, the install goal in `docs/ROADMAP.md` is met. Unraid is expected to save its own copy of the template into `/boot/config/plugins/dockerMan/templates-user/` when you press Apply, beside the file you downloaded, so a second WARNO entry may appear in the Template dropdown afterwards. Compare Unraid's saved copy with `templates/warno-dedicated-server.xml`; dockerMan's formatting is the one Community Applications expects.
+When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the Name on the form. With Name left as `WARNO-Dedicated-Server`, that is the same file as the download. A different Name leaves the downloaded file in the dropdown as a second entry labeled **WARNO-Dedicated-Server**. Compare Unraid's saved copy with `templates/warno-dedicated-server.xml`; dockerMan's formatting is the one Community Applications expects.
 
 ## Troubleshooting
 
@@ -198,7 +214,7 @@ When 7e works, the install goal in `docs/ROADMAP.md` is met. Unraid is expected 
 
 These need a real Unraid install with a real key. They are listed so nobody mistakes this guide for a test record.
 
-- That Unraid 7 shows the file from `templates-user` in the Template dropdown and prefills every field as written here.
+- That Unraid 7 shows `my-WARNO-Dedicated-Server.xml` in the Template dropdown as **WARNO-Dedicated-Server** and prefills every field as written here. A file named `warno-dedicated-server.xml` was reported to show that lowercase name. The corrected filename and the prefill have not been recorded.
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.
 - Which sockets (TCP, UDP, or both) `warno-server` opens on the game port.
 - Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to.

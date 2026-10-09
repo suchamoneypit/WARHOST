@@ -119,6 +119,37 @@ for raw in tracked.split(b"\0"):
             if match.group(1) not in allowed_logins:
                 fail(f"{relative}:{number}: unexpected login assignment")
 
+def command_block(text):
+    return "\n".join(line.strip() for line in text.splitlines() if line.strip())
+
+
+def run_fetch(args):
+    completed = subprocess.run(
+        ["sh", "scripts/print_template_fetch.sh", *args],
+        cwd=root,
+        text=True,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout).strip()
+        fail(f"scripts/print_template_fetch.sh {' '.join(args)}: {detail}")
+        return ""
+    return completed.stdout
+
+
+readme = (root / "README.md").read_text()
+install_doc = (root / "docs/INSTALL-UNRAID.md").read_text()
+fetch = run_fetch([])
+private_fetch = run_fetch(["--private"])
+if command_block(fetch) not in command_block(readme):
+    fail("README.md is missing the output of scripts/print_template_fetch.sh")
+if command_block(fetch) not in command_block(install_doc):
+    fail("docs/INSTALL-UNRAID.md is missing the output of scripts/print_template_fetch.sh")
+if command_block(private_fetch) not in command_block(install_doc):
+    fail("docs/INSTALL-UNRAID.md is missing the output of scripts/print_template_fetch.sh --private")
+if "scripts/print_template_fetch.sh" not in readme:
+    fail("README.md does not name scripts/print_template_fetch.sh")
+
 if errors:
     print("repository check failed:", file=sys.stderr)
     for message in errors:
@@ -132,6 +163,7 @@ PY
 sh -n entrypoint-unraid.sh
 sh -n tests/entrypoint_test.sh
 sh -n scripts/check_repo.sh
+sh -n scripts/print_template_fetch.sh
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").read_text(), "scripts/upstream_digest.py", "exec")'
 echo "syntax ok"
 

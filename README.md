@@ -15,19 +15,21 @@ First install? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It cover
 
 ## Install
 
-Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown:
+Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown.
+
+In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints the command in step 1. In Cursor, `/unraid-template-installscript` runs that script and shows the same output. Paste it; the URL and the flash filename both come from the template.
 
 1. Unraid web UI → terminal icon (`>_`):
 
    ```sh
    mkdir -p /boot/config/plugins/dockerMan/templates-user
-   curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
+   curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml \
      https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
    ```
 
-2. **Docker → Add Container → Template → User templates**, choose the WARNO entry, fill in the fields below, **Apply**.
+2. **Docker → Add Container → Template → User templates**, choose **WARNO-Dedicated-Server**, fill in the fields below, **Apply**.
 
-This route is the one the Community Applications author gives for Unraid 6.10 and later. It has not yet been executed for this repository; the first real install should confirm it.
+The dropdown label is the flash filename with `my-` removed, so `my-WARNO-Dedicated-Server.xml` shows **WARNO-Dedicated-Server**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARNO-Dedicated-Server`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARNO-Dedicated-Server**. An earlier download saved `warno-dedicated-server.xml` in that folder; delete that file or the lowercase entry stays. This route is the one the Community Applications author gives for Unraid 6.10 and later. The corrected filename has not been tried on a server yet. `sh scripts/print_template_fetch.sh --private` saves `warno-dedicated-server.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
 
 The image is `ghcr.io/suchamoneypit/warno-unraid:latest`. It is published and publicly pullable (confirmed 2026-10-09; the check is in the install guide, step 2).
 

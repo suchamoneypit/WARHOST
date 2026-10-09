@@ -16,12 +16,13 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 | `tests/entrypoint_test.sh` | Runs the wrapper against a fake upstream entrypoint |
 | `scripts/upstream_digest.py` | Prints the Eugen image manifest digest |
 | `scripts/check_repo.sh` | Local XML and repository checks |
+| `scripts/print_template_fetch.sh` | Prints the Unraid terminal command that downloads the template as `my-<Name>.xml` before it is in Community Applications |
 | `.github/workflows/rebuild-image.yml` | Rebuilds the GHCR image when Eugen's digest changes |
 | `.github/workflows/check-repo.yml` | Runs `scripts/check_repo.sh` |
 | `docs/INSTALL-UNRAID.md` | First-install walkthrough for Unraid 7 with verification and troubleshooting |
 | `docs/UNRAID-TEMPLATE-GUIDE.md` | Generic Unraid template guidance, reusable for other game servers |
 | `docs/CURSOR-QUICKSTART.md` | How the Cursor rules, subagents, and commands in `.cursor/` are meant to be used |
-| `.cursor/rules/`, `.cursor/agents/`, `.cursor/commands/` | Agent rules (generic workflow, generic Unraid conventions, WARNO project), four subagents, five slash commands |
+| `.cursor/rules/`, `.cursor/agents/`, `.cursor/commands/` | Agent rules (generic workflow, generic Unraid conventions, WARNO project), four subagents, six slash commands |
 
 `.dockerignore` keeps templates, tests, samples, Markdown, and `.github` out of the image build context. The Dockerfile copies only `entrypoint-unraid.sh`.
 
@@ -112,4 +113,4 @@ Eugen's `variables.ini` reference gives `GameType` `0` as NATO vs PACT. A later 
 - The README's LAN exception for Eugen connectivity was not checked against Eugen.
 - Whether `warno-server` downloads workshop item `3811913066` onto the server was not observed. The binary contains `GetModPackMountingPoint` and `ModDownloadCanceled`, and it contains no `workshop` string.
 - Current Unraid handling of `<br>` inside Overview and Description was not tested. The [template schema thread](https://forums.unraid.net/topic/38619-docker-template-xml-schema/) says Unraid 6.10+ removes HTML tags from those fields. The same thread says Community Applications ignores `<Description>` when `<Overview>` is present.
-- The install route in `docs/INSTALL-UNRAID.md` (copy the XML to `/boot/config/plugins/dockerMan/templates-user/`, then **Add Container → Template → User templates**) follows the Community Applications author's [statement](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/) that Unraid 6.10 removed the Template Repositories field. It has not been executed on an Unraid 7 server for this repository.
+- The install route in `docs/INSTALL-UNRAID.md` follows the Community Applications author's [statement](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/) that Unraid 6.10 removed the Template Repositories field. `scripts/print_template_fetch.sh` prints the download. The Template dropdown label is the flash filename with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php)); Unraid's own save path is `my-<Name>.xml` and keeps that case ([DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). Both files were read from webgui `master` on 2026-10-09. The operator reported that `warno-dedicated-server.xml` showed up lowercase. Saving `my-WARNO-Dedicated-Server.xml` has not been confirmed on a server.

@@ -68,15 +68,16 @@ Project commands in `.cursor/commands/` (name = file name):
 | Command | Use it when |
 | --- | --- |
 | `/project-help` | You are unsure which workflow or agent fits, or you want the setup explained. |
+| `/unraid-template-installscript` | You want the Unraid terminal command that downloads this template before it is in Community Applications. |
 | `/first-unraid-install` | You are doing the first install of this container on Unraid and want to be walked through `docs/INSTALL-UNRAID.md` with live checks. |
 | `/implement-feature <what>` | A change that touches code, template, or docs and should end with checks and updated docs. |
 | `/review-and-verify` | You want an independent review of uncommitted changes before committing. |
 | `/handoff` | You are about to close a chat or hand the work to someone else. |
 
-Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `/plan` to switch to Plan mode, `/create-rule`, `/create-subagent`, `/create-skill`, `/review` for a diff review, `/summarize` (CLI) to compact context. Cursor's docs now treat skills (`.cursor/skills/<name>/SKILL.md`) as the successor to commands and offer `/migrate-to-skills`; the five commands above are small enough that migrating them is optional.
+Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `/plan` to switch to Plan mode, `/create-rule`, `/create-subagent`, `/create-skill`, `/review` for a diff review, `/summarize` (CLI) to compact context. Cursor's docs now treat skills (`.cursor/skills/<name>/SKILL.md`) as the successor to commands and offer `/migrate-to-skills`; the commands above are small enough that migrating them is optional.
 
 ## What is generic and what is WARNO-specific
 
-Generic, ready to copy into another game-server template repository: `rules/agent-workflow.mdc`, `rules/unraid-template.mdc`, `agents/unraid-template-reviewer.md` (replace its project-specifics paragraph), `agents/verifier.md`, `agents/docs-consistency.md`, all five commands (rename `first-unraid-install` targets), `docs/UNRAID-TEMPLATE-GUIDE.md`, and this file's structure.
+Generic, ready to copy into another game-server template repository: `rules/agent-workflow.mdc`, `rules/unraid-template.mdc`, `agents/unraid-template-reviewer.md` (replace its project-specifics paragraph), `agents/verifier.md`, `agents/docs-consistency.md`, the commands in `.cursor/commands/` (rename `first-unraid-install` targets), `docs/UNRAID-TEMPLATE-GUIDE.md`, `scripts/print_template_fetch.sh`, and this file's structure.
 
 WARNO-specific: `rules/warno-project.mdc`, `agents/warno-researcher.md`, `README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, the template, the wrapper, samples, and tests.

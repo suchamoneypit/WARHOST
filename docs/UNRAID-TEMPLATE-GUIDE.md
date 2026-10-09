@@ -7,6 +7,7 @@ Sources checked on 2026-10-09:
 - Unraid docs, [Managing & customizing containers](https://docs.unraid.net/unraid-os/manual/docker-management/)
 - Unraid forum, [Docker template XML schema](https://forums.unraid.net/topic/38619-docker-template-xml-schema/) (maintained by the Community Applications author)
 - Unraid forum, [Template Repositories removed in 6.10](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/)
+- Unraid webgui, [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php) (the Template dropdown label is the filename with `my-` removed) and [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath` (Unraid saves `my-<Name>.xml` and keeps that case). Read from `master` on 2026-10-09.
 
 ## Repository shape
 
@@ -19,6 +20,7 @@ Sources checked on 2026-10-09:
 | `samples/` | Placeholder copies of generated files. Never real credentials. |
 | `tests/` | Wrapper tests that run against a fake upstream entrypoint, never the real game server. |
 | `scripts/check_repo.sh` | Local invariants: XML well-formed, required tags, masked secrets, placeholder scan, shell syntax. |
+| `scripts/print_template_fetch.sh` | Prints the Unraid terminal command that downloads the template from `<TemplateURL>` before Community Applications lists it. |
 | `.github/workflows/` | Run the checks on push and PR. Optionally rebuild the wrapper image when upstream changes. |
 
 ## Template XML
@@ -61,10 +63,12 @@ Whatever the mode, the README must state the exact ports and protocols to forwar
 
 Unraid 6.10 removed the **Template Repositories** URL field from the Docker tab. There is no "paste a template URL" step in Unraid 7.x. Two supported routes remain:
 
-1. **User templates.** From the Unraid terminal (or via the flash share), save the XML to `/boot/config/plugins/dockerMan/templates-user/<app>.xml`. Then **Docker → Add Container**, open the **Template** dropdown, and pick the file under **User templates**. Every field prefills from the XML.
+1. **User templates.** From the Unraid terminal (or via the flash share), save the XML to `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the `<Name>` text as written, including capitals. Then **Docker → Add Container**, open the **Template** dropdown, and pick it under **User templates**. The dropdown label is that filename with `my-` removed, not the `<Name>` element. Every field prefills from the XML. Saving under the repository filename instead, for example `app.xml`, shows that filename in the dropdown.
 2. **Private CA repository.** Save the XML to `/boot/config/plugins/community.applications/private/<anyFolderName>/<app>.xml`. It then appears in the **Apps** tab under **Private** (or its own category) and installs like any CA app.
 
 Route 1 is the simplest for a one-off test. Route 2 behaves like the eventual CA listing. Both read the file from the flash drive, so the XML must be downloaded first; the raw GitHub URL is for that download, not for Unraid to fetch.
+
+`scripts/print_template_fetch.sh` reads `<TemplateURL>` and `<Name>` from the single file in `templates/` (or from a path argument) and prints that download. With no arguments the destination is `templates-user/my-<Name>.xml`. `--private` uses `community.applications/private/<owner>/` and the repository filename, taking `<owner>` from a `raw.githubusercontent.com` URL. stdout is only the command, so it can be pasted into the Unraid web terminal. `/unraid-template-installscript` runs this script and shows that stdout; it does not keep a second copy of the URL. The install docs must contain that output, and `scripts/check_repo.sh` must fail when they disagree.
 
 ## Multiple instances
 
@@ -110,4 +114,4 @@ When copying this layout for another game server:
 3. Decide bridge vs host and update the Overview, README, and port descriptions together.
 4. Rewrite the wrapper entrypoint and `tests/` for the new settings files, and update the expected-file assertions.
 5. Update `scripts/check_repo.sh` for the new secret variable names and settings path.
-6. Replace the game-specific docs (`README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`) and the game-specific Cursor rule and researcher agent. The generic rule, docs-consistency agent, reviewer, verifier, commands, and this guide carry over.
+6. Replace the game-specific docs (`README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`) and the game-specific Cursor rule and researcher agent. The generic rule, docs-consistency agent, reviewer, verifier, commands, this guide, and `scripts/print_template_fetch.sh` carry over.
