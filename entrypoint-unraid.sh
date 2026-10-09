@@ -45,6 +45,29 @@ require_number_between() {
   fi
 }
 
+# warno-server does not log a rejected join. The client compares the number
+# after the slash with Version in the mod's Config.ini.
+note_workshop_mod_list() {
+  list=$1
+  if [ -z "$list" ]; then
+    return 0
+  fi
+  printf '%s\n' "Clients compare each Workshop id/version with Version in that mod's Config.ini. The client message \"At least one mod version doesnt match\" does not appear in this log."
+  rest=$list
+  while [ -n "$rest" ]; do
+    pair=${rest%%-*}
+    case $pair in
+      3811913066/0)
+        printf '%s\n' "warning: Workshop Mod List contains 3811913066/0. That value fails for the Red Dragon pack. Config.ini Version was 15 on 2026-10-09. Set Workshop Mod List to 3811913066/15, or to the Version line in Config.ini if the author has incremented it, then Apply. warno-server still starts and logs nothing about the rejected join."
+        ;;
+    esac
+    case $rest in
+      *-*) rest=${rest#*-} ;;
+      *) break ;;
+    esac
+  done
+}
+
 case "$UPSTREAM_ENTRYPOINT" in
   /*) ;;
   *) die "UPSTREAM_ENTRYPOINT must be an absolute path." ;;
@@ -112,7 +135,7 @@ if [ "$write_config" = "true" ]; then
     COMBAT_RULE=2
   fi
   if [ -z "${MOD_LIST+x}" ]; then
-    MOD_LIST="3811913066/0"
+    MOD_LIST="3811913066/15"
   fi
   if [ -z "${MOD_TAG_LIST+x}" ]; then
     MOD_TAG_LIST="Maps-Scenarios"
@@ -133,7 +156,7 @@ if [ "$write_config" = "true" ]; then
   esac
 
   if [ -n "$MOD_LIST" ] && ! printf '%s\n' "$MOD_LIST" | grep -Eq '^[0-9]+/[0-9]+(-[0-9]+/[0-9]+)*$'; then
-    die "Workshop mod list must look like 3811913066/0. Join extra mods with a hyphen, such as 3811913066/0-123456/0."
+    die "Workshop mod list must look like 3811913066/15. Join extra mods with a hyphen, such as 3811913066/15-123456/0."
   fi
   if [ -n "$MOD_TAG_LIST" ] && ! printf '%s\n' "$MOD_TAG_LIST" | grep -Eq '^[A-Za-z]+(-[A-Za-z]+)*$'; then
     die "Workshop mod tags must look like Maps-Scenarios."
@@ -205,7 +228,12 @@ if [ "$write_config" = "true" ]; then
   trap - EXIT
   umask 022
 
-  printf 'Wrote WARNO settings for %s on port %s.\n' "$SERVER_NAME" "$EXPOSEDPORT"
+  if [ -n "$MOD_LIST" ]; then
+    printf 'Wrote WARNO settings for %s on port %s. Map %s. ModList %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$MOD_LIST"
+  else
+    printf 'Wrote WARNO settings for %s on port %s. Map %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP"
+  fi
+  note_workshop_mod_list "$MOD_LIST"
 else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then
     die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."

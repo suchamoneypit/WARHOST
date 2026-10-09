@@ -54,7 +54,7 @@ This template was built with AI coding assistants. Humans reviewed what shipped 
 
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Dedicated key from Eugen's reply. It is written to login.ini on this server only. One login and key pair can run five servers." Type="Variable" Display="always" Required="true" Mask="true"></Config>
 
-  <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Address Eugen's lobby tells players to connect to. Use your router's public WAN address for internet play, and forward the game port to Unraid. Domain names won't work." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Address Eugen's lobby tells players to connect to. Use your router's public WAN address for internet play, and forward the game port to Unraid. Domain names won't work. If you do not know the address, open https://www.whatismyip.com/ from a device on that network." Type="Variable" Display="always" Required="true" Mask="false"></Config>
 
   <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="Port the server listens on. Host networking: the port must be free on the Unraid server itself. Forward this same port as both TCP and UDP to the Unraid server. Each server container needs its own port." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
 
@@ -70,7 +70,7 @@ This template was built with AI coding assistants. Humans reviewed what shipped 
 
   <Config Name="Combat Rule" Target="COMBAT_RULE" Default="2" Mode="" Description="1 is Destruction. 2 is Conquest. Jungle Law is Conquest, so leave this at 2." Type="Variable" Display="advanced" Required="true" Mask="false">2</Config>
 
-  <Config Name="Workshop Mod List" Target="MOD_LIST" Default="3811913066/0" Mode="" Description="Workshop mods joining players must have, written as id/version. The Red Dragon map pack is 3811913066/0. Separate extra mods with a hyphen. Clear this field to require no workshop mods." Type="Variable" Display="advanced" Required="false" Mask="false">3811913066/0</Config>
+  <Config Name="Workshop Mod List" Target="MOD_LIST" Default="3811913066/15" Mode="" Description="Workshop mods joining players must have, written as id/version. The Red Dragon map pack is 3811913066/15, matching Version in that mod's Config.ini on 2026-10-09. If the author increments Version, change this to match. Separate extra mods with a hyphen. Clear this field to require no workshop mods." Type="Variable" Display="advanced" Required="false" Mask="false">3811913066/15</Config>
 
   <Config Name="Workshop Mod Tags" Target="MOD_TAG_LIST" Default="Maps-Scenarios" Mode="" Description="Browser icons for the required mods. Maps-Scenarios matches the Red Dragon map pack. Valid tags are Gameplay, Interface, Maps, Scenarios, Music, and Sound." Type="Variable" Display="advanced" Required="false" Mask="false">Maps-Scenarios</Config>
 

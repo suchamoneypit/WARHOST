@@ -100,6 +100,10 @@ cmp -s "${settings}/variables.ini" "${WORKDIR}/expected-variables.ini" || fail "
 cmp -s "${settings}/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.example" || fail "params_for_ai.json drifted from the sample"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint did not run from the settings directory"
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
+grep -q 'ModList 3811913066/15' "${WORKDIR}/stdout.txt" || fail "default log did not name the mod list"
+if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
+  fail "default log warned about the old mod version"
+fi
 mode=$(stat -c '%a' "${settings}/login.ini")
 [ "$mode" = "600" ] || fail "login.ini mode was ${mode}"
 
@@ -206,6 +210,36 @@ fi
 if grep -q '^ModTagList =' "${server}/settings/variables.ini"; then
   fail "empty mod tags were still written"
 fi
+if grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt"; then
+  fail "empty mod list still printed the version hint"
+fi
+
+make_server
+expect_ok "warns when the Red Dragon mod list is version 0" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2 \
+  MOD_LIST=3811913066/0
+grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt" || fail "version 0 did not warn"
+grep -qx 'ModList = 3811913066/0' "${server}/settings/variables.ini" || fail "version 0 was not written through"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "version 0 warning stopped the server"
+
+make_server
+expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2 \
+  MOD_LIST=123456/0
+if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
+  fail "another mod's version 0 raised the Red Dragon warning"
+fi
+grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt" || fail "a set mod list omitted the version hint"
 
 make_server
 mkdir -p "${server}/settings"

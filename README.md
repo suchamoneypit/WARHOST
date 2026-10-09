@@ -39,12 +39,12 @@ Fill in:
 | --- | --- |
 | Eugen Login | The login Eugen sent back with your dedicated key. This is unique and must be obtained from Eugen.|
 | Eugen Dedicated Key | The key from the same reply from Eugen |
-| Public WAN IP | The address Eugen's lobby should advertise to players |
+| Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
 | Game Port | `10400`, or another free port. Forward it TCP and UDP. |
 | Server Name | The name in the server browser |
 | Map | A scenario ID. The preset is `RDPort_JungleLaw_2v2_CONQ` |
 
-Advanced fields (under **Show more settings**) are already set for a 2v2 Conquest match on the Red Dragon map pack: 4 players, 2 per team, combat rule `2`, mod `3811913066/0`.
+Advanced fields (under **Show more settings**) are already set for a 2v2 Conquest match on the Red Dragon map pack: 4 players, 2 per team, combat rule `2`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match.
 
 ### Map
 
