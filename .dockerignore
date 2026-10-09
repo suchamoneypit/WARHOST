@@ -1,0 +1,11 @@
+.git
+.github
+tests
+samples
+templates
+README.md
+LICENSE
+ca_profile.xml
+icon.png
+icon.svg
+*.md

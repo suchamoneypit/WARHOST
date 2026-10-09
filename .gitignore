@@ -1,0 +1,7 @@
+# A real login.ini contains an Eugen dedicated key. Never commit one.
+login.ini
+/settings/
+appdata/
+
+.DS_Store
+*.swp
