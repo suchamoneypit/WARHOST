@@ -37,18 +37,56 @@ The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is publis
 
 Fill in:
 
-| Field | What to enter |
-| --- | --- |
-| Eugen Login | The login from Eugen's reply, exactly as written, not your Steam name. This login and the key are a matching pair good for five containers. |
-| Eugen Dedicated Key | The key from the same reply. Shown in clear text on this form so servers can be told apart. |
-| Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
-| Settings Folder | `/mnt/user/appdata/warno/settings` for the first server. Each added server needs its own folder, for example `/mnt/user/appdata/warno/10401/settings`. The folder holds the ini files only. |
-| Game Port | `10400` for the first server. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Players join by Server Name. |
-| Server Name | `WARHOST - Red Dragon 4v4` on the first server. Give each container a different name. No `=` sign. |
-| Max Players | `4` for this 2v2 preset. Usual sizes are under Map. The lobby is not locked to the size in the scenario ID. |
-| Minimum Players | `2`, and not above Max Players |
-| Team Size | `2` for this 2v2 preset. Slots on one side, usually half of Max Players. |
-| Combat Rule | `2` for Conquest, `1` for Destruction |
+<table>
+<thead>
+<tr>
+<th align="left" nowrap>Field</th>
+<th align="left">What to enter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td nowrap>Eugen Login</td>
+<td>The login from Eugen's reply, exactly as written, not your Steam name. This login and the key are a matching pair good for five containers.</td>
+</tr>
+<tr>
+<td nowrap>Eugen Dedicated Key</td>
+<td>The key from the same reply. Shown in clear text on this form so servers can be told apart.</td>
+</tr>
+<tr>
+<td nowrap>Public WAN IP</td>
+<td>The address Eugen's lobby should advertise to players. Look it up at <a href="https://www.whatismyip.com/">https://www.whatismyip.com/</a> from a device on that network if you do not know it.</td>
+</tr>
+<tr>
+<td nowrap>Settings Folder</td>
+<td><code>/mnt/user/appdata/warno/settings</code> for the first server. Each added server needs its own folder, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only.</td>
+</tr>
+<tr>
+<td nowrap>Game Port</td>
+<td><code>10400</code> for the first server. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Players join by Server Name.</td>
+</tr>
+<tr>
+<td nowrap>Server Name</td>
+<td><code>WARHOST - Red Dragon 4v4</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
+</tr>
+<tr>
+<td nowrap>Max Players</td>
+<td><code>4</code> for this 2v2 preset. Usual sizes are under Map. The lobby is not locked to the size in the scenario ID.</td>
+</tr>
+<tr>
+<td nowrap>Minimum Players</td>
+<td><code>2</code>, and not above Max Players</td>
+</tr>
+<tr>
+<td nowrap>Team Size</td>
+<td><code>2</code> for this 2v2 preset. Slots on one side, usually half of Max Players.</td>
+</tr>
+<tr>
+<td nowrap>Combat Rule</td>
+<td><code>2</code> for Conquest, <code>1</code> for Destruction</td>
+</tr>
+</tbody>
+</table>
 
 **Show more settings** holds Write Config From Form, Workshop Mod Tags, Workshop Mod List, and Map. Workshop Mod Tags are browser icons only and do not download mods. The preset is Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match. Scenario IDs and named mods are in the tables below.
 
