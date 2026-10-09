@@ -27,7 +27,7 @@ Sources checked on 2026-10-09:
 
 - Use `<Container version="2">`. Express every path, variable, and port as a one-line `<Config>` element. Unraid 6.10+ no longer writes the legacy `<Networking>`, `<Data>`, and `<Environment>` blocks; leave them out.
 - `<Config>` attributes: `Name` (label), `Target` (container path, variable name, or container port), `Default`, `Mode` (`rw`/`ro` for paths, `tcp`/`udp` for ports), `Description`, `Type` (`Path`, `Variable`, `Port`, `Device`, `Label`), `Display` (`always` or `advanced`), `Required`, `Mask`. Put the default in both `Default="..."` and the element text.
-- Set `Mask="true"` on every secret. Give secrets an empty default so a fresh install never ships a placeholder into a live server. The Eugen dedicated key is the exception: `Mask="false"`, because Unraid's password input hides every character and this form is how an operator tells servers apart. The startup log still names only the last four characters.
+- Set `Mask="true"` on every secret. Give secrets an empty default so a fresh install never ships a placeholder into a live server. On this form, Eugen Login and Eugen Dedicated Key stay `Mask="false"`. The Docker edit page is an admin screen, and the key must stay readable so servers can be told apart. The startup log still names only the last four characters of the key.
 - `Display="advanced"` hides fields behind Unraid's **Show more settings** toggle. Put the fields a first-time user must fill under `always` and tuning values under `advanced`.
 - `<Overview>` is what the Apps tab and the Add Container page show. Community Applications ignores `<Description>` when `<Overview>` exists, so if both are present keep them in agreement.
 - `<Requires>` is a free-text line for things the user must obtain outside Unraid (accounts, keys, client-side mods).
@@ -110,8 +110,8 @@ Submit at [https://ca.unraid.net/submit](https://ca.unraid.net/submit) after at 
 When copying this layout for another game server:
 
 1. Rename the template file, container `<Name>`, `<Repository>`, `<Registry>`, `<TemplateURL>`, `<Icon>`, `<Support>`, `<Project>`, and the paths in `ca_profile.xml`.
-2. Replace every form field with the new game's variables; keep secrets masked and empty by default, except a key the operator must read on the form, as with the Eugen dedicated key.
+2. Replace every form field with the new game's variables; keep secrets masked and empty by default, except a value the operator must read on an admin-only edit page, as with the Eugen login and dedicated key.
 3. Decide bridge vs host and update the Overview, README, and port descriptions together.
 4. Rewrite the wrapper entrypoint and `tests/` for the new settings files, and update the expected-file assertions.
 5. Update `scripts/check_repo.sh` for the new secret variable names and settings path.
-6. Replace the game-specific docs (`README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`) and the game-specific Cursor rule and researcher agent. The generic rule, docs-consistency agent, reviewer, verifier, commands, this guide, and `scripts/print_template_fetch.sh` carry over.
+6. Replace the game-specific docs (`README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`) and the game-specific Cursor rule, researcher agent, and credential reviewer. The generic rule, docs-consistency agent, template reviewer, verifier, the other commands, this guide, and `scripts/print_template_fetch.sh` carry over.

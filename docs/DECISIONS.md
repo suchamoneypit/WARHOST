@@ -133,3 +133,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** `EUGEN_DEDICATED_KEY` uses `Mask="false"`. There is no Key last 4 field. This supersedes "Show the last 4 characters of the dedicated key." The key still never enters git. The startup line still names only the last 4 characters.
 
 **Rationale:** Unraid's `Mask="true"` hides every character of a password input. [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read on 2026-10-09, has no control that reveals four characters inside that box. The edit page is how an operator tells servers apart. A companion field had to be typed by hand and could stop a start when it did not match.
+
+## 2026-10-09 — Keep the Eugen login in clear text on the form
+
+**Decision:** `EUGEN_LOGIN` uses `Mask="false"`, the same as `EUGEN_DEDICATED_KEY`. Clear text on those two Unraid form fields is accepted. The Docker edit page is an admin screen. The login and the key still never enter git, samples, issues, or chat. The startup line still names only the last 4 characters of the key. `.cursor/agents/credential-reviewer.md` and `.cursor/commands/credential-review.md` are WARNO-specific. The main agent launches that reviewer only for `/credential-review`, or when a change writes, logs, templates, or documents the Eugen login, dedicated key, or `login.ini`. It is not part of `/review-and-verify`.
+
+**Rationale:** The edit page is where an admin enters the pair from Eugen's reply. Masking the login would hide it on the same screen that already shows the key. An always-on review would rerun that audit on unrelated edits. The checklist lives in the agent so a later review does not recommend masking the form. This adds those two files to the WARNO-specific set from "Generic and WARNO-specific guidance kept apart."
