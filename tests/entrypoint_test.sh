@@ -373,6 +373,39 @@ expect_ok "ignores the game port when it appears only as a remote socket" \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
 
+make_server
+time_wait="${WORKDIR}/time-wait-port"
+mkdir -p "$time_wait"
+printf '%s\n' \
+  '  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode' \
+  '   0: 00000000:28A0 00000000:0050 06 00000000:00000000 00:00000000 00000000     0        0 1 1 0000000000000000 100 0 0 10 0' \
+  > "${time_wait}/tcp"
+expect_ok "ignores a game port left in TCP TIME_WAIT" \
+  WARHOST_PORT_TABLE="$time_wait" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+
+make_server
+listening="${WORKDIR}/listen-port"
+mkdir -p "$listening"
+printf '%s\n' \
+  '  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode' \
+  '   0: 00000000:28A0 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1 1 0000000000000000 100 0 0 10 0' \
+  > "${listening}/tcp"
+expect_fail "refuses a game port that is already listening on TCP" \
+  WARHOST_PORT_TABLE="$listening" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+grep -q 'Game port 10400 is already in use.' "${WORKDIR}/stderr.txt" || fail "listening port error did not name the port"
+
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"
 fi

@@ -68,37 +68,61 @@ note_workshop_mod_list() {
   done
 }
 
-# Second whitespace-separated field. Does not touch the script's arguments.
-field_two() {
+# Prints "local-address state" for one /proc/net row.
+socket_addr_state() {
   rest=$1
-  rest=${rest#"${rest%%[![:space:]]*}"}
-  first=${rest%%[[:space:]]*}
-  rest=${rest#"$first"}
-  rest=${rest#"${rest%%[![:space:]]*}"}
-  printf '%s' "${rest%%[[:space:]]*}"
+  i=0
+  addr=
+  state=
+  while [ "$i" -lt 4 ]; do
+    rest=${rest#"${rest%%[![:space:]]*}"}
+    if [ -z "$rest" ]; then
+      return 0
+    fi
+    word=${rest%%[[:space:]]*}
+    rest=${rest#"$word"}
+    i=$((i + 1))
+    if [ "$i" -eq 2 ]; then
+      addr=$word
+    elif [ "$i" -eq 4 ]; then
+      state=$word
+    fi
+  done
+  printf '%s %s' "$addr" "$state"
 }
 
 # WARHOST_PORT_TABLE is a test seam, not a form field. Host networking
 # shows the host sockets at /proc/net. The first line of each file is a header.
+# listen_only=1 matches TCP state 0A (LISTEN). UDP has no listen state.
 port_file_has_local() {
   file=$1
   hex=$2
+  listen_only=$3
   first=1
   while IFS= read -r line || [ -n "$line" ]; do
     if [ "$first" -eq 1 ]; then
       first=0
       continue
     fi
-    addr=$(field_two "$line")
+    pair=$(socket_addr_state "$line")
+    addr=${pair%% *}
+    state=${pair#* }
     case $addr in
-      *:*)
-        suffix=${addr##*:}
-        suffix=$(printf '%s' "$suffix" | tr '[:lower:]' '[:upper:]')
-        if [ "$suffix" = "$hex" ]; then
-          return 0
-        fi
-        ;;
+      *:*) ;;
+      *) continue ;;
     esac
+    suffix=${addr##*:}
+    suffix=$(printf '%s' "$suffix" | tr '[:lower:]' '[:upper:]')
+    if [ "$suffix" != "$hex" ]; then
+      continue
+    fi
+    if [ "$listen_only" -eq 1 ]; then
+      state=$(printf '%s' "$state" | tr '[:lower:]' '[:upper:]')
+      if [ "$state" != "0A" ]; then
+        continue
+      fi
+    fi
+    return 0
   done < "$file"
   return 1
 }
@@ -106,12 +130,16 @@ port_file_has_local() {
 local_port_taken() {
   table=${WARHOST_PORT_TABLE:-/proc/net}
   hex=$(printf '%04X' "$1")
-  for name in tcp tcp6 udp udp6; do
+  name=
+  for name in tcp tcp6; do
     file="${table}/${name}"
-    if [ ! -f "$file" ]; then
-      continue
+    if [ -f "$file" ] && port_file_has_local "$file" "$hex" 1; then
+      return 0
     fi
-    if port_file_has_local "$file" "$hex"; then
+  done
+  for name in udp udp6; do
+    file="${table}/${name}"
+    if [ -f "$file" ] && port_file_has_local "$file" "$hex" 0; then
       return 0
     fi
   done

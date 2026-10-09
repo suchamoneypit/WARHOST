@@ -214,7 +214,7 @@ For the next container:
 
 Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
-Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. Do not copy WARNO or a Workshop folder into it. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
+Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. If the image has no `flock` command, the start warns and continues. Do not copy WARNO or a Workshop folder into it. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 
 On start, the log names the next port. If the settings folder is already in use, or the game port is already taken, the container stops and the last log line says what to change.
 
@@ -228,7 +228,7 @@ On start, the log names the next port. If the settings folder is already in use,
 | Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Replace Map with a scenario ID...` | A map name or placeholder was entered | Step 4. |
 | Log ends with `Workshop mod list must look like 3811913066/15...` | Mod list format | Use `id/version`, hyphen between mods, or clear it. |
 | Log ends with `Official WARNO entrypoint was not found at /server/entrypoint2.sh.` | Eugen changed their image layout | Open a GitHub issue; the wrapper needs an update. |
-| Log ends with `Game port 10400 is already in use` (the number will be the port you set) | That port is already a local socket on the Unraid host | Set Game Port to that number plus 1, forward the new port as TCP and UDP, and give this container its own settings folder and Server Name. Players join by Server Name. |
+| Log ends with `Game port 10400 is already in use` (the number will be the port you set) | That port is already listening on TCP, or bound on UDP, on the Unraid host. A port left in TIME_WAIT after a stop does not do this | Set Game Port to that number plus 1, forward the new port as TCP and UDP, and give this container its own settings folder and Server Name. Players join by Server Name. |
 | Container runs but the server never appears in anyone's browser | Outbound traffic to Eugen blocked; wrong login or key; wrong WAN IP | Check the lines after the wrapper's `Wrote WARNO settings` line for errors. Allow outbound to `178.32.126.73:10002`. Re-enter login and key from Eugen's reply. |
 | LAN players join, internet players cannot | Router forward missing or only one protocol; WAN IP wrong or changed; carrier-grade NAT | Step 3. Forward TCP and UDP. Re-check the WAN IP. |
 | Players are told a mod is missing or incompatible, and the log contains `warning: Workshop Mod List contains 3811913066/0` | The field is still the old preset. The server registers and `warno-server` logs nothing about the rejected join | Set **Workshop Mod List** to `3811913066/15`, or to the `Version` line in the mod's `Config.ini` if the author has incremented it, and Apply. |
