@@ -8,9 +8,7 @@ The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](
 
 Email `eugsupport@eugensystems.com` and ask for a dedicated-server login and key. Use the email on your EugNet account. Eugen answers manually, and one login/key pair can run five servers.
 
-Joining players do not use that key. They need WARNO, and for this preset they subscribe to workshop item `3811913066` and enable it in WARNO's mod center.
-
-On your router, forward the game port as both TCP and UDP to the Unraid server. The container uses host networking, so Unraid does not show a Docker port mapping. The server also needs outbound internet access so it can reach Eugen.
+Port forward the game port TCP/UDP to your Unraid server. The container uses host networking, so Unraid does not show a Docker port mapping. The server also needs outbound internet access so it can reach Eugen (not for LAN usage).
 
 ## Install
 
