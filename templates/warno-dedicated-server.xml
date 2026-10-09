@@ -50,7 +50,7 @@ This template was built with AI coding assistants. Humans reviewed what shipped 
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/settings" Mode="rw" Description="Generated settings for this server, including login.ini. Use a different folder for each server, such as /mnt/user/appdata/warno2/settings. Do not commit this folder to a public repository." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/settings</Config>
 
-  <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Your Eugen username. The same username/email you gave Eugen to get your server key." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="The login Eugen sent back with your dedicated key, entered exactly as written. This is unique and must be obtained from Eugen. Type="Variable" Display="always" Required="true" Mask="false"></Config>
 
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Dedicated key from Eugen's reply. It is written to login.ini on this server only. One login and key pair can run five servers." Type="Variable" Display="always" Required="true" Mask="true"></Config>
 
