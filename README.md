@@ -40,42 +40,49 @@ Fill in:
 | Eugen Login | The login Eugen sent back with your dedicated key. This is unique and must be obtained from Eugen.|
 | Eugen Dedicated Key | The key from the same reply from Eugen |
 | Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
-| Game Port | `10400`, or another free port. Forward it TCP and UDP. |
+| Game Port | `10400`, or another free port. You can change it later by editing the container. Forward the same number as TCP and UDP. |
 | Server Name | The name in the server browser |
-| Map | A scenario ID. The preset is `RDPort_JungleLaw_2v2_CONQ` |
+| Max Players | `4` for this 2v2 preset. Use 2, 4, 6, 8, or 20 for 1v1, 2v2, 3v3, 4v4, or 10v10. |
+| Minimum Players | `2`, and not above Max Players |
+| Team Size | `2` for this 2v2 preset. One team: 1, 2, 3, 4, or 10 for 1v1 through 4v4 and 10v10. |
+| Combat Rule | `2` for Conquest, `1` for Destruction |
 
-Advanced fields (under **Show more settings**) are already set for a 2v2 Conquest match on the Red Dragon map pack: 4 players, 2 per team, combat rule `2`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match.
+**Show more settings** holds Write Config From Form, Workshop Mod Tags, Workshop Mod List, and Map. Workshop Mod Tags are browser icons only and do not download mods. Map and Workshop Mod List are at the bottom because their descriptions are long. The preset is already Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match. Open **Show more settings** to pick a different map or mod. The Map description lists the scenario IDs. The Workshop Mod List description has two sections: mods and conversions, then maps.
 
 ### Map
 
-**Map** is a scenario ID. Base-game IDs are the ones in Eugen's map table, such as `_2x2_Hesse_2vs2_CONQ`. Those maps are part of the dedicated server's own game data. For a base-game map, clear **Workshop Mod List**.
+**Map** is a scenario ID. Base-game IDs are the ones in Eugen's map table, such as `_2x2_Hesse_2vs2_CONQ`. Those maps are part of the dedicated server's own game data. For a base-game map, clear **Workshop Mod List**. The Map field under **Show more settings** lists Eugen's table, read on 2026-10-09, from 1v1 to 10v10. That list is not copied here.
 
 A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
 
-The Red Dragon map pack scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-09. The procedure is in the install guide, step 4.
+The Red Dragon map pack scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-09 and is repeated in the Map field, after the base-game IDs. The procedure is in the install guide, step 4.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
-| 38th Parallel | `RDPort_38thParallel_4v4_CONQ` | 4v4 |
-| 38th Perpendicular | `RDPort_38thPerpendicular_3v3_CONQ` | 3v3 |
+| Mud Fight | `RDPort_MudFight_1v1_CONQ` | 1v1 |
+| Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
 | Another D-Day | `RDPort_AnotherDDay_2v2_CONQ` | 2v2 |
 | Apocalypse Imminent | `RDPort_ApocalypseImminent_2v2_CONQ` | 2v2 |
-| Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
-| Back to Inchon | `RDPort_BackToInchon_3v3_CONQ` | 3v3 |
 | Chosin Reservoir | `RDPort_ChosinReservoir_2v2_CONQ` | 2v2 |
-| Floods | `RDPort_Floods_4v4_CONQ` | 4v4 |
 | Gunboat Diplomacy | `RDPort_GunboatDiplomacy_2v2_CONQ` | 2v2 |
 | Hop and Glory | `RDPort_HopAndGlory_2v2_CONQ` | 2v2 |
 | Jungle Law | `RDPort_JungleLaw_2v2_CONQ` | 2v2 |
-| Mud Fight | `RDPort_MudFight_1v1_CONQ` | 1v1 |
 | Operation Chromite | `RDPort_OperationChromite_2v2_CONQ` | 2v2 |
 | Paddy Field | `RDPort_PaddyField_2v2_CONQ` | 2v2 |
-| Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
-| Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
-| Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
 | Wonsan Harbour (file name `WonsanNative`) | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
+| 38th Perpendicular | `RDPort_38thPerpendicular_3v3_CONQ` | 3v3 |
+| Back to Inchon | `RDPort_BackToInchon_3v3_CONQ` | 3v3 |
+| Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
+| 38th Parallel | `RDPort_38thParallel_4v4_CONQ` | 4v4 |
+| Floods | `RDPort_Floods_4v4_CONQ` | 4v4 |
+| Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
+| Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
 
-All of these are Conquest, so leave **Combat Rule** at `2`. Change **Max Players** and **Team Size** to match the map size. A 4v4 map needs 8 max players and a team size of 4. Asgard needs 20 and 10.
+Every map in that table is Conquest, so leave **Combat Rule** at `2` for them. Change **Max Players** and **Team Size** to match the size column. A 1v1 map needs 2 and 1. A 2v2 needs 4 and 2. A 3v3 needs 6 and 3. A 4v4 needs 8 and 4. Asgard needs 20 and 10.
+
+**Workshop Mod List** also names two conversions, [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) (`3595948209`) and [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) (`3388575848`). Their pages, read on 2026-10-09, call them a total conversion and a modern-day overhaul. They are not maps, so **Map** stays a scenario ID. Neither page publishes a `Config.ini` `Version`. Galactic Divide's page tags are Gameplay, Interface, Sound, Scenarios, and Maps. A World in Flames's page tags are Gameplay and Interface. The Workshop Mod List description gives the tag words: Galactic Divide is `Gameplay-Interface-Sound-Scenarios-Maps`, and A World in Flames is `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` when a map pack is also required.
+
+The maps section also names five more packs: [WEST FULDA 1.0](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349), [Highway to Oslo](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989), [Ramstein Air Base](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772), [Arsenal](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374), and [Helbe](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679). Those pages do not publish scenario IDs or a `Config.ini` `Version`. The Map field says so and does not invent IDs. After you subscribe, use the filename before `_Definition.dat` as **Map**, and `workshopId/Version` from `Config.ini` as **Workshop Mod List**. WEST FULDA 1.0, Highway to Oslo, Ramstein Air Base, and Arsenal list both Conquest and Destruction. Use Combat Rule `2` when the scenario ID contains `CONQ`, and `1` when it contains `DEST`. Helbe's page lists Conquest only, so leave Combat Rule at `2` for Helbe.
 
 Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `ModList` makes a joining player who is missing the mod get prompted to download and enable it. This container does not download workshop files itself. It writes `Map` and `ModList`, then starts Eugen's entrypoint. That entrypoint only launches `warno-server`. Whether the server binary then downloads workshop item `3811913066` has not been confirmed on a running server.
 

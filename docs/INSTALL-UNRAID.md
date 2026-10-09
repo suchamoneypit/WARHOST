@@ -64,7 +64,7 @@ The server also needs **outbound** internet. Eugen's start script in the image c
 
 **Map** is a scenario ID, not a map name. Eugen's page lists base-game IDs such as `_2x2_Hesse_2vs2_CONQ`; those need no mod, so clear **Workshop Mod List** for them. For a Workshop map pack, the IDs are inside the mod's files, and the Workshop page does not publish them.
 
-The template defaults to Jungle Law from the Red Dragon map pack: Map `RDPort_JungleLaw_2v2_CONQ`, Workshop Mod List `3811913066/15`. The full list of that pack's IDs is in `README.md`.
+The template defaults to Jungle Law from the Red Dragon map pack: Map `RDPort_JungleLaw_2v2_CONQ`, Workshop Mod List `3811913066/15`. The full list of that pack's IDs is in `README.md`, sorted from 1v1 to 10v10. The Map field under **Show more settings** lists those IDs and Eugen's base-game IDs the same way. Workshop Mod List has two sections. Mods and conversions: Galactic Divide (`3595948209`) and A World in Flames (`3388575848`). Their pages, read on 2026-10-09, do not publish a `Config.ini` `Version`, and they are not maps, so **Map** stays a scenario ID. The Workshop Mod List description gives the tag words: Galactic Divide is `Gameplay-Interface-Sound-Scenarios-Maps`, and A World in Flames is `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` when a map pack is also required. Maps: WEST FULDA 1.0 (`3363584349`), Highway to Oslo (`3474588989`), Ramstein Air Base (`3705706772`), Arsenal (`3415339374`), and Helbe (`3762638679`). Those map pages do not publish scenario IDs, so the Map field does not list any. Use the procedure below after you subscribe.
 
 To find scenario IDs yourself, on any PC where Steam has downloaded the mod (subscribe in Steam, let it download):
 
@@ -88,7 +88,7 @@ To find scenario IDs yourself, on any PC where Steam has downloaded the mod (sub
 4. The display name can differ from the ID. The Workshop page lists "Wonsan Harbour"; the file is `RDPort_WonsanNative_2v2_CONQ`.
 5. `Config.ini` in the mod root confirms the item ID (`ID = 3811913066`) and shows the mod's own `Version` number (`15` on 2026-10-09). The comment on that line says to increment it when an update is incompatible with the current version. **Workshop Mod List** must use that number, so the preset is `3811913066/15`. Eugen's page says the version in `ModList` "is usually always 0"; `/0` lets this server register and then the client rejects the join. If the author increments `Version`, change the field to the new number.
 
-Pick a size that fits the ID: the `2v2` in the ID means Max Players 4 and Team Size 2; `4v4` means 8 and 4; `10v10` means 20 and 10. All Red Dragon maps are Conquest, so Combat Rule stays `2`.
+Pick a size that fits the ID: `1v1` means Max Players 2 and Team Size 1; `2v2` means 4 and 2; `3v3` means 6 and 3; `4v4` means 8 and 4; `10v10` means 20 and 10. All Red Dragon maps are Conquest, so Combat Rule stays `2` for them. WEST FULDA 1.0, Highway to Oslo, Ramstein Air Base, and Arsenal list both Conquest and Destruction: use `2` when the scenario ID contains `CONQ`, and `1` when it contains `DEST`. Helbe's page lists Conquest only, so leave Combat Rule at `2` for Helbe.
 
 ## 5. Put the template into Unraid
 
@@ -124,7 +124,7 @@ It then appears in the **Apps** tab under **Private**. The user-template downloa
 
 ## 6. Fill in the form
 
-Click **Show more settings** to see the advanced fields. Leave defaults alone unless the table says otherwise.
+Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. Click **Show more settings** for the map and the workshop mods. Those two long descriptions are at the bottom of that section. Leave defaults alone unless the table says otherwise.
 
 | Field | Default | Enter |
 | --- | --- | --- |
@@ -134,16 +134,16 @@ Click **Show more settings** to see the advanced fields. Leave defaults alone un
 | Eugen Login | empty | The login from Eugen's reply. |
 | Eugen Dedicated Key | empty, masked | The key from Eugen's reply. |
 | Public WAN IP | empty | Your public IP address from step 3. |
-| Game Port | `10400` | Keep unless the port is taken. Must match the router forward. |
+| Game Port | `10400` | Keep unless the port is taken. You can change it later by editing the container; the router forward must use the same number, TCP and UDP. |
 | Server Name | `WARNO Jungle Law 2v2` | What players see in the browser. No `=` sign. |
-| Map | `RDPort_JungleLaw_2v2_CONQ` | A scenario ID from step 4. `Jungle Law` is rejected on purpose. |
-| Max Players (advanced) | `4` | Match the map size. |
-| Minimum Players (advanced) | `2` | Players needed before the countdown. Not above Max Players. |
-| Team Size (advanced) | `2` | Match the map size. |
-| Combat Rule (advanced) | `2` | `2` Conquest, `1` Destruction. |
-| Workshop Mod List (advanced) | `3811913066/15` | Keep for Red Dragon maps unless `Config.ini` `Version` has changed. Clear for a base-game map. |
-| Workshop Mod Tags (advanced) | `Maps-Scenarios` | Informational only. |
-| Write Config From Form (advanced) | `true` | Keep. |
+| Max Players | `4` | Match the map size. A 2v2 map uses 4. A 10v10 map uses 20. |
+| Minimum Players | `2` | Players needed before the countdown. Not above Max Players. |
+| Team Size | `2` | Players on one team. Match the map size. |
+| Combat Rule | `2` | `2` Conquest, `1` Destruction. |
+| Write Config From Form (Show more) | `true` | Keep. |
+| Workshop Mod Tags (Show more) | `Maps-Scenarios` | Browser icons only. It does not download mods. Leave this for the Red Dragon pack. A conversion uses the tag string in step 4. |
+| Workshop Mod List (Show more) | `3811913066/15` | Keep for Red Dragon maps unless `Config.ini` `Version` has changed. Clear for a base-game map with no workshop mod. The description has a mods and conversions section and a maps section. Only the Red Dragon version is filled in. |
+| Map (Show more) | `RDPort_JungleLaw_2v2_CONQ` | A scenario ID from step 4. `Jungle Law` is rejected on purpose. The description lists known IDs from 1v1 to 10v10. |
 
 Click **Apply**. Unraid pulls the image and starts the container. A pull error here means Unraid could not fetch the image; the first troubleshooting row and step 2 cover the usual causes.
 
@@ -220,4 +220,4 @@ These need a real Unraid install with a real key. They are listed so nobody mist
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.
 - Which sockets (TCP, UDP, or both) `warno-server` opens on the game port.
 - Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to.
-- Whether Unraid 7 strips the `<br>` tags in the template's Overview text.
+- Whether the plain-paragraph Overview renders with paragraph breaks on this Unraid server. The template no longer contains `<br>` tags. Unraid's current [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read on 2026-10-09, turns newlines in the basic Overview into line breaks. That has not been checked on a server after this wording change.
