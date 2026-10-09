@@ -30,6 +30,14 @@ Ask for exactly this shape and hold the result to it: findings as short bullets;
 - Reference files by path instead of pasting them. Read `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and `docs/ROADMAP.md` only when the task touches behavior, decisions, or goals.
 - In every summary, separate what was checked locally from what needs a real deployment.
 
+## Branches
+
+Day-to-day commits go on `dev`. When the user asks to commit, commit on `dev` and push `origin/dev`. If the checkout is `main`, switch to `dev` before committing. Asking to commit is not permission to update `main`.
+
+`main` is the published snapshot. Update it only when the user explicitly asks to publish the accumulated work to `main`. That means merge `dev` into `main` and push `origin/main`. Do not force-push, deploy, or publish images unless that same request authorizes it.
+
+A push of wording, docs, or the Unraid template to `main` is what Community Apps reads. A push of `Dockerfile`, `entrypoint-unraid.sh`, or `.github/workflows/rebuild-image.yml` to `main` also publishes `ghcr.io/suchamoneypit/warno-unraid:latest`, which Unraid offers as a container update. Commits on `dev` do neither.
+
 ## Safety
 
 - Never claim a check passed unless it ran in this session. Never present an upstream fact as verified without a source fetched this session or a repo doc that cites one.

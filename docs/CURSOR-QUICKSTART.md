@@ -50,7 +50,8 @@ From `.cursor/rules/agent-workflow.mdc`:
 6. **Check.** `sh scripts/check_repo.sh` (XML well-formedness, repository invariants, shell syntax, wrapper tests against a fake upstream).
 7. **Review and verify.** `/review-and-verify`, or the agent launches `verifier` and, when relevant, `unraid-template-reviewer` in parallel. Fix, re-check.
 8. **Record decisions.** `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, or `docs/ROADMAP.md` when behavior, a verified fact, or a goal changed. The consistency check does not write those.
-9. **Commit and PR.** You decide when to commit. Create a branch, commit, push the branch, and open a pull request on GitHub. The `Check repository` workflow runs `scripts/check_repo.sh` on every PR and on `main`. Merging a change to `Dockerfile`, `entrypoint-unraid.sh`, or the rebuild workflow also triggers **Rebuild WARNO image**, which publishes `ghcr.io/suchamoneypit/warno-unraid:latest`. The agent will not push to `main`, force-push, or merge on its own.
+9. **Commit on `dev`.** You decide when to commit. The agent commits that work on `dev` and pushes `origin/dev`. If the checkout is `main`, it switches to `dev` first. Community Apps and the raw template URL read `main`, so commits on `dev` do not change the Apps listing or the Docker image.
+10. **Publish to `main` only when you ask.** Say explicitly that you want the accumulated work on `main`. The agent then merges `dev` into `main` and pushes `origin/main`. The `Check repository` workflow runs `scripts/check_repo.sh` on every PR and on `main`. A `main` push that changes `Dockerfile`, `entrypoint-unraid.sh`, or the rebuild workflow also triggers **Rebuild WARNO image**, which publishes `ghcr.io/suchamoneypit/warno-unraid:latest`. Wording and template-only pushes update the Apps listing and do not rebuild that image. The agent will not push to `main`, force-push, or merge on its own.
 
 ## Starting a fresh chat without losing knowledge
 

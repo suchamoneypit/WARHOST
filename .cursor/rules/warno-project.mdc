@@ -23,6 +23,10 @@ Server settings and the fixed `variables.ini` values, launch arguments, template
 
 Eugen logins, dedicated keys, real `login.ini`, and real `settings/` folders never enter git, samples, issues, or chat. The only placeholders are `YOUR_EUGEN_LOGIN_HERE` and `YOUR_EUGEN_DEDICATED_KEY_HERE`. A key that reached git history is compromised even after deletion.
 
+## Publishing branch
+
+Community Apps reads `<TemplateURL>` on `main`. The image rebuild workflow also runs from `main`. Day-to-day commits stay on `dev` until the maintainer explicitly asks to publish them to `main`. The procedure is in the agent-workflow rule and `docs/CURSOR-QUICKSTART.md`.
+
 ## Validation
 
 After any change to the template, wrapper, tests, or checks: `sh scripts/check_repo.sh`. Tests never start the real server.
