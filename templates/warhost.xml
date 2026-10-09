@@ -13,6 +13,8 @@
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, variables.ini, and params_for_ai.json from this form.
 
+WARNO was a game made in France, but WARHOST was created in the United States.
+
 Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and the game port must be forwarded to this Unraid server as TCP and UDP.]]>
   </Overview>
   <Category>GameServers:</Category>
@@ -28,11 +30,13 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, variables.ini, and params_for_ai.json from this form.
 
+WARNO was a game made in France, but WARHOST was created in the United States.
+
 Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and the game port must be forwarded to this Unraid server as TCP and UDP.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/settings" Mode="rw" Description="Folder for this server's settings. Use a different folder for each container." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/settings</Config>
-  <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Login from Eugen's reply, exactly as written. Not your Steam name; one login runs five servers." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Key from the same reply. Hidden; the next field shows the last 4 characters so you can tell keys apart." Type="Variable" Display="always" Required="true" Mask="true"></Config>
   <Config Name="Key last 4" Target="EUGEN_KEY_LAST4" Default="" Mode="" Description="Last 4 characters of the key above. Must match, or a start that rewrites settings will stop." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Public address players connect to. Not a hostname, and not this Unraid server's LAN address." Type="Variable" Display="always" Required="true" Mask="false"></Config>

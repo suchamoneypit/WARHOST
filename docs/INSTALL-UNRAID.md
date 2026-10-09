@@ -1,5 +1,7 @@
 # First install on Unraid 7.x
 
+WARNO was a game made in France, but WARHOST was created in the United States.
+
 A step-by-step guide from nothing to a WARHOST container running a WARNO dedicated server that players can join. It is written for someone who has never installed a container outside Community Applications.
 
 What this guide rests on, checked on 2026-10-09:
@@ -123,6 +125,8 @@ curl -fsSL -o /boot/config/plugins/community.applications/private/suchamoneypit/
 It then appears in the **Apps** tab under **Private**. The user-template download was tried with the lowercase filename, and the dropdown showed that name. The private-folder route has not been executed for this repository.
 
 ## 6. Fill in the form
+
+Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
 Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. Click **Show more settings** for the map and the workshop mods. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README, not on the form.
 

@@ -1,5 +1,7 @@
 # WARHOST — WARNO Dedicated Server for Unraid
 
+WARNO was a game made in France, but WARHOST was created in the United States.
+
 A mod-friendly WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
 The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`).
@@ -37,7 +39,7 @@ Fill in:
 
 | Field | What to enter |
 | --- | --- |
-| Eugen Login | The login Eugen sent back with your dedicated key. This is unique and must be obtained from Eugen. |
+| Eugen Login | The login from Eugen's reply, exactly as written, not your Steam name. This login and the key are a matching pair good for five containers. |
 | Eugen Dedicated Key | The key from the same reply. Unraid hides this box. |
 | Key last 4 | The last 4 characters of that key, shown in clear text so you can tell keys apart. A start that rewrites settings stops if they do not match. |
 | Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
@@ -242,6 +244,8 @@ The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same s
 Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start overwrites hand edits. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
 
 ## Keys
+
+Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
 The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. **Key last 4** is the last 4 characters of that key, shown in clear text. It is checked against the key when Write Config From Form is true, and it is not written to `login.ini`. The key does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
 
