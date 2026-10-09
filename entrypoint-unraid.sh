@@ -68,6 +68,86 @@ note_workshop_mod_list() {
   done
 }
 
+# Second whitespace-separated field. Does not touch the script's arguments.
+field_two() {
+  rest=$1
+  rest=${rest#"${rest%%[![:space:]]*}"}
+  first=${rest%%[[:space:]]*}
+  rest=${rest#"$first"}
+  rest=${rest#"${rest%%[![:space:]]*}"}
+  printf '%s' "${rest%%[[:space:]]*}"
+}
+
+# WARHOST_PORT_TABLE is a test seam, not a form field. Host networking
+# shows the host sockets at /proc/net. The first line of each file is a header.
+port_file_has_local() {
+  file=$1
+  hex=$2
+  first=1
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [ "$first" -eq 1 ]; then
+      first=0
+      continue
+    fi
+    addr=$(field_two "$line")
+    case $addr in
+      *:*)
+        suffix=${addr##*:}
+        suffix=$(printf '%s' "$suffix" | tr '[:lower:]' '[:upper:]')
+        if [ "$suffix" = "$hex" ]; then
+          return 0
+        fi
+        ;;
+    esac
+  done < "$file"
+  return 1
+}
+
+local_port_taken() {
+  table=${WARHOST_PORT_TABLE:-/proc/net}
+  hex=$(printf '%04X' "$1")
+  for name in tcp tcp6 udp udp6; do
+    file="${table}/${name}"
+    if [ ! -f "$file" ]; then
+      continue
+    fi
+    if port_file_has_local "$file" "$hex"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+prepare_server_runtime() {
+  mkdir -p "$SETTINGS_DIR"
+  if command -v flock >/dev/null 2>&1; then
+    # fd 9 stays open across exec so the lock lasts as long as the server.
+    exec 9>"${SETTINGS_DIR}/warhost.lock"
+    if ! flock -n 9; then
+      if [ -n "$NEXT_PORT" ]; then
+        die "This settings folder is already used by a running container. Give this container its own folder, for example /mnt/user/appdata/warno/${NEXT_PORT}/settings. Do not copy WARNO or Workshop files into it."
+      fi
+      die "This settings folder is already used by a running container. Give this container its own folder, for example /mnt/user/appdata/warno/<port>/settings. Do not copy WARNO or Workshop files into it."
+    fi
+  else
+    printf '%s\n' "warning: flock is not available, so this start cannot tell whether another container is using this settings folder."
+  fi
+  if local_port_taken "$EXPOSEDPORT"; then
+    if [ -n "$NEXT_PORT" ]; then
+      die "Game port ${EXPOSEDPORT} is already in use. Set this container's Game Port to ${NEXT_PORT}, forward ${NEXT_PORT} as TCP and UDP, and give it its own settings folder and Server Name. Players join by Server Name."
+    fi
+    die "Game port ${EXPOSEDPORT} is already in use. Pick a free Game Port, forward it as TCP and UDP, and give this container its own settings folder and Server Name. Players join by Server Name."
+  fi
+}
+
+note_next_container() {
+  if [ -n "$NEXT_PORT" ]; then
+    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name."
+    return 0
+  fi
+  printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name."
+}
+
 case "$UPSTREAM_ENTRYPOINT" in
   /*) ;;
   *) die "UPSTREAM_ENTRYPOINT must be an absolute path." ;;
@@ -88,6 +168,11 @@ case "$EXPOSEDIP" in
   *[[:space:]]*) die "Public WAN IP cannot contain spaces." ;;
 esac
 require_number_between "Game port" "$EXPOSEDPORT" 1 65535
+if [ "$EXPOSEDPORT" -lt 65535 ]; then
+  NEXT_PORT=$((EXPOSEDPORT + 1))
+else
+  NEXT_PORT=
+fi
 
 write_config=$(printf '%s' "${WRITE_CONFIG:-true}" | tr '[:upper:]' '[:lower:]')
 case "$write_config" in
@@ -181,7 +266,7 @@ if [ "$write_config" = "true" ]; then
       ;;
   esac
 
-  mkdir -p "$SETTINGS_DIR"
+  prepare_server_runtime
   tmp_login="${SETTINGS_DIR}/.login.ini.new"
   tmp_variables="${SETTINGS_DIR}/.variables.ini.new"
   tmp_ai="${SETTINGS_DIR}/.params_for_ai.json.new"
@@ -242,8 +327,11 @@ else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then
     die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."
   fi
+  prepare_server_runtime
   printf 'Left existing WARNO settings in place.\n'
 fi
+
+note_next_container
 
 cd "$server_root"
 exec "$UPSTREAM_ENTRYPOINT" "$@"

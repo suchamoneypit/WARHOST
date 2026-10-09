@@ -5,7 +5,10 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 ENTRY="${ROOT}/entrypoint-unraid.sh"
 WORKDIR=$(mktemp -d)
-trap 'rm -rf "$WORKDIR"' EXIT
+EMPTY_PORT_TABLE="${WORKDIR}/empty-ports"
+mkdir -p "$EMPTY_PORT_TABLE"
+holder=
+trap 'if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
 
 SERVER_COUNT=0
 
@@ -28,11 +31,11 @@ EOF
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
   if [ -f "${WORKDIR}/stdout.txt" ]; then
-    printf '--- stdout ---\n' >&2
+    printf '%s\n' '--- stdout ---' >&2
     cat "${WORKDIR}/stdout.txt" >&2
   fi
   if [ -f "${WORKDIR}/stderr.txt" ]; then
-    printf '--- stderr ---\n' >&2
+    printf '%s\n' '--- stderr ---' >&2
     cat "${WORKDIR}/stderr.txt" >&2
   fi
   exit 1
@@ -52,7 +55,9 @@ run_entry() {
   : > "${WORKDIR}/stderr.txt"
   # ENTRY_ARGS is intentionally unquoted so a single pass-through flag can be set by a test.
   # shellcheck disable=SC2086
-  if env -i PATH="$PATH" "$@" sh "$ENTRY" $ENTRY_ARGS >"${WORKDIR}/stdout.txt" 2>"${WORKDIR}/stderr.txt"; then
+  # A later WARHOST_PORT_TABLE= in "$@" overrides the empty fixture.
+  # shellcheck disable=SC2086
+  if env -i PATH="$PATH" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" "$@" sh "$ENTRY" $ENTRY_ARGS >"${WORKDIR}/stdout.txt" 2>"${WORKDIR}/stderr.txt"; then
     return 0
   fi
   return 1
@@ -102,6 +107,7 @@ grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
 grep -q 'ModList 3811913066/15' "${WORKDIR}/stdout.txt" || fail "default log did not name the mod list"
 grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not name the key last 4"
+grep -qx 'Next container on this host: Game Port 10401, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
 if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the old mod version"
 fi
@@ -262,6 +268,7 @@ expect_ok "keeps hand-edited files when write config is false" \
   EXPOSEDPORT=10401
 grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "hand-edited login.ini was replaced"
 grep -qx 'Left existing WARNO settings in place.' "${WORKDIR}/stdout.txt" || fail "write-config false did not say it left files alone"
+grep -qx 'Next container on this host: Game Port 10402, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
 
 make_server
 expect_fail "refuses write-config false when settings files are missing" \
@@ -269,6 +276,102 @@ expect_fail "refuses write-config false when settings files are missing" \
   WRITE_CONFIG=false \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400
+
+make_server
+expect_ok "starts once so the settings lock can be held" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+grep -qx 'ServerName = WARHOST - Red Dragon 4v4' "${server}/settings/variables.ini" || fail "first server name was not written"
+holder_log="${WORKDIR}/holder.out"
+release="${WORKDIR}/release-lock"
+: > "$holder_log"
+: > "$release"
+flock -n "${server}/settings/warhost.lock" sh -c 'echo held; while [ -f "$1" ]; do sleep 0.05; done' _ "$release" >"$holder_log" &
+holder=$!
+held=0
+i=0
+while [ "$i" -lt 50 ]; do
+  if grep -q held "$holder_log"; then
+    held=1
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+[ "$held" -eq 1 ] || fail "test could not lock the settings folder"
+expect_fail "refuses a second container on the same settings folder" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2 \
+  SERVER_NAME="Second Server"
+grep -q 'This settings folder is already used by a running container.' "${WORKDIR}/stderr.txt" || fail "shared folder error did not say the folder is in use"
+grep -q '/mnt/user/appdata/warno/10401/settings' "${WORKDIR}/stderr.txt" || fail "shared folder error did not name the next folder"
+grep -q 'Do not copy WARNO or Workshop files into it.' "${WORKDIR}/stderr.txt" || fail "shared folder error did not warn against copying the game"
+if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
+  fail "a locked settings folder still started the server"
+fi
+grep -qx 'ServerName = WARHOST - Red Dragon 4v4' "${server}/settings/variables.ini" || fail "locked folder was overwritten"
+rm -f "$release"
+wait "$holder" || fail "lock holder did not exit"
+expect_ok "starts again after the other container releases the settings folder" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2 \
+  SERVER_NAME="After Lock"
+grep -qx 'ServerName = After Lock' "${server}/settings/variables.ini" || fail "settings were not written after the lock was released"
+
+make_server
+taken="${WORKDIR}/taken-port"
+mkdir -p "$taken"
+printf '%s\n' \
+  '  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode' \
+  '   0: 00000000:0050 00000000:28A0 01 00000000:00000000 00:00000000 00000000     0        0 1 1 0000000000000000 100 0 0 10 0' \
+  > "${taken}/tcp"
+printf '%s\n' \
+  '  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode' \
+  '   0: 0100007F:28A0 00000000:0000 07 00000000:00000000 00:00000000 00000000     0        0 2 1 0000000000000000 100 0 0 10 0' \
+  > "${taken}/udp"
+expect_fail "refuses a game port that is already a local socket" \
+  WARHOST_PORT_TABLE="$taken" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+grep -q 'Game port 10400 is already in use.' "${WORKDIR}/stderr.txt" || fail "taken port error did not name the port"
+grep -q 'Set this container'"'"'s Game Port to 10401, forward 10401 as TCP and UDP' "${WORKDIR}/stderr.txt" || fail "taken port error did not name the next port"
+grep -q 'Server Name' "${WORKDIR}/stderr.txt" || fail "taken port error did not mention Server Name"
+grep -q 'Players join by Server Name.' "${WORKDIR}/stderr.txt" || fail "taken port error did not say how players join"
+if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
+  fail "a taken port still started the server"
+fi
+
+make_server
+decoy="${WORKDIR}/decoy-port"
+mkdir -p "$decoy"
+printf '%s\n' \
+  '  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode' \
+  '   0: 00000000:0050 00000000:28A0 01 00000000:00000000 00:00000000 00000000     0        0 1 1 0000000000000000 100 0 0 10 0' \
+  > "${decoy}/tcp"
+expect_ok "ignores the game port when it appears only as a remote socket" \
+  WARHOST_PORT_TABLE="$decoy" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
 
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"

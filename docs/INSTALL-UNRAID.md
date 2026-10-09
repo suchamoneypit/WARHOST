@@ -53,13 +53,13 @@ The container uses **host networking**, which Eugen recommends. That has three c
 
 1. Unraid shows **no port mapping** for this container. That is correct, not a missing field.
 2. The game port must be free on the Unraid server itself. `10400` is this template's default; Eugen's docs use a placeholder. If something else on Unraid already uses `10400`, pick another port and use it everywhere below.
-3. Every additional WARHOST container needs a different port.
+3. Every additional container needs the previous game port plus 1. Forward each of those ports as TCP and UDP. Players join by Server Name in the browser.
 
 On your router, forward the game port **as both TCP and UDP** to your Unraid server's LAN IP. Eugen: "make sure you forward both UDP and the TCP to the exposed port because the server needs both." Give Unraid a fixed LAN IP (DHCP reservation) so the forward does not break.
 
 Find your **public WAN IP** on the router's status page or at <https://www.whatismyip.com/> from a device on that network. The Add Container form cannot look this up for you. The server advertises exactly the address you type; it does not look it up. If your router's WAN address is in `100.64.0.0/10` (`100.64.` to `100.127.`), you are behind carrier-grade NAT; if it starts with `10.`, `172.16.` to `172.31.`, or `192.168.`, there is another router or NAT device upstream. In both cases a forward on your router alone will not reach you; forward on the upstream device too, or ask your ISP for a public address. If your public IP changes over time, you must update the field and restart the container.
 
-The server also needs **outbound** internet. Eugen's start script in the image calls `warno-server` with `-ipmms 178.32.126.73 -portmms 10002`, so the server contacts Eugen's master server at that address. The image itself is small (about 80 MB) and contains no game data, so expect the first start to take longer than later ones. What it downloads, and where, has not been observed.
+The server also needs **outbound** internet. Eugen's start script in the image calls `warno-server` with `-ipmms 178.32.126.73 -portmms 10002`, so the server contacts Eugen's master server at that address. The image is about 80 MB, contains no Steam library, and is stored once no matter how many containers you add. What a first start downloads, and where, has not been observed. Do not copy WARNO or a Workshop folder into each settings directory.
 
 ## 4. Decide the map and find a scenario ID
 
@@ -132,14 +132,14 @@ Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. C
 
 | Field | Default | Enter |
 | --- | --- | --- |
-| Name | `WARHOST` | Keep, or any unique container name. The settings folder stays `/mnt/user/appdata/warno/settings`. |
+| Name | `WARHOST` | Keep for the first server. Each added container needs its own name. |
 | Network Type | `Host` | Keep. |
-| Settings Folder | `/mnt/user/appdata/warno/settings` | Keep. Unraid creates it. One folder per server. |
+| Settings Folder | `/mnt/user/appdata/warno/settings` | Keep for the first server. Unraid creates it. Each added server needs its own folder, for example `/mnt/user/appdata/warno/10401/settings`. These are small ini files. Do not copy the game here. |
 | Eugen Login | empty | The login from Eugen's reply. |
 | Eugen Dedicated Key | empty | The key from Eugen's reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | empty | Your public IP address from step 3. |
-| Game Port | `10400` | Keep unless the port is taken. You can change it later by editing the container; the router forward must use the same number, TCP and UDP. |
-| Server Name | `WARHOST - Red Dragon 4v4` | What players see in the browser. No `=` sign. |
+| Game Port | `10400` | Keep for the first server. The next container uses this number plus 1. Forward each number as TCP and UDP. Players join by Server Name. You can change a port later by editing that container; the forward must use the same number. |
+| Server Name | `WARHOST - Red Dragon 4v4` | What players see in the browser. Give each container a different name. No `=` sign. |
 | Max Players | `4` | Total slots. Preset 4 for this 2v2. Usual sizes are in the README. Not locked to the map. |
 | Minimum Players | `2` | Players needed before the countdown. Not above Max Players. |
 | Team Size | `2` | Slots on one side. Usually half of Max Players. |
@@ -157,11 +157,12 @@ Work through these in order. Each one proves something different.
 
 ### 7a. The container started
 
-On the **Docker** tab the container shows as started. Click its icon → **Logs**. The first wrapper line is `Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4` and the last 4 characters of the key. The wrapper then prints the Config.ini comparison line, and `warning: Workshop Mod List contains 3811913066/0` when that pair is set, before Eugen's output.
+On the **Docker** tab the container shows as started. Click its icon → **Logs**. The first wrapper line is `Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4` and the last 4 characters of the key. The wrapper then prints the Config.ini comparison line, and `warning: Workshop Mod List contains 3811913066/0` when that pair is set. The last wrapper line names the next container's Game Port. Eugen's output follows.
 
 ```text
 Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4 XXXX.
 Clients compare each Workshop id/version with Version in that mod's Config.ini. The client message "At least one mod version doesnt match" does not appear in this log.
+Next container on this host: Game Port 10401, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name.
 ```
 
 Eugen's server prints after those wrapper lines. Nobody has recorded the full healthy `warno-server` log; when you see it, add it to this file. If the container stopped **before** printing that first line, the last log line is one of the wrapper's own error messages (first rows of the troubleshooting table). If it stopped **after** Eugen's output begins, the wrapper did its job and `warno-server` itself exited; read the lines after it and use the later rows.
@@ -175,7 +176,7 @@ ls -l /mnt/user/appdata/warno/settings/
 grep -E '^(ServerName|Map|ModList) ' /mnt/user/appdata/warno/settings/variables.ini
 ```
 
-Expect `login.ini`, `variables.ini`, and `params_for_ai.json` with mode `-rw-------`, and `Map = RDPort_JungleLaw_2v2_CONQ`. Do not display `login.ini` on a shared screen; it contains the key.
+Expect `login.ini`, `variables.ini`, and `params_for_ai.json` with mode `-rw-------`, and `Map = RDPort_JungleLaw_2v2_CONQ`. `warhost.lock` is the wrapper's lock file. Do not display `login.ini` on a shared screen; it contains the key.
 
 ### 7c. The port is open on Unraid
 
@@ -198,6 +199,25 @@ Have someone outside your LAN find and join the server. Only this step proves th
 
 When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the Name on the form. With Name left as `WARHOST`, that is the same file as the download. A different Name leaves the downloaded file in the dropdown as a second entry labeled **WARHOST**. Compare Unraid's saved copy with `templates/warhost.xml`; dockerMan's formatting is the one Community Applications expects.
 
+## 8. Another server on the same host
+
+Each server is its own container. Add another one from this same template. Do not use Unraid's reinstall action. Reinstall replaces the container you already have.
+
+For the next container:
+
+- **Name:** a new container name
+- **Game Port:** the previous game port plus 1 (`10401` after `10400`). Forward that port to this Unraid server as TCP and UDP.
+- **Server Name:** a different name from the one already in the browser
+- **Settings Folder:** a new folder, for example `/mnt/user/appdata/warno/10401/settings`
+- **Public WAN IP:** the same address as the first server
+- **Eugen login and key:** the same pair, for up to five servers. A sixth container needs another login and key pair.
+
+Players join from the WARNO server browser by Server Name. They are not given a port to type.
+
+Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. Do not copy WARNO or a Workshop folder into it. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
+
+On start, the log names the next port. If the settings folder is already in use, or the game port is already taken, the container stops and the last log line says what to change.
+
 ## Troubleshooting
 
 | Symptom | Likely cause | What to do |
@@ -208,13 +228,14 @@ When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid wr
 | Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Replace Map with a scenario ID...` | A map name or placeholder was entered | Step 4. |
 | Log ends with `Workshop mod list must look like 3811913066/15...` | Mod list format | Use `id/version`, hyphen between mods, or clear it. |
 | Log ends with `Official WARNO entrypoint was not found at /server/entrypoint2.sh.` | Eugen changed their image layout | Open a GitHub issue; the wrapper needs an update. |
-| Log says a port or address is already in use | Host networking; something on Unraid uses the port | Change Game Port, forward the new port, Apply. |
+| Log ends with `Game port 10400 is already in use` (the number will be the port you set) | That port is already a local socket on the Unraid host | Set Game Port to that number plus 1, forward the new port as TCP and UDP, and give this container its own settings folder and Server Name. Players join by Server Name. |
 | Container runs but the server never appears in anyone's browser | Outbound traffic to Eugen blocked; wrong login or key; wrong WAN IP | Check the lines after the wrapper's `Wrote WARNO settings` line for errors. Allow outbound to `178.32.126.73:10002`. Re-enter login and key from Eugen's reply. |
 | LAN players join, internet players cannot | Router forward missing or only one protocol; WAN IP wrong or changed; carrier-grade NAT | Step 3. Forward TCP and UDP. Re-check the WAN IP. |
 | Players are told a mod is missing or incompatible, and the log contains `warning: Workshop Mod List contains 3811913066/0` | The field is still the old preset. The server registers and `warno-server` logs nothing about the rejected join | Set **Workshop Mod List** to `3811913066/15`, or to the `Version` line in the mod's `Config.ini` if the author has incremented it, and Apply. |
 | Players are told a mod is missing or incompatible, and that warning is absent | They have not subscribed to and enabled the mod, or `Version` in `Config.ini` has changed | Players: subscribe in Steam and enable the mod in WARNO's Mod Center. Host: set **Workshop Mod List** to the `Version` line in `Config.ini`. The client message does not appear in this log. |
 | Hand edits to `variables.ini` disappear after a restart | Write Config From Form is `true` | Set it to `false`. All three files must then exist. |
-| A sixth container on the same login and key fails to come online | Eugen documents a limit of five servers per login and key pair; the exact error has not been observed | Stop one, or request a second key. |
+| Log ends with `This settings folder is already used by a running container` | Two containers share one settings folder | Give this container its own folder, for example `/mnt/user/appdata/warno/10401/settings`. Do not copy WARNO or a Workshop folder into it. |
+| A sixth container on the same login and key fails to come online | Eugen documents a limit of five servers per login and key pair; the exact error has not been observed. This wrapper does not count running servers | Stop one, or request another login and key pair. |
 | Players on a new WARNO patch cannot join | The image is older than the game | The rebuild runs daily. On Unraid, check for updates on the Docker tab and update the container. |
 
 ## Not yet verified
@@ -224,5 +245,6 @@ These need a real Unraid install with a real key. They are listed so nobody mist
 - A line-by-line check that Unraid 7 prefills every field as written here. The dropdown label **WARHOST** for `my-WARHOST.xml` was seen on 2026-10-09, and Key last 4 was absent after a fresh curl of `main`. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.
 - Which sockets (TCP, UDP, or both) `warno-server` opens on the game port.
-- Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to.
+- Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to. Until that path is known, do not add a copy of the game for each container.
+- A second container on the same Unraid host (section 8): the next port, a separate settings folder, and the settings-folder lock.
 - Whether the plain-paragraph Overview renders with paragraph breaks on this Unraid server. The template no longer contains `<br>` tags. Unraid's current [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read on 2026-10-09, turns newlines in the basic Overview into line breaks. That has not been checked on a server after this wording change.

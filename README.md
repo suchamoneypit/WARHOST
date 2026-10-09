@@ -33,7 +33,7 @@ In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints th
 
 The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml` shows **WARHOST**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARHOST`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARHOST**. Delete an earlier download if it is still in that folder: `warno-dedicated-server.xml` or `my-WARNO-Dedicated-Server.xml`. This route is the one the Community Applications author gives for Unraid 6.10 and later. On 2026-10-09 Unraid 7.3.3 showed `my-WARHOST.xml` in that dropdown as **WARHOST**. The install guide records what that try did and did not prove. `sh scripts/print_template_fetch.sh --private` saves `warhost.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
 
-The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. The pull check is in the install guide, step 2. The settings folder stays `/mnt/user/appdata/warno/settings`. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
+The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. The pull check is in the install guide, step 2. The first server's settings folder is `/mnt/user/appdata/warno/settings`. Every container shares that one image. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
 
 Fill in:
 
@@ -42,8 +42,9 @@ Fill in:
 | Eugen Login | The login from Eugen's reply, exactly as written, not your Steam name. This login and the key are a matching pair good for five containers. |
 | Eugen Dedicated Key | The key from the same reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | The address Eugen's lobby should advertise to players. Look it up at <https://www.whatismyip.com/> from a device on that network if you do not know it. |
-| Game Port | `10400`, or another free port. Forward the same number to this Unraid server as TCP and UDP. |
-| Server Name | `WARHOST - Red Dragon 4v4`, the name in the server browser |
+| Settings Folder | `/mnt/user/appdata/warno/settings` for the first server. Each added server needs its own folder, for example `/mnt/user/appdata/warno/10401/settings`. The folder holds the ini files only. |
+| Game Port | `10400` for the first server. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Players join by Server Name. |
+| Server Name | `WARHOST - Red Dragon 4v4` on the first server. Give each container a different name. No `=` sign. |
 | Max Players | `4` for this 2v2 preset. Usual sizes are under Map. The lobby is not locked to the size in the scenario ID. |
 | Minimum Players | `2`, and not above Max Players |
 | Team Size | `2` for this 2v2 preset. Slots on one side, usually half of Max Players. |
@@ -53,7 +54,7 @@ Fill in:
 
 ### Map
 
-**Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Those maps are part of the dedicated server's own game data, so clear **Workshop Mod List** for them. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
+**Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Clear **Workshop Mod List** for them. The server image does not contain a Steam library, and Workshop mods download on each player's PC. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
 
 The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. A 1v1 ID usually uses Max Players 2 and Team Size 1, a 2v2 uses 4 and 2, a 3v3 uses 6 and 3, a 4v4 uses 8 and 4, and a 10v10 uses 20 and 10. Setting Max Players to 8 on a 2v2 map has not been tested. Combat Rule is `2` when the ID contains `CONQ`, and `1` when it contains `DEST`.
 
@@ -220,13 +221,20 @@ Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `
 
 ### A second server
 
-Add another container from this same template. Change three values:
+Each server is its own container. Add another one from this same template. Do not use Unraid's reinstall action. Reinstall replaces the container you already have.
 
-- container name
-- game port
-- settings folder, for example `/mnt/user/appdata/warno2/settings`
+For the next container:
 
-Use the same Eugen login and key. Do not use Unraid's reinstall action for this. Reinstall replaces the container you already have. Eugen refuses a sixth server on the same key.
+- **Name:** a new container name
+- **Game Port:** the previous game port plus 1 (`10401` after `10400`). Forward that port to this Unraid server as TCP and UDP.
+- **Server Name:** a different name from the one already in the browser
+- **Settings Folder:** a new folder, for example `/mnt/user/appdata/warno/10401/settings`
+- **Public WAN IP:** the same address as the first server
+- **Eugen login and key:** the same pair, for up to five servers. A sixth container needs another login and key pair.
+
+Players join from the WARNO server browser by Server Name. They are not given a port to type.
+
+Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 
 ## Settings files
 
