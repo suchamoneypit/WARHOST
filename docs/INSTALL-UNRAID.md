@@ -112,7 +112,7 @@ rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
   /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml
 ```
 
-The filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). `my-WARHOST.xml` has not been tried on a server yet. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
+The filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). On 2026-10-09 Unraid 7.3.3 showed `my-WARHOST.xml` in the Template dropdown as **WARHOST**. A file left from an earlier Apply kept the old fields until it was removed and this curl was run again. Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. The curl changes the form only. The container runs `ghcr.io/suchamoneypit/warhost:latest`, which changes when a rebuild of that tag succeeds. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 
 Alternative, still until Community Applications lists it: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
 
@@ -221,7 +221,7 @@ When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid wr
 
 These need a real Unraid install with a real key. They are listed so nobody mistakes this guide for a test record.
 
-- That Unraid 7 shows `my-WARHOST.xml` in the Template dropdown as **WARHOST** and prefills every field as written here. A file named `warno-dedicated-server.xml` was reported to show that lowercase name. `my-WARHOST.xml` and the prefill have not been recorded.
+- A line-by-line check that Unraid 7 prefills every field as written here. The dropdown label **WARHOST** for `my-WARHOST.xml` was seen on 2026-10-09, and Key last 4 was absent after a fresh curl of `main`. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.
 - Which sockets (TCP, UDP, or both) `warno-server` opens on the game port.
 - Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to.
