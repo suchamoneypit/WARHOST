@@ -2,36 +2,47 @@
 
 Unraid template for one [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
-The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (workshop item `3811913066`).
+The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`).
 
-## Before you install
+First install? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
 
-Email `eugsupport@eugensystems.com` and ask for a dedicated-server key. Use the email on your EugNet account. That same email is the Eugen Login on the form. Eugen emails the key. Eugen answers manually, and one login/key pair can run five servers.
+## What you need
 
-Eugen recommends host networking, and this container uses it, so Unraid does not show a Docker port mapping. Port forward the game port TCP/UDP to your Unraid server. The server also needs outbound internet access so it can reach Eugen (not for LAN usage).
+- A dedicated-server **login and key** from Eugen. Email `eugsupport@eugensystems.com` with the email address of your EugNet account; Eugen replies with a login and key pair ([Docker Hub](https://hub.docker.com/r/eugensystems/warno)). A dedicated key from another Eugen game also works. One pair can run up to five servers.
+- Your **public WAN IP**, and the game port forwarded on your router **as both TCP and UDP** to the Unraid server. Eugen recommends host networking and this container uses it, so Unraid shows no Docker port mapping.
+- Outbound internet from the Unraid server, so the game server can reach Eugen's master server.
+- Players need WARNO and, for the Red Dragon maps, Workshop item `3811913066` subscribed and enabled in WARNO's Mod Center.
 
 ## Install
 
-Community Apps listing comes after this template has been tested on a running server. Until then, add the container in Unraid with **Docker**, **Add Container**, and a template URL of:
+Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown:
 
-```text
-https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
-```
+1. Unraid web UI → terminal icon (`>_`):
 
-The image is `ghcr.io/suchamoneypit/warno-unraid:latest`. It does not exist until the GitHub Action has built it. See [Publishing the image](#publishing-the-image).
+   ```sh
+   mkdir -p /boot/config/plugins/dockerMan/templates-user
+   curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
+     https://raw.githubusercontent.com/suchamoneypit/WARNO-Dedicated-Server-Unraid/main/templates/warno-dedicated-server.xml
+   ```
+
+2. **Docker → Add Container → Template → User templates**, choose the WARNO entry, fill in the fields below, **Apply**.
+
+This route is the one the Community Applications author gives for Unraid 6.10 and later. It has not yet been executed for this repository; the first real install should confirm it.
+
+The image is `ghcr.io/suchamoneypit/warno-unraid:latest`. It is published and publicly pullable (confirmed 2026-10-09; the check is in the install guide, step 2).
 
 Fill in:
 
 | Field | What to enter |
 | --- | --- |
-| Eugen Login | The EugNet email you sent Eugen when you requested the key |
-| Eugen Dedicated Key | The key Eugen emailed back |
+| Eugen Login | The login from Eugen's reply to your key request. Enter it exactly as written. |
+| Eugen Dedicated Key | The key from the same reply |
 | Public WAN IP | The address Eugen's lobby should advertise to players |
-| Game Port | `10400`, or another free port |
+| Game Port | `10400`, or another free port. Forward it TCP and UDP. |
 | Server Name | The name in the server browser |
 | Map | A scenario ID. The preset is `RDPort_JungleLaw_2v2_CONQ` |
 
-Advanced fields are already set for a 2v2 Conquest match on the Red Dragon map pack: 4 players, 2 per team, combat rule `2`, mod `3811913066/0`.
+Advanced fields (under **Show more settings**) are already set for a 2v2 Conquest match on the Red Dragon map pack: 4 players, 2 per team, combat rule `2`, mod `3811913066/0`.
 
 ### Map
 
@@ -39,7 +50,7 @@ Advanced fields are already set for a 2v2 Conquest match on the Red Dragon map p
 
 A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
 
-The Red Dragon map pack scenario IDs, taken from the mod files for workshop item `3811913066`, are:
+The Red Dragon map pack scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-09. The procedure is in the install guide, step 4.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -60,7 +71,7 @@ The Red Dragon map pack scenario IDs, taken from the mod files for workshop item
 | Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
 | Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
 | Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
-| Wonsan Native | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
+| Wonsan Harbour (file name `WonsanNative`) | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
 
 All of these are Conquest, so leave **Combat Rule** at `2`. Change **Max Players** and **Team Size** to match the map size. A 4v4 map needs 8 max players and a team size of 4. Asgard needs 20 and 10.
 
@@ -88,7 +99,7 @@ On each start, **Write Config From Form** (`true`) rewrites these files in the s
 
 The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same size (`DeltaMaxTeamSize = 0`). AI decks are empty. RCON is not configured.
 
-Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start overwrites hand edits. `admins.ini` and `banned_clients.ini` created by the server are left alone.
+Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start overwrites hand edits. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
 
 ## Keys
 
@@ -102,9 +113,9 @@ Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not 
 
 Change the entrypoint only if Eugen renames `entrypoint2.sh` or the settings filenames. A normal game patch does not require an edit here.
 
-## Publishing the image
+## Publishing the image (maintainers)
 
-After these files are on `main`:
+The image is already published. If you fork this repository, repeat these steps once your files are on `main`:
 
 1. In the GitHub repository settings, enable Issues.
 2. Under Actions, allow GitHub Actions, and set workflow permissions to read and write.
@@ -112,6 +123,17 @@ After these files are on `main`:
 4. Open the package `warno-unraid` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this, and the package page is the place to confirm it.
 
 Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and Jungle Law is the running scenario. Submit the repository to Community Apps after that test. The submission site is [https://ca.unraid.net/submit](https://ca.unraid.net/submit).
+
+## Documentation
+
+| File | Contents |
+| --- | --- |
+| [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md) | First install, step by step, with verification and troubleshooting |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | What the repository contains and what was verified, with sources |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Why things are the way they are |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Goals and known issues |
+| [docs/UNRAID-TEMPLATE-GUIDE.md](docs/UNRAID-TEMPLATE-GUIDE.md) | Generic Unraid template guidance, reusable for other game servers |
+| [docs/CURSOR-QUICKSTART.md](docs/CURSOR-QUICKSTART.md) | Working on this repository with Cursor's agents |
 
 ## Support
 

@@ -9,9 +9,10 @@ Confirmed from `README.md` and the repository state on 2026-10-09. No other goal
 
 ## Known issues
 
-- The repository has no record of a completed Unraid install test. The README defers the Community Apps listing until that test exists.
+- The repository has no record of a completed Unraid install test. The README defers the Community Apps listing until that test exists. `docs/INSTALL-UNRAID.md` is the walkthrough for that test.
 - Whether the dedicated server downloads workshop item `3811913066` by itself has not been observed. Eugen's docs only describe the client download prompt: https://hub.docker.com/r/eugensystems/warno
-- `README.md` says `ghcr.io/suchamoneypit/warno-unraid:latest` does not exist until the GitHub Action builds it. An anonymous read of that tag's manifest succeeded on 2026-10-09. See `docs/ARCHITECTURE.md` for the digest.
+- The GHCR image was confirmed publicly pullable on 2026-10-09 (see `docs/ARCHITECTURE.md`). The earlier README statement that it did not exist yet was removed in the documentation pass of that date.
+- First-start behavior (what `warno-server` logs, how long it takes, which sockets it opens, whether `ModList` wants `/0` or the mod's own version) is unrecorded. The list is kept under "Not yet verified" in `docs/INSTALL-UNRAID.md`; fill it in from the first real install.
 
 ## Planned work
 

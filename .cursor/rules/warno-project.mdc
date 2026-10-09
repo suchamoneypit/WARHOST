@@ -1,58 +1,28 @@
 ---
-description: Unraid template conventions, evidence, secrets, validation, and git safety for the WARNO dedicated server
+description: WARNO dedicated-server project facts, invariants, evidence rules, secrets, and validation
 alwaysApply: true
 ---
 
-# WARNO Unraid repository
+# WARNO Unraid project
 
-This repo is an Unraid template plus a settings wrapper around `eugensystems/warno`. Leave server settings, launch arguments, and published defaults unchanged unless the task asks for that change.
+Unraid template plus a settings wrapper around the official `eugensystems/warno` image. `entrypoint-unraid.sh` writes `login.ini`, `variables.ini`, and `params_for_ai.json`, then execs `/server/entrypoint2.sh`. Eugen's server launch arguments stay in their image.
 
-## Template
+Durable knowledge lives in `@docs/ARCHITECTURE.md` (what exists and what was verified, with URLs and digests), `@docs/DECISIONS.md` (why), and `@docs/ROADMAP.md` (goals). The human install guide is `@docs/INSTALL-UNRAID.md`. Read them when a task touches behavior, decisions, or installation; do not restate them in chat.
 
-- Edit `templates/warno-dedicated-server.xml` for the container and `ca_profile.xml` for the Community Apps profile.
-- Use `<Container version="2">`. Express paths and variables as one-line `<Config>` entries. Leave out legacy `<Networking>`, `<Data>`, and `<Environment>` blocks.
-- `Type="Path"` maps a host folder. `Type="Variable"` sets an environment variable. Set `Mask="true"` on secrets.
-- This server uses `<Network>host</Network>`. The game port is `EXPOSEDPORT`, forwarded as TCP and UDP. There is no Docker port mapping.
-- Keep Overview, Description, and `README.md` in agreement.
+## Do not change unless the task asks for it
+
+Server settings and the fixed `variables.ini` values, launch arguments, template defaults (`EXPOSEDPORT` `10400`, Map `RDPort_JungleLaw_2v2_CONQ`, Mod List `3811913066/0`), host networking, the settings path `/server/settings`, image build logic, and the image name `ghcr.io/suchamoneypit/warno-unraid:latest`.
 
 ## Evidence
 
-- Cite a source URL for Eugen or Docker Hub claims. Label anything not checked in this session as unverified.
-- `10400` is this repo's default game port. Eugen's docs show a placeholder port.
-- A parsed XML file is only well-formed. Unraid behavior still needs a server test.
-- `entrypoint-unraid.sh` writes settings, then runs `/server/entrypoint2.sh`. Leave Eugen's server arguments in their image.
+- Cite a URL for Eugen, Docker Hub, Steam, or Unraid claims. Anything not fetched this session is "unverified" or "repository statement".
+- `10400` is this repo's choice; Eugen's docs use a placeholder port. Eugen does not document the `Map` key for workshop maps; the `RDPort_*` scenario IDs are the file names in the mod's `Scenarios/` folder (procedure in `docs/INSTALL-UNRAID.md`).
+- Local checks prove XML well-formedness and wrapper behavior only. Unraid acceptance and remote connectivity need a real server.
 
 ## Secrets
 
-- Keep Eugen logins, dedicated keys, `login.ini`, and real `settings/` directories out of git, examples, issues, and chat.
-- Samples may use `YOUR_EUGEN_LOGIN_HERE` and `YOUR_EUGEN_DEDICATED_KEY_HERE` only.
-- A key that reaches git history stays compromised after a later delete.
+Eugen logins, dedicated keys, real `login.ini`, and real `settings/` folders never enter git, samples, issues, or chat. The only placeholders are `YOUR_EUGEN_LOGIN_HERE` and `YOUR_EUGEN_DEDICATED_KEY_HERE`. A key that reached git history is compromised even after deletion.
 
-## Validation and git
+## Validation
 
-- After template, entrypoint, or check changes, run `sh scripts/check_repo.sh`.
-- Tests must not start the real WARNO server.
-- Commit only when asked. Do not push to `main`, force-push, deploy, publish the image, or merge a pull request unless explicitly asked.
-
-## Agent Orchestration
-
-- Work autonomously by default. Plan, investigate, implement,
-  validate, and summarize without asking for approval at every step.
-- Read the project's architecture, decisions, and roadmap files
-  when relevant. Check Git status before changing files.
-- Delegate external research to warno-researcher when the task
-  depends on upstream behavior or undocumented configuration.
-- Delegate XML, Docker, networking, and documentation review
-  to unraid-template-reviewer when those areas change.
-- Use verifier for independent verification of nontrivial work.
-- Run agents in parallel only when their tasks are independent.
-- Do not invoke all agents for simple tasks.
-- Ask subagents for concise results: findings, evidence, source
-  links, affected files, and remaining uncertainty.
-- Keep long research and noisy command output out of the main
-  conversation. Return only information needed to make decisions.
-- Never claim that a check passed unless it actually ran.
-- Never expose secrets or deploy, push to main, or merge a PR
-  without explicit authorization.
-- Update durable project documentation when behavior, decisions,
-  or installation procedures change.
+After any change to the template, wrapper, tests, or checks: `sh scripts/check_repo.sh`. Tests never start the real server.

@@ -1,0 +1,37 @@
+---
+description: How the main agent works on this repository and when it delegates to the project subagents
+alwaysApply: true
+---
+
+# Agent workflow (generic, reusable)
+
+Work autonomously: check `git status`, read a file before editing it, implement, run the project checks, summarize. Ask the user only for decisions that are genuinely theirs. The human-readable version of this rule is `@docs/CURSOR-QUICKSTART.md`.
+
+## Delegation
+
+Subagents live in `.cursor/agents/`. They run only when you launch them or the user types `/<name>`; nothing runs continuously or on every edit. Each starts with an empty context, so the prompt must carry the task, the file list, and the exact return format.
+
+| Delegate to | When | Skip when |
+| --- | --- | --- |
+| the project researcher (here `warno-researcher`) | The task depends on an upstream fact that `docs/ARCHITECTURE.md` does not record with a source URL, or an upstream fact may have changed: image entrypoint, settings keys, ports, mod or map IDs, vendor key process. | The fact is already recorded with a source and the task does not change upstream-facing behavior. Typos, wording, structure of docs. |
+| `unraid-template-reviewer` | You changed `templates/*.xml`, `ca_profile.xml`, `Dockerfile`, the entrypoint, networking or port statements, volume paths, form variables, or install instructions in `README.md` or `docs/INSTALL-*.md`. | The change only touches `.cursor/`, `docs/CURSOR-*`, tests, or workflow YAML. |
+| `verifier` | A nontrivial implementation is "done": new or changed scripts, entrypoint logic, checks, or docs that make testable claims (URLs, commands, paths). | A one-line edit you already checked by running the relevant command yourself. |
+
+Order: research before implementing when needed; reviewer and verifier after, launched in parallel because they are independent. One task rarely needs all three; a small task needs none.
+
+## What a subagent must return
+
+Ask for exactly this shape and hold the result to it: findings as short bullets; a source URL or `file:line` for each; affected files; commands run with their result; remaining uncertainty. No transcripts, no restating the repository. A finding without evidence is "unverified", not a fact.
+
+## Context hygiene
+
+- Keep long research, noisy command output, and file dumps inside subagents. Bring back only what changes a decision.
+- Reference files by path instead of pasting them. Read `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and `docs/ROADMAP.md` only when the task touches behavior, decisions, or goals.
+- In every summary, separate what was checked locally from what needs a real deployment.
+
+## Safety
+
+- Never claim a check passed unless it ran in this session. Never present an upstream fact as verified without a source fetched this session or a repo doc that cites one.
+- Keep secrets out of files, examples, issues, and chat.
+- Commit only when asked. Do not push to `main`, force-push, deploy, publish images, or merge without explicit authorization.
+- Update durable docs (`README.md`, `docs/`) in the same change when behavior, decisions, or install procedures change.

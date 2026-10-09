@@ -13,11 +13,11 @@
     <![CDATA[
 This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.<br>
 <br>
-Request a dedicated key from eugsupport@eugensystems.com. Use the email on your EugNet account. That same email is Eugen Login. Eugen emails the key. One key can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.<br>
+Request access from eugsupport@eugensystems.com with the email of your EugNet account. Eugen replies with a login and key pair; enter both exactly as written. One pair can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.<br>
 <br>
 The preset is a 2v2 Conquest server for Jungle Law from the Red Dragon map pack, Steam Workshop item 3811913066. Map is RDPort_JungleLaw_2v2_CONQ. A base-game scenario ID works too if you clear Workshop Mod List. Players subscribe to the mod in Steam and enable it in WARNO.<br>
 <br>
-Eugen recommends host networking, and this container uses it, so there is no Docker port mapping. Forward the game port as both TCP and UDP to this Unraid server.<br>
+Eugen recommends host networking, and this container uses it, so there is no Docker port mapping. Forward the game port as both TCP and UDP to this Unraid server. The server also needs outbound internet access to reach Eugen.<br>
 <br>
 For another server, add a new container from this same template. Change the container name, the game port, and the settings folder. Use the same login and key.]]>
   </Overview>
@@ -33,7 +33,7 @@ For another server, add a new container from this same template. Change the cont
     <![CDATA[
 This container runs Eugen's official WARNO dedicated server. The form writes login.ini, variables.ini, and params_for_ai.json for you.<br>
 <br>
-Request a dedicated key from eugsupport@eugensystems.com. Use the email on your EugNet account. That same email is Eugen Login. Eugen emails the key. One key can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.<br>
+Request access from eugsupport@eugensystems.com with the email of your EugNet account. Eugen replies with a login and key pair; enter both exactly as written. One pair can run five servers. The key stays in this container's Unraid settings and in login.ini inside the settings folder. Do not put it in GitHub, and do not paste it into an issue.<br>
 <br>
 The preset is a 2v2 Conquest server for Jungle Law from the Red Dragon map pack, Steam Workshop item 3811913066. Map is RDPort_JungleLaw_2v2_CONQ. A base-game scenario ID works too if you clear Workshop Mod List. Players subscribe to the mod in Steam and enable it in WARNO.<br>
 <br>
@@ -46,13 +46,13 @@ Write Config From Form rewrites the three settings files on every start. Set it 
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/settings" Mode="rw" Description="Generated settings for this server, including login.ini. Use a different folder for each server, such as /mnt/user/appdata/warno2/settings. Do not commit this folder to a public repository." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/settings</Config>
 
-  <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Your EugNet account email, the same address you sent to eugsupport@eugensystems.com to request the dedicated key. Eugen emails the key. This is not a login for players who join the match." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="The login Eugen sent back with your dedicated key, entered exactly as written. Request it from eugsupport@eugensystems.com with your EugNet account email. This is not a login for players who join the match." Type="Variable" Display="always" Required="true" Mask="false"></Config>
 
-  <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Dedicated key Eugen emailed to that EugNet address. It is written to login.ini on this server only. One key can run five servers." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Dedicated key from Eugen's reply. It is written to login.ini on this server only. One login and key pair can run five servers." Type="Variable" Display="always" Required="true" Mask="true"></Config>
 
   <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Address Eugen's lobby tells players to connect to. The server does not look this up. Use your router's public WAN address for internet play, and forward the game port to Unraid. A LAN address only works for players on that LAN." Type="Variable" Display="always" Required="true" Mask="false"></Config>
 
-  <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="Port the server listens on. Forward this same port as both TCP and UDP to the Unraid server. Each server container needs its own port." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
+  <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="Port the server listens on. Host networking: the port must be free on the Unraid server itself. Forward this same port as both TCP and UDP to the Unraid server. Each server container needs its own port." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
 
   <Config Name="Server Name" Target="SERVER_NAME" Default="WARNO Jungle Law 2v2" Mode="" Description="Name shown in the WARNO server browser." Type="Variable" Display="always" Required="true" Mask="false">WARNO Jungle Law 2v2</Config>
 
