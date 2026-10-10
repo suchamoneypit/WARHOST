@@ -5,3 +5,7 @@ appdata/
 
 .DS_Store
 *.swp
+
+# Cursor plans and the editor workspace stay on this machine.
+.cursor/plans/
+*.code-workspace
