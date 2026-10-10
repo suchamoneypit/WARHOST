@@ -2,7 +2,7 @@
 
 A mod-friendly, multi-instance capable WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key (provided by Eugen upon request) and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
-The preset is a 2v2 Conquest server on the base-game map Hesse (`_2x2_Hesse_2vs2_CONQ`) with no workshop mods, so players need only the game. To host the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`) instead, use the [Red Dragon server example](#red-dragon-server-example).
+The preset is a 2v2 Conquest server on the base-game map Hesse (`_2x2_Hesse_2vs2_CONQ`) with no workshop mods, so players need only the game. To host the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`) instead, set Workshop Mod List to `3811913066/27` and choose a scenario ID from the [scenario lists](#scenario-ids).
 
 If you've used other game servers before you likely can toll the unraid template tooltips only, and setup your standard port forward and you are done. Looking for more info? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
 
@@ -110,22 +110,186 @@ Unraid fills a cleared field with the template's default when the container is c
 
 **Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Leave **Workshop Mod List** and **Workshop Mod Tags** empty for them. The server image does not contain a Steam library, and Workshop mods download on each player's PC. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset sets **Map** to `_2x2_Hesse_2vs2_CONQ` with no workshop mod. When Map is not a Red Dragon scenario and Workshop Mod List still contains `3811913066`, the log warns that players without that mod cannot join, and the value is still written. When Workshop Mod List is empty and Map is not one of the base-game scenario IDs below, including a workshop ID that starts with `_`, the log warns and the server still starts. When Workshop Mod Tags is set and Workshop Mod List is empty, the log notes that the tags are written and do not select a mod. `Jungle Law` and `YOUR_*` placeholders are rejected.
 
-#### Red Dragon server example
-
-| Field | Value |
-| --- | --- |
-| Map | `RDPort_JungleLaw_2v2_CONQ` |
-| Workshop Mod List | `3811913066/27` |
-| Workshop Mod Tags | `Maps-Scenarios` |
-
-Joining players subscribe to Workshop item `3811913066` and enable it in WARNO's Mod Center. The other Red Dragon scenario IDs are in the [Red Dragon map pack](#red-dragon-map-pack) table.
-
 The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. A 1v1 ID usually uses Max Players 2 and Team Size 1, a 2v2 uses 4 and 2, a 3v3 uses 6 and 3, a 4v4 uses 8 and 4, and a 10v10 uses 20 and 10. Setting Max Players to 8 on a 2v2 map has not been tested. Combat Rule is `2` when the ID contains `CONQ` or `Conquest`, and `1` when it contains `DEST` or `Destruction`.
 
-#### Base game
+#### Workshop mods
+
+**Workshop Mod List** loads the mod that contains the maps. The value is `workshopId/version` from the table. Pick **Map** from that mod's scenario list below. Red Dragon is the first row: Workshop Mod List `3811913066/27`, Workshop Mod Tags `Maps-Scenarios`, and Map `RDPort_JungleLaw_2v2_CONQ` for Jungle Law.
+
+| Mod | Workshop id | Workshop Mod List | Workshop Mod Tags |
+| --- | --- | --- | --- |
+| [WARNO: Red Dragon - Map Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) | `3811913066` | `3811913066/27` | `Maps-Scenarios` |
+| [WEST FULDA 1.0](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349) | `3363584349` | `3363584349/1023` | `Maps-Scenarios` |
+| [Highway to Oslo](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989) | `3474588989` | `3474588989/14` | `Maps-Scenarios` |
+| [Ramstein Air Base](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772) | `3705706772` | `3705706772/9` | `Maps-Scenarios` |
+| [Arsenal](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374) | `3415339374` | `3415339374/20` | `Maps-Scenarios` |
+| [Helbe](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679) | `3762638679` | `3762638679/36` | `Maps-Scenarios` |
+| [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) | `3595948209` | `3595948209/16` | `Gameplay-Interface-Sound-Scenarios-Maps` |
+| [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) | `3388575848` | `3388575848/7` | `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` with a map pack |
+
+Each Workshop Mod List value is `Version` in that mod's `Config.ini`, read from `steamapps/workshop/content/1611600/<id>/Config.ini`. Red Dragon was re-read on 2026-10-10. The others were read on 2026-10-09. The Workshop page does not publish that number. If the author increments `Version`, change the field to match.
+
+Galactic Divide and A World in Flames are a total conversion and a modern-day overhaul. Their `Scenarios/` folders are empty. **Map** stays a scenario ID from the base game or from a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209/16-3811913066/27`.
+
+Joining players subscribe to each Workshop item in the list and enable it in WARNO's Mod Center. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `ModList` makes a joining player who is missing the mod get prompted to download and enable it. This container does not download workshop files itself. It writes `Map` and `ModList`, then starts Eugen's entrypoint. That entrypoint only launches `warno-server`. Whether the server binary then downloads workshop item `3811913066` has not been confirmed on a running server.
+
+#### Scenario IDs
+
+The map-pack lists follow the workshop table, and the base-game list is last. A workshop ID is the file name in that mod's `Scenarios/` folder, before `_Definition.dat`, read on 2026-10-09 except Red Dragon, which was re-read on 2026-10-10. Where the Workshop page uses a different size or place name, the file name is the value for **Map**. Files whose names start with `SM_` are Army General file names in the same list. This repository has not seen them used as a lobby **Map**. The procedure is in the install guide, step 4. Base-game IDs are Eugen's Map Base Id column and need no workshop mod.
+
+<details>
+<summary>Red Dragon map pack (28 scenario IDs)</summary>
+
+Workshop Mod List `3811913066/27`. Every ID is Conquest, so leave **Combat Rule** at `2`. The Workshop page still lists 18 maps; the [change note](https://steamcommunity.com/sharedfiles/filedetails/changelog/3811913066) for Mod Version 27 names the 10 added layouts. Wonsan Harbour's file name is `WonsanNative`. The two Strait to the Point Land & Sea rows take their size from the `2v2` and `4v4` tokens in the file names.
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| Hell in a Very Small Place | `RDPort_HellInAVerySmallPlace_1v1_CONQ` | 1v1 |
+| Mud Fight | `RDPort_MudFight_1v1_CONQ` | 1v1 |
+| Paddy Field | `RDPort_PaddyField_1v1_CONQ` | 1v1 |
+| Strait to the Point (file name `StraitSmall`) | `RDPort_StraitSmall_1v1_CONQ` | 1v1 |
+| Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
+| Wonsan Harbour Land & Sea (file name `WonsanLandSea`) | `RDPort_WonsanLandSea_1v1_CONQ` | 1v1 |
+| Another D-Day | `RDPort_AnotherDDay_2v2_CONQ` | 2v2 |
+| Apocalypse Imminent | `RDPort_ApocalypseImminent_2v2_CONQ` | 2v2 |
+| Chosin Reservoir | `RDPort_ChosinReservoir_2v2_CONQ` | 2v2 |
+| Gunboat Diplomacy | `RDPort_GunboatDiplomacy_2v2_CONQ` | 2v2 |
+| Hop and Glory | `RDPort_HopAndGlory_2v2_CONQ` | 2v2 |
+| Jungle Law | `RDPort_JungleLaw_2v2_CONQ` | 2v2 |
+| Operation Chromite | `RDPort_OperationChromite_2v2_CONQ` | 2v2 |
+| Paddy Field | `RDPort_PaddyField_2v2_CONQ` | 2v2 |
+| Strait to the Point Land & Sea (file name `StraitSmallLandSea`) | `RDPort_StraitSmallLandSea_2v2_CONQ` | 2v2 |
+| Wonsan Harbour (file name `WonsanNative`) | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
+| 38th Perpendicular | `RDPort_38thPerpendicular_3v3_CONQ` | 3v3 |
+| Another D-Day in Paradise Land & Sea | `RDPort_AnotherDDayLandSea_3v3_CONQ` | 3v3 |
+| Back to Inchon | `RDPort_BackToInchon_3v3_CONQ` | 3v3 |
+| Gunboat Diplomacy Land & Sea | `RDPort_GunboatLandSea_3v3_CONQ` | 3v3 |
+| Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
+| 38th Parallel | `RDPort_38thParallel_4v4_CONQ` | 4v4 |
+| Battle of Yuchalnok Pass | `RDPort_BattleOfYuchalnokPass_4v4_CONQ` | 4v4 |
+| Final Meltdown | `RDPort_FinalMeltdown_4v4_CONQ` | 4v4 |
+| Floods | `RDPort_Floods_4v4_CONQ` | 4v4 |
+| Strait to the Point Land & Sea (file name `StraitLandSea`) | `RDPort_StraitLandSea_4v4_CONQ` | 4v4 |
+| Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
+| Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
+
+</details>
+
+<details>
+<summary>WEST FULDA 1.0 (16 scenario IDs)</summary>
+
+Workshop Mod List `3363584349/1023`. Grossenluder is `_3x3_WFuldaGrossen_1v1_CONQ` and `_3x3_WFuldaGrossen_2v2_DEST`. Neuenberg also has `_3x3_WFuldaNeuen_1v1_CONQ`.
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| West Fulda | `_3x3_WFulda_4v4_CONQ` | 4v4 Conquest |
+| West Fulda | `_3x3_WFulda_4v4_DEST` | 4v4 Destruction |
+| West Fulda | `_3x3_WFulda_10v10_CONQ` | 10v10 Conquest |
+| West Fulda | `_3x3_WFulda_10v10_DEST` | 10v10 Destruction |
+| Bimbach | `_3x3_WFuldaBimbach_2v2_CONQ` | 2v2 Conquest |
+| Bimbach | `_3x3_WFuldaBimbach_2v2_DEST` | 2v2 Destruction |
+| Grossenluder | `_3x3_WFuldaGrossen_1v1_CONQ` | 1v1 Conquest |
+| Grossenluder | `_3x3_WFuldaGrossen_2v2_DEST` | 2v2 Destruction |
+| Kammerzell | `_3x3_WFuldaKammerzell_1v1_CONQ` | 1v1 Conquest |
+| Kammerzell | `_3x3_WFuldaKammerzell_2v2_CONQ` | 2v2 Conquest |
+| Kammerzell | `_3x3_WFuldaKammerzell_2v2_DEST` | 2v2 Destruction |
+| Malkes | `_3x3_WFuldaMalkes_3v3_CONQ` | 3v3 Conquest |
+| Malkes | `_3x3_WFuldaMalkes_3v3_DEST` | 3v3 Destruction |
+| Neuenberg | `_3x3_WFuldaNeuen_1v1_CONQ` | 1v1 Conquest |
+| Neuenberg | `_3x3_WFuldaNeuen_2v2_CONQ` | 2v2 Conquest |
+| Neuenberg | `_3x3_WFuldaNeuen_2v2_DEST` | 2v2 Destruction |
+
+Army General file names:
+
+- `SM_FO_3x3_WestFulda_01`
+- `SM_FO_3x3_WestFulda_02`
+- `SM_PL_3x3_WestFulda_01`
+- `SM_PL_3x3_WestFulda_02`
+- `SM_PL_3x3_WestFulda_03`
+- `SM_PL_3x3_WestFulda_04`
+- `SM_SU_3x3_WestFulda_01`
+- `SM_SU_3x3_WestFulda_02`
+- `SM_SU_3x3_WestFulda_03`
+
+</details>
+
+<details>
+<summary>Highway to Oslo (4 scenario IDs)</summary>
+
+Workshop Mod List `3474588989/14`. The Workshop page calls these 1v1, and calls the `NS` pair no sidespawn. The file name has no `1v1` token.
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| Highway to Oslo | `_2x2_Oslo_Conquest` | Conquest |
+| Highway to Oslo | `_2x2_Oslo_Destruction` | Destruction |
+| Highway to Oslo | `_2x2_Oslo_ConquestNS` | Conquest, file suffix `NS` |
+| Highway to Oslo | `_2x2_Oslo_DestructionNS` | Destruction, file suffix `NS` |
+
+</details>
+
+<details>
+<summary>Ramstein Air Base (2 scenario IDs)</summary>
+
+Workshop Mod List `3705706772/9`. The Workshop page calls these 3v3. The file name has no `3v3` token.
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| Ramstein Air Base | `_2x2_Ramstein_Conquest` | Conquest |
+| Ramstein Air Base | `_2x2_Ramstein_Destruction` | Destruction |
+
+</details>
+
+<details>
+<summary>Arsenal (4 scenario IDs)</summary>
+
+Workshop Mod List `3415339374/20`. The Workshop page lists 2v2 and 3v3, each in Conquest and Destruction. The files are the four names below. Two of them end in `_6P`.
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| Two Hills | `_2x3_TwoHills_Conquest` | Conquest |
+| Two Hills | `_2x3_TwoHills_Destruction` | Destruction |
+| Two Hills | `_2x3_TwoHills_Conquest_6P` | Conquest, file suffix `_6P` |
+| Two Hills | `_2x3_TwoHills_Destruction_6P` | Destruction, file suffix `_6P` |
+
+</details>
+
+<details>
+<summary>Helbe (12 scenario IDs)</summary>
+
+Workshop Mod List `3762638679/36`. Norden is `_5x3_HelbeNorden_2v2_CONQ`. The Workshop page says NORDEN 3v3.
+
+| Map | Scenario ID | Size |
+| --- | --- | --- |
+| Helbe | `_5x3_Helbe_4v4_CONQ` | 4v4 Conquest |
+| Helbe | `_5x3_Helbe_10v10_CONQ` | 10v10 Conquest |
+| Hochland | `_5x3_HelbeHochland_2v2_CONQ` | 2v2 Conquest |
+| Norden | `_5x3_HelbeNorden_2v2_CONQ` | 2v2 Conquest |
+| Stream | `_5x3_HelbeStream_2v2_CONQ` | 2v2 Conquest |
+| Stream | `_5x3_HelbeStream_3v3_CONQ` | 3v3 Conquest |
+| Stream | `_5x3_HelbeStream_10v10_CONQ` | 10v10 Conquest |
+| Suden | `_5x3_HelbeSuden_1v1_CONQ_DUEL` | 1v1 Conquest duel |
+| Wide | `_5x3_HelbeWide_4v4_CONQ` | 4v4 Conquest |
+| Wide | `_5x3_HelbeWide_10v10_CONQ` | 10v10 Conquest |
+| Zentrum | `_5x3_HelbeZentrum_3v3_CONQ` | 3v3 Conquest |
+| Zentrum | `_5x3_HelbeZentrum_10v10_CONQ` | 10v10 Conquest |
+
+Army General file names:
+
+- `SM_FO_5x3_Helbe_01`
+- `SM_FO_5x3_Helbe_02`
+- `SM_FO_5x3_Helbe_03`
+- `SM_PL_5x3_Helbe_01`
+- `SM_PL_5x3_Helbe_02`
+- `SM_PL_5x3_Helbe_03`
+- `SM_PL_5x3_Helbe_04`
+- `SM_PL_5x3_Helbe_05`
+
+</details>
 
 <details>
 <summary>Base game (102 scenario IDs)</summary>
+
+Leave **Workshop Mod List** and **Workshop Mod Tags** empty. These IDs are Eugen's Map Base Id column.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -234,180 +398,6 @@ The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.i
 
 </details>
 
-#### Red Dragon map pack
-
-The Red Dragon scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-10. The procedure is in the install guide, step 4. The Workshop page says Wonsan Harbour; the file name is `WonsanNative`. The page description, fetched the same day, still lists 18 maps. The [change note](https://steamcommunity.com/sharedfiles/filedetails/changelog/3811913066) for Mod Version 27 names the 10 added layouts. The two Strait to the Point Land & Sea rows take their size from the `2v2` and `4v4` tokens in the file names.
-
-<details>
-<summary>Red Dragon map pack (28 scenario IDs)</summary>
-
-| Map | Scenario ID | Size |
-| --- | --- | --- |
-| Hell in a Very Small Place | `RDPort_HellInAVerySmallPlace_1v1_CONQ` | 1v1 |
-| Mud Fight | `RDPort_MudFight_1v1_CONQ` | 1v1 |
-| Paddy Field | `RDPort_PaddyField_1v1_CONQ` | 1v1 |
-| Strait to the Point (file name `StraitSmall`) | `RDPort_StraitSmall_1v1_CONQ` | 1v1 |
-| Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
-| Wonsan Harbour Land & Sea (file name `WonsanLandSea`) | `RDPort_WonsanLandSea_1v1_CONQ` | 1v1 |
-| Another D-Day | `RDPort_AnotherDDay_2v2_CONQ` | 2v2 |
-| Apocalypse Imminent | `RDPort_ApocalypseImminent_2v2_CONQ` | 2v2 |
-| Chosin Reservoir | `RDPort_ChosinReservoir_2v2_CONQ` | 2v2 |
-| Gunboat Diplomacy | `RDPort_GunboatDiplomacy_2v2_CONQ` | 2v2 |
-| Hop and Glory | `RDPort_HopAndGlory_2v2_CONQ` | 2v2 |
-| Jungle Law | `RDPort_JungleLaw_2v2_CONQ` | 2v2 |
-| Operation Chromite | `RDPort_OperationChromite_2v2_CONQ` | 2v2 |
-| Paddy Field | `RDPort_PaddyField_2v2_CONQ` | 2v2 |
-| Strait to the Point Land & Sea (file name `StraitSmallLandSea`) | `RDPort_StraitSmallLandSea_2v2_CONQ` | 2v2 |
-| Wonsan Harbour (file name `WonsanNative`) | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
-| 38th Perpendicular | `RDPort_38thPerpendicular_3v3_CONQ` | 3v3 |
-| Another D-Day in Paradise Land & Sea | `RDPort_AnotherDDayLandSea_3v3_CONQ` | 3v3 |
-| Back to Inchon | `RDPort_BackToInchon_3v3_CONQ` | 3v3 |
-| Gunboat Diplomacy Land & Sea | `RDPort_GunboatLandSea_3v3_CONQ` | 3v3 |
-| Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
-| 38th Parallel | `RDPort_38thParallel_4v4_CONQ` | 4v4 |
-| Battle of Yuchalnok Pass | `RDPort_BattleOfYuchalnokPass_4v4_CONQ` | 4v4 |
-| Final Meltdown | `RDPort_FinalMeltdown_4v4_CONQ` | 4v4 |
-| Floods | `RDPort_Floods_4v4_CONQ` | 4v4 |
-| Strait to the Point Land & Sea (file name `StraitLandSea`) | `RDPort_StraitLandSea_4v4_CONQ` | 4v4 |
-| Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
-| Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
-
-</details>
-
-Every map in that table is Conquest, so leave **Combat Rule** at `2` for them.
-
-#### Workshop mods
-
-| Mod | Workshop id | Workshop Mod List | Workshop Mod Tags |
-| --- | --- | --- | --- |
-| [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) | `3595948209` | `3595948209/16` | `Gameplay-Interface-Sound-Scenarios-Maps` |
-| [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) | `3388575848` | `3388575848/7` | `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` with a map pack |
-| [WARNO: Red Dragon - Map Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) | `3811913066` | `3811913066/27` | `Maps-Scenarios` |
-| [WEST FULDA 1.0](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349) | `3363584349` | `3363584349/1023` | `Maps-Scenarios` |
-| [Highway to Oslo](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989) | `3474588989` | `3474588989/14` | `Maps-Scenarios` |
-| [Ramstein Air Base](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772) | `3705706772` | `3705706772/9` | `Maps-Scenarios` |
-| [Arsenal](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374) | `3415339374` | `3415339374/20` | `Maps-Scenarios` |
-| [Helbe](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679) | `3762638679` | `3762638679/36` | `Maps-Scenarios` |
-
-Each Workshop Mod List value is `Version` in that mod's `Config.ini`, read from `steamapps/workshop/content/1611600/<id>/Config.ini`. Red Dragon was re-read on 2026-10-10. The others were read on 2026-10-09. The Workshop page does not publish that number. If the author increments `Version`, change the field to match.
-
-Galactic Divide and A World in Flames are a total conversion and a modern-day overhaul. Their `Scenarios/` folders are empty. **Map** stays a scenario ID from the base game or from a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209/16-3811913066/27`.
-
-The scenario IDs below are the file names in each mod's `Scenarios/` folder, read on 2026-10-09. The ID is the name before `_Definition.dat`. Where the Workshop page uses a different size or place name, the file name is the value for **Map**. Files whose names start with `SM_` are Army General file names in the same list. This repository has not seen them used as a lobby **Map**.
-
-<details>
-<summary>WEST FULDA 1.0 scenario IDs</summary>
-
-Workshop Mod List `3363584349/1023`. Grossenluder is `_3x3_WFuldaGrossen_1v1_CONQ` and `_3x3_WFuldaGrossen_2v2_DEST`. Neuenberg also has `_3x3_WFuldaNeuen_1v1_CONQ`.
-
-| Map | Scenario ID | Size |
-| --- | --- | --- |
-| West Fulda | `_3x3_WFulda_4v4_CONQ` | 4v4 Conquest |
-| West Fulda | `_3x3_WFulda_4v4_DEST` | 4v4 Destruction |
-| West Fulda | `_3x3_WFulda_10v10_CONQ` | 10v10 Conquest |
-| West Fulda | `_3x3_WFulda_10v10_DEST` | 10v10 Destruction |
-| Bimbach | `_3x3_WFuldaBimbach_2v2_CONQ` | 2v2 Conquest |
-| Bimbach | `_3x3_WFuldaBimbach_2v2_DEST` | 2v2 Destruction |
-| Grossenluder | `_3x3_WFuldaGrossen_1v1_CONQ` | 1v1 Conquest |
-| Grossenluder | `_3x3_WFuldaGrossen_2v2_DEST` | 2v2 Destruction |
-| Kammerzell | `_3x3_WFuldaKammerzell_1v1_CONQ` | 1v1 Conquest |
-| Kammerzell | `_3x3_WFuldaKammerzell_2v2_CONQ` | 2v2 Conquest |
-| Kammerzell | `_3x3_WFuldaKammerzell_2v2_DEST` | 2v2 Destruction |
-| Malkes | `_3x3_WFuldaMalkes_3v3_CONQ` | 3v3 Conquest |
-| Malkes | `_3x3_WFuldaMalkes_3v3_DEST` | 3v3 Destruction |
-| Neuenberg | `_3x3_WFuldaNeuen_1v1_CONQ` | 1v1 Conquest |
-| Neuenberg | `_3x3_WFuldaNeuen_2v2_CONQ` | 2v2 Conquest |
-| Neuenberg | `_3x3_WFuldaNeuen_2v2_DEST` | 2v2 Destruction |
-
-Army General file names:
-
-- `SM_FO_3x3_WestFulda_01`
-- `SM_FO_3x3_WestFulda_02`
-- `SM_PL_3x3_WestFulda_01`
-- `SM_PL_3x3_WestFulda_02`
-- `SM_PL_3x3_WestFulda_03`
-- `SM_PL_3x3_WestFulda_04`
-- `SM_SU_3x3_WestFulda_01`
-- `SM_SU_3x3_WestFulda_02`
-- `SM_SU_3x3_WestFulda_03`
-
-</details>
-
-<details>
-<summary>Highway to Oslo scenario IDs</summary>
-
-Workshop Mod List `3474588989/14`. The Workshop page calls these 1v1, and calls the `NS` pair no sidespawn. The file name has no `1v1` token.
-
-| Map | Scenario ID | Size |
-| --- | --- | --- |
-| Highway to Oslo | `_2x2_Oslo_Conquest` | Conquest |
-| Highway to Oslo | `_2x2_Oslo_Destruction` | Destruction |
-| Highway to Oslo | `_2x2_Oslo_ConquestNS` | Conquest, file suffix `NS` |
-| Highway to Oslo | `_2x2_Oslo_DestructionNS` | Destruction, file suffix `NS` |
-
-</details>
-
-<details>
-<summary>Ramstein Air Base scenario IDs</summary>
-
-Workshop Mod List `3705706772/9`. The Workshop page calls these 3v3. The file name has no `3v3` token.
-
-| Map | Scenario ID | Size |
-| --- | --- | --- |
-| Ramstein Air Base | `_2x2_Ramstein_Conquest` | Conquest |
-| Ramstein Air Base | `_2x2_Ramstein_Destruction` | Destruction |
-
-</details>
-
-<details>
-<summary>Arsenal scenario IDs</summary>
-
-Workshop Mod List `3415339374/20`. The Workshop page lists 2v2 and 3v3, each in Conquest and Destruction. The files are the four names below. Two of them end in `_6P`.
-
-| Map | Scenario ID | Size |
-| --- | --- | --- |
-| Two Hills | `_2x3_TwoHills_Conquest` | Conquest |
-| Two Hills | `_2x3_TwoHills_Destruction` | Destruction |
-| Two Hills | `_2x3_TwoHills_Conquest_6P` | Conquest, file suffix `_6P` |
-| Two Hills | `_2x3_TwoHills_Destruction_6P` | Destruction, file suffix `_6P` |
-
-</details>
-
-<details>
-<summary>Helbe scenario IDs</summary>
-
-Workshop Mod List `3762638679/36`. Norden is `_5x3_HelbeNorden_2v2_CONQ`. The Workshop page says NORDEN 3v3.
-
-| Map | Scenario ID | Size |
-| --- | --- | --- |
-| Helbe | `_5x3_Helbe_4v4_CONQ` | 4v4 Conquest |
-| Helbe | `_5x3_Helbe_10v10_CONQ` | 10v10 Conquest |
-| Hochland | `_5x3_HelbeHochland_2v2_CONQ` | 2v2 Conquest |
-| Norden | `_5x3_HelbeNorden_2v2_CONQ` | 2v2 Conquest |
-| Stream | `_5x3_HelbeStream_2v2_CONQ` | 2v2 Conquest |
-| Stream | `_5x3_HelbeStream_3v3_CONQ` | 3v3 Conquest |
-| Stream | `_5x3_HelbeStream_10v10_CONQ` | 10v10 Conquest |
-| Suden | `_5x3_HelbeSuden_1v1_CONQ_DUEL` | 1v1 Conquest duel |
-| Wide | `_5x3_HelbeWide_4v4_CONQ` | 4v4 Conquest |
-| Wide | `_5x3_HelbeWide_10v10_CONQ` | 10v10 Conquest |
-| Zentrum | `_5x3_HelbeZentrum_3v3_CONQ` | 3v3 Conquest |
-| Zentrum | `_5x3_HelbeZentrum_10v10_CONQ` | 10v10 Conquest |
-
-Army General file names:
-
-- `SM_FO_5x3_Helbe_01`
-- `SM_FO_5x3_Helbe_02`
-- `SM_FO_5x3_Helbe_03`
-- `SM_PL_5x3_Helbe_01`
-- `SM_PL_5x3_Helbe_02`
-- `SM_PL_5x3_Helbe_03`
-- `SM_PL_5x3_Helbe_04`
-- `SM_PL_5x3_Helbe_05`
-
-</details>
-
-Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `ModList` makes a joining player who is missing the mod get prompted to download and enable it. This container does not download workshop files itself. It writes `Map` and `ModList`, then starts Eugen's entrypoint. That entrypoint only launches `warno-server`. Whether the server binary then downloads workshop item `3811913066` has not been confirmed on a running server.
-
 ### A second server
 
 Each server is its own container. Add another one from this same template. Do not use Unraid's reinstall action. Reinstall replaces the container you already have.
@@ -421,7 +411,7 @@ The container name, Game Port, Settings Folder, and Server Name are unique. The 
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
 | Server Name | `WARHOST - Hesse 2v2` | a different name |
 
-Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon example while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
+Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon map pack while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
 Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. If the image has no `flock` command, the start warns and continues. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 

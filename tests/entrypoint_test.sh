@@ -151,7 +151,7 @@ python3 - "$ROOT" << 'PY' || fail "base-game map list does not match the README"
 import pathlib, re, sys
 root = pathlib.Path(sys.argv[1])
 readme = root.joinpath("README.md").read_text()
-start = readme.index("#### Base game")
+start = readme.index("<summary>Base game (102 scenario IDs)</summary>")
 end = readme.index("</details>", start)
 readme_ids = re.findall(r"`(_[A-Za-z0-9_]+)`", readme[start:end])
 entry = root.joinpath("entrypoint-unraid.sh").read_text()
