@@ -80,6 +80,7 @@ Project commands in `.cursor/commands/` (name = file name):
 | `/implement-feature <what>` | A change that touches code, template, or docs and should end with checks and updated docs. |
 | `/review-and-verify` | You want an independent review of uncommitted changes before committing. |
 | `/credential-review` | You want an adversarial review of the Eugen login and dedicated key. Clear text on the Unraid form is accepted. |
+| `/slop-review` | You want an adversarial read of what ships (the app card, the form, the README, the install guide, the wrapper, and the icon) the way a moderator, a first-time installer, and a skeptical homelabber would read it. Start a new Agent chat and pick your strongest model first. It reports only; reply `apply` with finding IDs to fix those. |
 | `/workshop-mods` | You want the local WARNO workshop mods compared with the README: versions, tags, and scenario IDs. It reports only, unless you also ask it to apply the report. |
 | `/handoff` | You are about to close a chat or hand the work to someone else. |
 
@@ -87,6 +88,6 @@ Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `
 
 ## What is generic and what is WARNO-specific
 
-Generic, ready to copy into another game-server template repository: `rules/agent-workflow.mdc`, `rules/unraid-template.mdc`, `agents/unraid-template-reviewer.md` (replace its project-specifics paragraph), `agents/verifier.md`, `agents/docs-consistency.md`, the commands in `.cursor/commands/` except `credential-review.md` (rename `first-unraid-install` targets), `docs/UNRAID-TEMPLATE-GUIDE.md`, `scripts/print_template_fetch.sh`, and this file's structure.
+Generic, ready to copy into another game-server template repository: `rules/agent-workflow.mdc`, `rules/unraid-template.mdc`, `agents/unraid-template-reviewer.md` (replace its project-specifics paragraph), `agents/verifier.md`, `agents/docs-consistency.md`, the commands in `.cursor/commands/` except `credential-review.md` and `workshop-mods.md` (rename `first-unraid-install` targets, and replace the project-specifics section of `slop-review.md`), `docs/UNRAID-TEMPLATE-GUIDE.md`, `scripts/print_template_fetch.sh`, and this file's structure.
 
 WARNO-specific: `rules/warno-project.mdc`, `agents/warno-researcher.md`, `agents/credential-reviewer.md`, `agents/workshop-mod-reader.md`, `commands/credential-review.md`, `commands/workshop-mods.md`, `scripts/list_workshop_mods.py`, `README.md`, `docs/INSTALL-UNRAID.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, the template, the wrapper, samples, and tests.
