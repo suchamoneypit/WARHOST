@@ -498,6 +498,319 @@ if grep -qE 'warning: Workshop Mod List contains 3811913066/0|warning: Map' "${W
 fi
 grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt" || fail "a set mod list omitted the version hint"
 
+# Fake Steam: wget answers the details call from details/<id>.json and
+# DepotDownloader copies items/<id>.ini to Config.ini. Both log every call.
+FAKE_STEAM="${WORKDIR}/fake-steam"
+mkdir -p "${FAKE_STEAM}/bin"
+cat > "${FAKE_STEAM}/bin/wget" << 'EOF'
+#!/bin/sh
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+id=
+for arg in "$@"; do
+  case $arg in
+    *publishedfileids%5B0%5D=*) id=${arg##*=} ;;
+  esac
+done
+printf '%s\n' "$id" >> "${root}/wget.calls"
+if [ -n "$id" ] && [ -f "${root}/details/${id}.json" ]; then
+  cat "${root}/details/${id}.json"
+  exit 0
+fi
+exit 4
+EOF
+cat > "${FAKE_STEAM}/bin/DepotDownloader" << 'EOF'
+#!/bin/sh
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+id=
+dir=
+list=
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    -pubfile) id=$2; shift 2 ;;
+    -dir) dir=$2; shift 2 ;;
+    -filelist) list=$2; shift 2 ;;
+    *) shift ;;
+  esac
+done
+printf '%s\n' "$id" >> "${root}/downloader.calls"
+cp "$list" "${root}/filelist.last"
+printf 'home=%s\ntmp=%s\ncwd=%s\ndir=%s\n' "${HOME:-}" "${TMPDIR:-}" "$(pwd)" "$dir" > "${root}/downloader.env"
+settings=$(dirname "$(dirname "$dir")")
+for other in "$settings"/.warhost-stage.*/item/Config.ini; do
+  if [ -e "$other" ]; then
+    printf '%s saw %s\n' "$id" "$other" >> "${root}/leftovers"
+  fi
+done
+if [ -f "${root}/items/${id}.ini" ]; then
+  mkdir -p "${dir}/.DepotDownloader"
+  printf 'manifest\n' > "${dir}/.DepotDownloader/${id}.manifest"
+  cp "${root}/items/${id}.ini" "${dir}/Config.ini"
+  printf 'Total downloaded: 416 bytes (551 bytes uncompressed) from 1 depots\n'
+  exit 0
+fi
+printf 'Unable to locate manifest ID for published file %s\n' "$id"
+exit 1
+EOF
+chmod 755 "${FAKE_STEAM}/bin/wget" "${FAKE_STEAM}/bin/DepotDownloader"
+
+reset_fake_steam() {
+  rm -rf "${FAKE_STEAM}/details" "${FAKE_STEAM}/items"
+  mkdir -p "${FAKE_STEAM}/details" "${FAKE_STEAM}/items"
+  rm -f "${FAKE_STEAM}/leftovers" "${FAKE_STEAM}/filelist.last" "${FAKE_STEAM}/downloader.env"
+  : > "${FAKE_STEAM}/wget.calls"
+  : > "${FAKE_STEAM}/downloader.calls"
+}
+
+# The description holds an escaped decoy, as a changelog quoted in JSON would.
+steam_details() {
+  printf '{"response":{"result":1,"resultcount":1,"publishedfiledetails":[{"publishedfileid":"%s","result":1,"consumer_app_id":1611600,"description":"Patch notes \\"time_updated\\":5","time_created":1790955484,"time_updated":%s,"visibility":0}]}}' "$1" "$2" > "${FAKE_STEAM}/details/$1.json"
+}
+
+steam_item() {
+  printf '[Properties]\nName = Fixture\nID = %s ; Mod Steam ID, do not modify\nVersion = %s ; Value to increment when an update in this mod is incompatible with the current version\nDeckFormatVersion = 0 ; At least 1 for Gameplay mods\nModGenVersion = 201602 ; ModGen revision, do not modify\n' "$1" "$2" > "${FAKE_STEAM}/items/$1.ini"
+}
+
+# Windows line endings, with ModGenVersion before Version.
+steam_item_crlf() {
+  printf '[Properties]\r\nName = Fixture\r\nModGenVersion = 201602 ; ModGen revision, do not modify\r\nID = %s ; Mod Steam ID, do not modify\r\nVersion = %s ; Value to increment when an update in this mod is incompatible with the current version\r\n' "$1" "$2" > "${FAKE_STEAM}/items/$1.ini"
+}
+
+call_count() {
+  wc -l < "${FAKE_STEAM}/$1" | tr -d ' '
+}
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+make_server
+expect_ok "reads Version from Config.ini for a bare workshop id" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066 \
+  MOD_TAG_LIST=Maps-Scenarios
+grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "bare id was not written as id/version"
+grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini. Only that file was downloaded, and it has been deleted.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
+grep -qx 'Wrote WARNO settings for WARHOST - Hesse 2v2 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
+[ "$(call_count downloader.calls)" = 1 ] || fail "bare id did not download exactly once"
+printf 'Config.ini\n' | cmp -s - "${FAKE_STEAM}/filelist.last" || fail "the download asked for more than Config.ini"
+grep -qx '3811913066 1791628993 27' "${server}/settings/warhost-workshop-versions.txt" || fail "cache did not record id, update time, and Version"
+for key in home tmp cwd; do
+  grep -q "^${key}=${server}/settings/.warhost-stage\." "${FAKE_STEAM}/downloader.env" || fail "DepotDownloader ${key} was not the private download directory"
+done
+assert_no_stage_dirs "${server}/settings"
+if grep -qE '^(warning|note):' "${WORKDIR}/stdout.txt"; then
+  fail "a resolved Red Dragon id printed a warning or a note"
+fi
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "bare id stopped the server"
+
+expect_ok "reuses the cached Version while the Steam update time is unchanged" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+[ "$(call_count downloader.calls)" = 1 ] || fail "an unchanged item was downloaded again"
+[ "$(call_count wget.calls)" = 2 ] || fail "the second start did not check the Steam update time"
+grep -qx 'Workshop item 3811913066 is unchanged on Steam since the last check. Version 27.' "${WORKDIR}/stdout.txt" || fail "cache hit was not reported"
+grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "cache hit did not write the cached Version"
+
+steam_details 3811913066 1791700000
+steam_item 3811913066 28
+expect_ok "reads Config.ini again after the author publishes" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+[ "$(call_count downloader.calls)" = 2 ] || fail "a new Steam update time did not download Config.ini again"
+grep -qx 'ModList = 3811913066/28' "${server}/settings/variables.ini" || fail "the new Version was not written"
+grep -qx '3811913066 1791700000 28' "${server}/settings/warhost-workshop-versions.txt" || fail "cache did not record the new update"
+assert_no_stage_dirs "${server}/settings"
+
+rm -f "${FAKE_STEAM}/details/3811913066.json"
+expect_ok "uses the cached Version when Steam gives no update time" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+[ "$(call_count downloader.calls)" = 2 ] || fail "a failed update check still downloaded"
+grep -q '^warning: Steam gave no update time for Workshop item 3811913066, so Version 28 from the last check is used.' "${WORKDIR}/stdout.txt" || fail "failed update check did not warn"
+grep -qx 'ModList = 3811913066/28' "${server}/settings/variables.ini" || fail "failed update check did not write the cached Version"
+grep -qx '3811913066 1791700000 28' "${server}/settings/warhost-workshop-versions.txt" || fail "failed update check changed the cache"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed update check stopped the server"
+
+steam_details 3811913066 1791800000
+rm -f "${FAKE_STEAM}/items/3811913066.ini"
+expect_ok "keeps the cached Version when Config.ini cannot be read after an update" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+[ "$(call_count downloader.calls)" = 3 ] || fail "a new update time did not try the download"
+grep -qx 'warning: Could not read Config.ini for Workshop item 3811913066. DepotDownloader exited with status 1. Version 28 from the last check is used, and the next start tries again.' "${WORKDIR}/stdout.txt" || fail "failed download did not warn"
+grep -qx 'DepotDownloader: Unable to locate manifest ID for published file 3811913066' "${WORKDIR}/stderr.txt" || fail "failed download did not print the DepotDownloader log"
+grep -qx '3811913066 1791700000 28' "${server}/settings/warhost-workshop-versions.txt" || fail "failed download recorded the new update time"
+assert_no_stage_dirs "${server}/settings"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed download with a cache stopped the server"
+
+reset_fake_steam
+steam_details 3474588989 1787211611
+make_server
+expect_fail "refuses to start when a bare id has no cache and Config.ini cannot be read" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Oslo_Conquest \
+  MOD_LIST=3474588989
+grep -q 'Could not read Version for Workshop item 3474588989. DepotDownloader exited with status 1.' "${WORKDIR}/stderr.txt" || fail "failed first download did not say why"
+grep -q 'pin the number as 3474588989/' "${WORKDIR}/stderr.txt" || fail "failed first download did not offer a pin"
+if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
+  fail "a bare id with no Version started the server"
+fi
+[ ! -e "${server}/settings/variables.ini" ] || fail "a bare id with no Version wrote variables.ini"
+assert_no_stage_dirs "${server}/settings"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_details 3474588989 1787211611
+steam_item 3811913066 27
+steam_item_crlf 3474588989 14
+make_server
+expect_ok "resolves two bare ids one at a time with no Config.ini left between them" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066-3474588989
+grep -qx 'ModList = 3811913066/27-3474588989/14' "${server}/settings/variables.ini" || fail "two bare ids were not both resolved"
+printf '3811913066\n3474588989\n' | cmp -s - "${FAKE_STEAM}/downloader.calls" || fail "the two ids were not downloaded in order"
+[ ! -e "${FAKE_STEAM}/leftovers" ] || fail "a Config.ini was still present when the next item was fetched: $(cat "${FAKE_STEAM}/leftovers")"
+grep -qx '3811913066 1791628993 27' "${server}/settings/warhost-workshop-versions.txt" || fail "cache lost the first id"
+grep -qx '3474588989 1787211611 14' "${server}/settings/warhost-workshop-versions.txt" || fail "cache lost the second id"
+assert_no_stage_dirs "${server}/settings"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+make_server
+expect_ok "writes a pinned id/version as typed and resolves only the bare id" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066-3474588989/14
+grep -qx 'ModList = 3811913066/27-3474588989/14' "${server}/settings/variables.ini" || fail "a mixed list was not written as id/version"
+printf '3811913066\n' | cmp -s - "${FAKE_STEAM}/downloader.calls" || fail "a pinned id was downloaded"
+printf '3811913066\n' | cmp -s - "${FAKE_STEAM}/wget.calls" || fail "a pinned id was checked on Steam"
+
+reset_fake_steam
+make_server
+expect_ok "does not contact Steam for a list of pins" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Oslo_Conquest \
+  MOD_LIST=3474588989/14
+[ "$(call_count wget.calls)" = 0 ] || fail "a pinned list called the Steam details API"
+[ "$(call_count downloader.calls)" = 0 ] || fail "a pinned list ran DepotDownloader"
+[ ! -e "${server}/settings/warhost-workshop-versions.txt" ] || fail "a pinned list wrote the version cache"
+grep -qx 'ModList = 3474588989/14' "${server}/settings/variables.ini" || fail "a pinned list was not written as typed"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+make_server
+expect_ok "warns when a base-game map lists the bare Red Dragon id" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
+  MOD_LIST=3811913066
+grep -q 'warning: Map _2x2_Hesse_2vs2_CONQ is not a Red Dragon scenario' "${WORKDIR}/stdout.txt" || fail "a bare Red Dragon id on a base-game map did not warn"
+grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "the map warning did not write the resolved list"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 15
+make_server
+expect_ok "does not call a Version read from Config.ini out of date" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+grep -qx 'ModList = 3811913066/15' "${server}/settings/variables.ini" || fail "Version 15 from Config.ini was not written"
+if grep -q 'warning: Workshop Mod List contains' "${WORKDIR}/stdout.txt"; then
+  fail "a Version read from Config.ini raised the typed-pin warning"
+fi
+
+expect_fail "rejects a workshop id with an empty version" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066/
+grep -q 'Workshop ids such as 3811913066' "${WORKDIR}/stderr.txt" || fail "an empty version did not explain the format"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+make_server
+mkdir -p "${server}/settings"
+printf 'preserved-login\n' > "${server}/settings/login.ini"
+printf 'ModList = 3811913066/15\n' > "${server}/settings/variables.ini"
+printf '{}\n' > "${server}/settings/params_for_ai.json"
+expect_ok "does not resolve a bare id when write config is false" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  WRITE_CONFIG=false \
+  MOD_LIST=3811913066 \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400
+[ "$(call_count wget.calls)" = 0 ] || fail "write config false called the Steam details API"
+[ "$(call_count downloader.calls)" = 0 ] || fail "write config false ran DepotDownloader"
+grep -qx 'ModList = 3811913066/15' "${server}/settings/variables.ini" || fail "write config false changed the hand-written mod list"
+
 make_server
 mkdir -p "${server}/settings"
 printf 'preserved-login\n' > "${server}/settings/login.ini"

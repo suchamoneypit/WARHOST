@@ -180,8 +180,8 @@ note_workshop_mod_list() {
   case $map in
     RDPort_*) ;;
     *)
-      case "-$list" in
-        *-3811913066/*)
+      case "-$list-" in
+        *-3811913066/*|*-3811913066-*)
           printf '%s\n' "warning: Map $map is not a Red Dragon scenario, and Workshop Mod List contains the Red Dragon map pack 3811913066. Players without that mod cannot join. Clear Workshop Mod List and Workshop Mod Tags, or type none in both if a field refills after Apply. warno-server still starts with the mod listed."
           return 0
           ;;
@@ -193,7 +193,7 @@ note_workshop_mod_list() {
     pair=${rest%%-*}
     case $pair in
       3811913066/0|3811913066/15)
-        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That value fails for the Red Dragon pack. Config.ini Version was 27 on 2026-10-10. Set Workshop Mod List to 3811913066/27, or to the Version line in Config.ini if the author has incremented it, then Apply. warno-server still starts and logs nothing about the rejected join."
+        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That value fails for the Red Dragon pack. Config.ini Version was 27 on 2026-10-10. Set Workshop Mod List to 3811913066 so each start reads the current Version, then Apply. warno-server still starts and logs nothing about the rejected join."
         ;;
     esac
     case $rest in
@@ -400,6 +400,152 @@ note_next_container() {
   printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name."
 }
 
+WORKSHOP_APP_ID=1611600
+WORKSHOP_CACHE_FILE=warhost-workshop-versions.txt
+workshop_cache_lines=
+workshop_fetch_log=
+
+# Prints Steam's time_updated for one Workshop item, or nothing when Steam
+# gives no time. The response is one line of JSON; a quote inside a string
+# is escaped, so only the item's own field matches.
+workshop_time_updated() {
+  if ! command -v wget >/dev/null 2>&1; then
+    return 0
+  fi
+  wget -q -T 20 -t 2 -O - \
+    --post-data "itemcount=1&publishedfileids%5B0%5D=$1" \
+    https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/ 2>/dev/null |
+    sed -n 's/.*"time_updated":[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -n 1
+}
+
+# Downloads only Config.ini of one Workshop item into a private directory,
+# reads Version, and removes the directory before returning. Every mod names
+# that file Config.ini, so nothing from one item is left for the next.
+fetch_workshop_version() {
+  fetch_id=$1
+  workshop_version=
+  workshop_fetch_error=
+  workshop_fetch_log=
+  if ! command -v DepotDownloader >/dev/null 2>&1; then
+    workshop_fetch_error="DepotDownloader is not installed in this image."
+    return 1
+  fi
+  stage_dir=$(make_private_stage_dir) || stage_dir=
+  if [ -z "$stage_dir" ]; then
+    workshop_fetch_error="Could not create a private download directory under ${SETTINGS_DIR}."
+    return 1
+  fi
+  trap 'on_stage_exit' EXIT
+  trap 'on_stage_signal' HUP INT TERM
+  printf '%s\n' Config.ini > "${stage_dir}/filelist.txt"
+  set -- DepotDownloader -app "$WORKSHOP_APP_ID" -pubfile "$fetch_id" \
+    -filelist "${stage_dir}/filelist.txt" -dir "${stage_dir}/item"
+  if command -v timeout >/dev/null 2>&1; then
+    set -- timeout 300 "$@"
+  fi
+  fetch_status=0
+  (
+    cd "$stage_dir" || exit 1
+    HOME=$stage_dir TMPDIR=$stage_dir DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_EnableDiagnostics=0 "$@"
+  ) > "${stage_dir}/depotdownloader.log" 2>&1 || fetch_status=$?
+  config="${stage_dir}/item/Config.ini"
+  if [ "$fetch_status" -eq 0 ] && [ -f "$config" ] && [ ! -L "$config" ]; then
+    workshop_version=$(sed -n 's/^[[:space:]]*Version[[:space:]]*=[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$config" | head -n 1)
+  fi
+  if [ -z "$workshop_version" ]; then
+    if [ "$fetch_status" -ne 0 ]; then
+      workshop_fetch_error="DepotDownloader exited with status ${fetch_status}."
+    elif [ ! -f "$config" ]; then
+      workshop_fetch_error="Steam sent no Config.ini for this item."
+    else
+      workshop_fetch_error="Its Config.ini has no Version line."
+    fi
+    workshop_fetch_log=$(tail -n 5 "${stage_dir}/depotdownloader.log" 2>/dev/null || true)
+  fi
+  discard_stage_dir
+  trap - EXIT
+  trap - HUP INT TERM
+  [ -n "$workshop_version" ]
+}
+
+print_workshop_fetch_log() {
+  if [ -n "$workshop_fetch_log" ]; then
+    printf '%s\n' "$workshop_fetch_log" | sed 's/^/DepotDownloader: /' >&2
+  fi
+}
+
+remember_workshop_version() {
+  workshop_cache_lines="${workshop_cache_lines}$1 $2 $3
+"
+}
+
+# Sets workshop_version for one bare id. The cache holds "id time_updated
+# Version" from the last start; Config.ini is fetched again only when Steam's
+# time_updated differs or nothing is cached.
+resolve_workshop_id() {
+  ws_id=$1
+  workshop_version=
+  cached_time=
+  cached_version=
+  cache="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
+  if [ -f "$cache" ] && [ ! -L "$cache" ]; then
+    while read -r c_id c_time c_version c_extra || [ -n "${c_id:-}" ]; do
+      if [ "${c_id:-}" = "$ws_id" ] && is_number "${c_time:-}" && is_number "${c_version:-}"; then
+        cached_time=$c_time
+        cached_version=$c_version
+      fi
+    done < "$cache"
+  fi
+  steam_time=$(workshop_time_updated "$ws_id")
+  if [ -n "$cached_version" ] && [ -n "$steam_time" ] && [ "$steam_time" = "$cached_time" ]; then
+    workshop_version=$cached_version
+    printf '%s\n' "Workshop item ${ws_id} is unchanged on Steam since the last check. Version ${workshop_version}."
+    remember_workshop_version "$ws_id" "$cached_time" "$workshop_version"
+    return 0
+  fi
+  if [ -n "$cached_version" ] && [ -z "$steam_time" ]; then
+    workshop_version=$cached_version
+    printf '%s\n' "warning: Steam gave no update time for Workshop item ${ws_id}, so Version ${workshop_version} from the last check is used. If the author has published since, players are refused until a later start reads the new Version."
+    remember_workshop_version "$ws_id" "$cached_time" "$workshop_version"
+    return 0
+  fi
+  if fetch_workshop_version "$ws_id"; then
+    printf '%s\n' "Workshop item ${ws_id} is Version ${workshop_version}, read from its Config.ini. Only that file was downloaded, and it has been deleted."
+    remember_workshop_version "$ws_id" "${steam_time:-0}" "$workshop_version"
+    return 0
+  fi
+  print_workshop_fetch_log
+  if [ -n "$cached_version" ]; then
+    workshop_version=$cached_version
+    printf '%s\n' "warning: Could not read Config.ini for Workshop item ${ws_id}. ${workshop_fetch_error} Version ${workshop_version} from the last check is used, and the next start tries again."
+    remember_workshop_version "$ws_id" "$cached_time" "$workshop_version"
+    return 0
+  fi
+  die "Could not read Version for Workshop item ${ws_id}. ${workshop_fetch_error} Start the container again when Steam is reachable, or pin the number as ${ws_id}/<Version from that mod's Config.ini>."
+}
+
+# Rewrites MOD_LIST with every bare id as id/version. Pins stay as typed.
+resolve_workshop_list() {
+  ws_rest=$1
+  ws_resolved=
+  while [ -n "$ws_rest" ]; do
+    ws_entry=${ws_rest%%-*}
+    case $ws_rest in
+      *-*) ws_rest=${ws_rest#*-} ;;
+      *) ws_rest= ;;
+    esac
+    case $ws_entry in
+      */*) ;;
+      *)
+        resolve_workshop_id "$ws_entry"
+        ws_entry="${ws_entry}/${workshop_version}"
+        ;;
+    esac
+    ws_resolved=${ws_resolved:+${ws_resolved}-}${ws_entry}
+  done
+  MOD_LIST=$ws_resolved
+}
+
 case "$UPSTREAM_ENTRYPOINT" in
   /*) ;;
   *) die "UPSTREAM_ENTRYPOINT must be an absolute path." ;;
@@ -500,8 +646,8 @@ if [ "$write_config" = "true" ]; then
     *) die "Combat rule must be 1 for Destruction or 2 for Conquest." ;;
   esac
 
-  if [ -n "$MOD_LIST" ] && ! printf '%s\n' "$MOD_LIST" | grep -Eq '^[0-9]+/[0-9]+(-[0-9]+/[0-9]+)*$'; then
-    die "Workshop mod list must be empty, none, or look like 3811913066/27. Join extra mods with a hyphen, such as 3811913066/27-123456/0."
+  if [ -n "$MOD_LIST" ] && ! printf '%s\n' "$MOD_LIST" | grep -Eq '^[0-9]+(/[0-9]+)?(-[0-9]+(/[0-9]+)?)*$'; then
+    die "Workshop mod list must be empty, none, or Workshop ids such as 3811913066. Add /version only to pin a number, such as 3811913066/27. Join mods with a hyphen, such as 3811913066-3474588989."
   fi
   if [ -n "$MOD_TAG_LIST" ] && ! printf '%s\n' "$MOD_TAG_LIST" | grep -Eq '^[A-Za-z]+(-[A-Za-z]+)*$'; then
     die "Workshop mod tags must be empty, none, or look like Maps-Scenarios."
@@ -523,6 +669,10 @@ if [ "$write_config" = "true" ]; then
   esac
 
   prepare_server_runtime
+  form_mod_list=$MOD_LIST
+  if [ -n "$MOD_LIST" ]; then
+    resolve_workshop_list "$MOD_LIST"
+  fi
   umask 077
   stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
   trap 'on_stage_exit' EXIT
@@ -572,6 +722,9 @@ if [ "$write_config" = "true" ]; then
   } > "$tmp_variables"
 
   printf '%s\n' '{' '  "0": [],' '  "1": []' '}' > "$tmp_ai"
+  if [ -n "$workshop_cache_lines" ]; then
+    printf '%s' "$workshop_cache_lines" > "${stage_dir}/${WORKSHOP_CACHE_FILE}"
+  fi
 
   # WARHOST_STAGING_HOLD is a test seam, not a form field. When it names an
   # existing file, wait until that file is gone before renaming into place.
@@ -585,6 +738,9 @@ if [ "$write_config" = "true" ]; then
   publish_staged_file "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
   publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
   chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
+  if [ -n "$workshop_cache_lines" ]; then
+    publish_staged_file "${stage_dir}/${WORKSHOP_CACHE_FILE}" "${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
+  fi
   discard_stage_dir
   trap - EXIT
   trap - HUP INT TERM
@@ -595,7 +751,7 @@ if [ "$write_config" = "true" ]; then
   else
     printf 'Wrote WARNO settings for %s on port %s. Map %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$key_tail"
   fi
-  note_workshop_mod_list "$MOD_LIST" "$MAP" "$MOD_TAG_LIST"
+  note_workshop_mod_list "$form_mod_list" "$MAP" "$MOD_TAG_LIST"
 else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then
     die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."
