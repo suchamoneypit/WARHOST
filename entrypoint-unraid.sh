@@ -45,20 +45,155 @@ require_number_between() {
   fi
 }
 
+is_none() {
+  [ "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" = "none" ]
+}
+
+is_base_game_map() {
+  # README base-game table, 102 scenario IDs. Workshop IDs that also start
+  # with "_" are not in this list.
+  case $1 in
+    _3x3_Airport_1vs1_CONQ_DUEL|\
+    _2x3_BlackForestStorm_1vs1_CONQ_DUEL|\
+    _4x2_Chemical_1vs1_CONQ_DUEL|\
+    _2x3_Death_Row_1vs1_CONQ_TRAINING|\
+    _4x3_geisa_1vs1_CONQ_TRAINING|\
+    _2x2_Hesse_1vs1_CONQ_DUEL|\
+    _3x3_Kreide_1vs1_CONQ_DUEL|\
+    _3x3_MountRiver_1vs1_CONQ_DUEL|\
+    _3x3_MountRiver_1vs1_CONQ_TRAINING|\
+    _2x3_Ohmen_1vs1_CONQ_DUEL|\
+    _2x3_Two_lakes_1vs1_CONQ_DUEL|\
+    _3x3_UrbanFrontlines_1vs1_CONQ_DUEL|\
+    _2x3_Vertigo_1vs1_CONQ_DUEL|\
+    _2x3_Albion_Military_Base_2vs2_CONQ|\
+    _2x3_BlackForestStorm_2vs2_CONQ|\
+    _4x2_Chemical_2vs2_CONQ_TRAINING|\
+    _2x3_Death_Row_2vs2_CONQ|\
+    _2x2_Hesse_2vs2_CONQ|\
+    _5x2_Loop_2vs2_CONQ|\
+    _3x3_MountRiver_2vs2_CONQ_ASSAULT|\
+    _2x3_Ripple_2vs2_CONQ|\
+    _2x2_Tension_2vs2_CONQ|\
+    _2x2_Teufelsmoor_2vs2_CONQ|\
+    _2x3_Two_lakes_2vs2_CONQ|\
+    _2x3_TwoWays_2vs2_CONQ|\
+    _3x3_UrbanFrontlines_2vs2_CONQ|\
+    _2x3_Vertigo_2vs2_CONQ|\
+    _2x3_Death_Row_2vs2_DEST|\
+    _2x3_Ripple_2vs2_DEST|\
+    _2x3_Two_lakes_2vs2_DEST|\
+    _2x3_TwoWays_2vs2_DEST|\
+    _2x3_Vertigo_2vs2_DEST|\
+    _3x3_Airport_3vs3_CONQ|\
+    _4x3_Cliff_3vs3_CONQ|\
+    _3x3_Cyrus_3vs3_CONQ|\
+    _3x3_DangerHills_3vs3_CONQ|\
+    _3x3_Eiche_3vs3_CONQ|\
+    _3x3_Factory_3vs3_CONQ|\
+    _3x3_Kreide_3vs3_CONQ|\
+    _3x3_MountRiver_3vs3_CONQ|\
+    _3x3_Railway_3vs3_CONQ|\
+    _3x3_Rift_3vs3_CONQ|\
+    _3x3_Rocks_3vs3_CONQ|\
+    _3x3_Rocks_3vs3_CONQ_ASSAULT|\
+    _3x3_Stoneware_3vs3_CONQ|\
+    _3x3_Surrounded_3vs3_CONQ|\
+    _3x3_TripleStrike_3vs3_CONQ|\
+    _3x3_TwinCities_3vs3_CONQ|\
+    _2x3_TwoWays_3vs3_CONQ|\
+    _3x3_UrbanFrontlines_3vs3_CONQ|\
+    _3x3_Valley_3vs3_CONQ|\
+    _3x3_Volcano_3vs3_CONQ|\
+    _3x3_Airport_3vs3_DEST|\
+    _3x3_Cyrus_3vs3_DEST|\
+    _3x3_DangerHills_3vs3_DEST|\
+    _3x3_Eiche_3vs3_DEST|\
+    _3x3_Factory_3vs3_DEST|\
+    _3x3_Kreide_3vs3_DEST|\
+    _3x3_MountRiver_3vs3_DEST|\
+    _3x3_Railway_3vs3_DEST|\
+    _3x3_Rift_3vs3_DEST|\
+    _3x3_Rocks_3vs3_DEST|\
+    _3x3_Stoneware_3vs3_DEST|\
+    _3x3_Surrounded_3vs3_DEST|\
+    _3x3_TripleStrike_3vs3_DEST|\
+    _3x3_TwinCities_3vs3_DEST|\
+    _3x3_UrbanFrontlines_3vs3_DEST|\
+    _3x3_Valley_3vs3_DEST|\
+    _3x3_Volcano_3vs3_DEST|\
+    _4x2_Chemical_4vs4_CONQ|\
+    _4x2_DarkStream_4vs4_CONQ|\
+    _4x2_Chemical_4vs4_DEST|\
+    _3x3_Airport_10vs10_CONQ|\
+    _5x2_crown_10vs10_CONQ|\
+    _3x3_Cyrus_10vs10_CONQ|\
+    _3x3_DangerHills_10vs10_CONQ|\
+    _4x2_DarkStream_10vs10_CONQ|\
+    _3x3_Factory_10vs10_CONQ|\
+    _4x3_geisa_10vs10_CONQ|\
+    _3x3_IronWaters_10vs10_CONQ|\
+    _3x3_Kreide_10vs10_CONQ|\
+    _5x2_Loop_10vs10_CONQ|\
+    _3x3_Railway_10vs10_CONQ|\
+    _3x3_Rift_10vs10_CONQ|\
+    _3x3_Rocks_10vs10_CONQ|\
+    _3x3_Stoneware_10vs10_CONQ|\
+    _3x3_Surrounded_10vs10_CONQ|\
+    _3x3_TripleStrike_10vs10_CONQ|\
+    _3x3_TwinCities_10vs10_CONQ|\
+    _3x3_UrbanFrontlines_10vs10_CONQ|\
+    _3x3_Valley_10vs10_CONQ|\
+    _3x3_Volcano_10vs10_CONQ|\
+    _3x3_Airport_10vs10_DEST|\
+    _5x2_crown_10vs10_DEST|\
+    _3x3_Cyrus_10vs10_DEST|\
+    _3x3_DangerHills_10vs10_DEST|\
+    _4x3_geisa_10vs10_DEST|\
+    _3x3_IronWaters_10vs10_DEST|\
+    _3x3_Kreide_10vs10_DEST|\
+    _5x2_Loop_10vs10_DEST|\
+    _3x3_Rocks_10vs10_DEST|\
+    _3x3_Volcano_10vs10_DEST)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
 # warno-server does not log a rejected join. The client compares the number
 # after the slash with Version in the mod's Config.ini.
 note_workshop_mod_list() {
   list=$1
+  map=$2
+  tags=$3
   if [ -z "$list" ]; then
+    if ! is_base_game_map "$map"; then
+      printf '%s\n' "warning: Workshop Mod List is empty and Map $map is not a base-game scenario. Only a base-game map runs with no workshop mod. Set Workshop Mod List to the pack for this map, or set Map to a base-game ID such as _2x2_Hesse_2vs2_CONQ. warno-server still starts."
+    fi
+    if [ -n "$tags" ]; then
+      printf '%s\n' "note: Workshop Mod Tags is $tags and Workshop Mod List is empty. The tags are written. They label the server in the browser and do not select modded content."
+    fi
     return 0
   fi
   printf '%s\n' "Clients compare each Workshop id/version with Version in that mod's Config.ini. The client message \"At least one mod version doesnt match\" does not appear in this log."
+  case $map in
+    RDPort_*) ;;
+    *)
+      case "-$list" in
+        *-3811913066/*)
+          printf '%s\n' "warning: Map $map is not a Red Dragon scenario, and Workshop Mod List contains the Red Dragon map pack 3811913066. Players without that mod cannot join. Clear Workshop Mod List and Workshop Mod Tags, or type none in both if a field refills after Apply. warno-server still starts with the mod listed."
+          return 0
+          ;;
+      esac
+      ;;
+  esac
   rest=$list
   while [ -n "$rest" ]; do
     pair=${rest%%-*}
     case $pair in
-      3811913066/0)
-        printf '%s\n' "warning: Workshop Mod List contains 3811913066/0. That value fails for the Red Dragon pack. Config.ini Version was 15 on 2026-10-09. Set Workshop Mod List to 3811913066/15, or to the Version line in Config.ini if the author has incremented it, then Apply. warno-server still starts and logs nothing about the rejected join."
+      3811913066/0|3811913066/15)
+        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That value fails for the Red Dragon pack. Config.ini Version was 27 on 2026-10-10. Set Workshop Mod List to 3811913066/27, or to the Version line in Config.ini if the author has incremented it, then Apply. warno-server still starts and logs nothing about the rejected join."
         ;;
     esac
     case $rest in
@@ -321,7 +456,7 @@ if [ "$write_config" = "true" ]; then
   key_tail=$(printf '%s' "$EUGEN_DEDICATED_KEY" | tail -c 4)
 
   if [ -z "${SERVER_NAME:-}" ]; then
-    SERVER_NAME="WARHOST - Red Dragon 4v4"
+    SERVER_NAME="WARHOST - Hesse 2v2"
   fi
   require_single_line "Server name" "$SERVER_NAME"
   case "$SERVER_NAME" in
@@ -340,11 +475,15 @@ if [ "$write_config" = "true" ]; then
   if [ -z "${COMBAT_RULE+x}" ] || [ -z "$COMBAT_RULE" ]; then
     COMBAT_RULE=2
   fi
-  if [ -z "${MOD_LIST+x}" ]; then
-    MOD_LIST="3811913066/15"
+  # Unraid replaces a blank field with its Default, so containers made from an
+  # older template can only opt out of their saved mod defaults with none.
+  MOD_LIST=${MOD_LIST:-}
+  MOD_TAG_LIST=${MOD_TAG_LIST:-}
+  if is_none "$MOD_LIST"; then
+    MOD_LIST=
   fi
-  if [ -z "${MOD_TAG_LIST+x}" ]; then
-    MOD_TAG_LIST="Maps-Scenarios"
+  if is_none "$MOD_TAG_LIST"; then
+    MOD_TAG_LIST=
   fi
 
   require_single_line "Max players" "$NB_MAX_PLAYER"
@@ -362,10 +501,10 @@ if [ "$write_config" = "true" ]; then
   esac
 
   if [ -n "$MOD_LIST" ] && ! printf '%s\n' "$MOD_LIST" | grep -Eq '^[0-9]+/[0-9]+(-[0-9]+/[0-9]+)*$'; then
-    die "Workshop mod list must look like 3811913066/15. Join extra mods with a hyphen, such as 3811913066/15-123456/0."
+    die "Workshop mod list must be empty, none, or look like 3811913066/27. Join extra mods with a hyphen, such as 3811913066/27-123456/0."
   fi
   if [ -n "$MOD_TAG_LIST" ] && ! printf '%s\n' "$MOD_TAG_LIST" | grep -Eq '^[A-Za-z]+(-[A-Za-z]+)*$'; then
-    die "Workshop mod tags must look like Maps-Scenarios."
+    die "Workshop mod tags must be empty, none, or look like Maps-Scenarios."
   fi
 
   : "${MAP:?Set Map to a scenario ID. A base-game ID looks like _2x2_Hesse_2vs2_CONQ. Jungle Law is RDPort_JungleLaw_2v2_CONQ.}"
@@ -456,7 +595,7 @@ if [ "$write_config" = "true" ]; then
   else
     printf 'Wrote WARNO settings for %s on port %s. Map %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$key_tail"
   fi
-  note_workshop_mod_list "$MOD_LIST"
+  note_workshop_mod_list "$MOD_LIST" "$MAP" "$MOD_TAG_LIST"
 else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then
     die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."

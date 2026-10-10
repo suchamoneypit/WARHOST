@@ -15,7 +15,7 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is the base-game map Hesse 2v2 with no workshop mods, the Map and Workshop Mod List descriptions show the Red Dragon map pack values, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
@@ -27,14 +27,14 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
-  <Requires>An Eugen Systems WARNO dedicated-server login and key for the person hosting. Joining players need the game and, for Jungle Law, Steam Workshop item 3811913066.</Requires>
+  <Requires>An Eugen Systems WARNO dedicated-server login and key for the person hosting. Joining players need the game, plus each Steam Workshop mod in Workshop Mod List, for example item 3811913066 for the Red Dragon map pack.</Requires>
   <Description>
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, variables.ini, and params_for_ai.json from this form.
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is the base-game map Hesse 2v2 with no workshop mods, the Map and Workshop Mod List descriptions show the Red Dragon map pack values, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. Use /mnt/user/appdata/warno/10400/settings. The next container uses this path with the port number plus 1, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>
@@ -42,13 +42,13 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Key from the same reply. Shown in clear text on this form so servers can be told apart." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Public address players connect to. Not a hostname, and not this Unraid server's LAN address." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="Forward this number to the Unraid host as TCP and UDP. The next container uses this number plus 1. Players join by Server Name in the browser." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
-  <Config Name="Server Name" Target="SERVER_NAME" Default="WARHOST - Red Dragon 4v4" Mode="" Description="Name in the WARNO browser. Give each container a different name. No equals sign." Type="Variable" Display="always" Required="true" Mask="false">WARHOST - Red Dragon 4v4</Config>
-  <Config Name="Map" Target="MAP" Default="RDPort_JungleLaw_2v2_CONQ" Mode="" Description="Scenario ID, not the display name. Preset RDPort_JungleLaw_2v2_CONQ; base-game and workshop lists are in the project README." Type="Variable" Display="always" Required="true" Mask="false">RDPort_JungleLaw_2v2_CONQ</Config>
+  <Config Name="Server Name" Target="SERVER_NAME" Default="WARHOST - Hesse 2v2" Mode="" Description="Name in the WARNO browser. Give each container a different name. No equals sign." Type="Variable" Display="always" Required="true" Mask="false">WARHOST - Hesse 2v2</Config>
+  <Config Name="Map" Target="MAP" Default="_2x2_Hesse_2vs2_CONQ" Mode="" Description="Scenario ID, not the display name. Preset _2x2_Hesse_2vs2_CONQ, a base-game map. Red Dragon example: RDPort_JungleLaw_2v2_CONQ with Workshop Mod List 3811913066/27. Full lists are in the project README." Type="Variable" Display="always" Required="true" Mask="false">_2x2_Hesse_2vs2_CONQ</Config>
   <Config Name="Max Players" Target="NB_MAX_PLAYER" Default="4" Mode="" Description="Total slots, both sides. Preset 4, maximum 20, not locked to the map; 8 on a 2v2 map is untested." Type="Variable" Display="always" Required="true" Mask="false">4</Config>
   <Config Name="Minimum Players" Target="NB_MIN_PLAYER" Default="2" Mode="" Description="Players needed before the countdown starts. Cannot be higher than Max Players." Type="Variable" Display="always" Required="true" Mask="false">2</Config>
   <Config Name="Team Size" Target="MAX_TEAM_SIZE" Default="2" Mode="" Description="Slots on one side. Preset 2, usually half of Max Players." Type="Variable" Display="always" Required="true" Mask="false">2</Config>
   <Config Name="Combat Rule" Target="COMBAT_RULE" Default="2" Mode="" Description="1 is Destruction and 2 is Conquest. Use 2 when the scenario ID contains CONQ or Conquest, and 1 when it contains DEST or Destruction." Type="Variable" Display="always" Required="true" Mask="false">2</Config>
-  <Config Name="Workshop Mod List" Target="MOD_LIST" Default="3811913066/15" Mode="" Description="3811913066/15 is the WARNO: Red Dragon - Map Pack, and 15 is that pack's version for Workshop Mod List. workshopId/version comes from the mod's Config.ini; clear it for a base-game map, and see the project README for named mods." Type="Variable" Display="advanced" Required="false" Mask="false">3811913066/15</Config>
+  <Config Name="Workshop Mod List" Target="MOD_LIST" Default="" Mode="" Description="Empty for a base-game map. Red Dragon map pack example: 3811913066/27. Format is workshopId/version from the mod's Config.ini; join mods with a hyphen. none also means empty. Named mods are in the project README." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="Write Config From Form" Target="WRITE_CONFIG" Default="true" Mode="" Description="true rewrites the three settings files from this form on every start. false leaves those files and sets login.ini to mode 600." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
-  <Config Name="Workshop Mod Tags" Target="MOD_TAG_LIST" Default="Maps-Scenarios" Mode="" Description="Browser icons only. Words are Gameplay, Interface, Maps, Scenarios, Music, and Sound, joined with hyphens." Type="Variable" Display="advanced" Required="false" Mask="false">Maps-Scenarios</Config>
+  <Config Name="Workshop Mod Tags" Target="MOD_TAG_LIST" Default="" Mode="" Description="Empty for a base-game map. Map pack example: Maps-Scenarios. Browser icons only; words are Gameplay, Interface, Maps, Scenarios, Music, and Sound, joined with hyphens. none also means empty." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
 </Container>

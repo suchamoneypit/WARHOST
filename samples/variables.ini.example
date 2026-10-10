@@ -1,12 +1,10 @@
-ServerName = WARHOST - Red Dragon 4v4
+ServerName = WARHOST - Hesse 2v2
 NbMaxPlayer = 4
 NbMinPlayer = 2
 MaxTeamSize = 2
 GameType = 0
 CombatRule = 2
-Map = RDPort_JungleLaw_2v2_CONQ
-ModList = 3811913066/15
-ModTagList = Maps-Scenarios
+Map = _2x2_Hesse_2vs2_CONQ
 MapRotationType = 0
 InitMoney = 750
 TimeLimit = 1200

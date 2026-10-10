@@ -147,6 +147,25 @@ release_held() {
   fail "held wrapper failed"
 }
 
+python3 - "$ROOT" << 'PY' || fail "base-game map list does not match the README"
+import pathlib, re, sys
+root = pathlib.Path(sys.argv[1])
+readme = root.joinpath("README.md").read_text()
+start = readme.index("#### Base game")
+end = readme.index("</details>", start)
+readme_ids = re.findall(r"`(_[A-Za-z0-9_]+)`", readme[start:end])
+entry = root.joinpath("entrypoint-unraid.sh").read_text()
+fn = entry.split("is_base_game_map()", 1)[1].split("\n}", 1)[0]
+script_ids = re.findall(r"(_[A-Za-z0-9_]+)", fn)
+if len(readme_ids) != 102 or len(set(readme_ids)) != 102:
+    sys.exit(f"README base-game table has {len(readme_ids)} ids, {len(set(readme_ids))} unique")
+if set(readme_ids) != set(script_ids) or len(script_ids) != 102:
+    missing = sorted(set(readme_ids) - set(script_ids))
+    extra = sorted(set(script_ids) - set(readme_ids))
+    sys.exit(f"missing {missing[:8]} extra {extra[:8]}")
+PY
+printf '%s\n' "ok base-game map list matches the README"
+
 make_server
 ENTRY_ARGS=--from-unraid
 expect_ok "writes settings and execs Eugen entrypoint" \
@@ -155,7 +174,7 @@ expect_ok "writes settings and execs Eugen entrypoint" \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2
+  MAP=_2x3_Ripple_2vs2_CONQ
 ENTRY_ARGS=
 
 settings="${server}/settings"
@@ -164,16 +183,19 @@ login="host-login"
 dedicated_key="host-key-value"
 EOF
 
-sed 's/RDPort_JungleLaw_2v2_CONQ/TestScenario_2v2/' "${ROOT}/samples/variables.ini.example" > "${WORKDIR}/expected-variables.ini"
+sed 's/_2x2_Hesse_2vs2_CONQ/_2x3_Ripple_2vs2_CONQ/' "${ROOT}/samples/variables.ini.example" > "${WORKDIR}/expected-variables.ini"
 cmp -s "${settings}/variables.ini" "${WORKDIR}/expected-variables.ini" || fail "variables.ini drifted from the sample"
 cmp -s "${settings}/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.example" || fail "params_for_ai.json drifted from the sample"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint did not run from the settings directory"
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
-grep -q 'ModList 3811913066/15' "${WORKDIR}/stdout.txt" || fail "default log did not name the mod list"
+grep -qx 'Wrote WARNO settings for WARHOST - Hesse 2v2 on port 10400. Map _2x3_Ripple_2vs2_CONQ. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "default log named a mod list or the wrong server name"
 grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not name the key last 4"
+if grep -qE '^(ModList|ModTagList) =' "${settings}/variables.ini"; then
+  fail "default run wrote a workshop mod line"
+fi
 grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
-if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
-  fail "default log warned about the old mod version"
+if grep -qE 'warning: (Map|Workshop Mod List)' "${WORKDIR}/stdout.txt"; then
+  fail "default log warned about the map or the mod list"
 fi
 mode=$(stat -c '%a' "${settings}/login.ini")
 [ "$mode" = "600" ] || fail "login.ini mode was ${mode}"
@@ -284,7 +306,7 @@ expect_ok "omits an empty workshop mod list" \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
   MOD_LIST= \
   MOD_TAG_LIST=
 if grep -q '^ModList =' "${server}/settings/variables.ini"; then
@@ -296,6 +318,129 @@ fi
 if grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt"; then
   fail "empty mod list still printed the version hint"
 fi
+if grep -qE '^(warning|note):' "${WORKDIR}/stdout.txt"; then
+  fail "empty mod list on a base-game map printed a warning or a note"
+fi
+
+make_server
+expect_ok "treats none as an empty workshop mod list and tags" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
+  MOD_LIST=none \
+  MOD_TAG_LIST=NONE
+if grep -q '^ModList =' "${server}/settings/variables.ini"; then
+  fail "none was written as a mod list"
+fi
+if grep -q '^ModTagList =' "${server}/settings/variables.ini"; then
+  fail "NONE was written as mod tags"
+fi
+if grep -qE 'At least one mod version doesnt match|^(warning|note):' "${WORKDIR}/stdout.txt"; then
+  fail "none still printed a mod hint or warning"
+fi
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "none stopped the server"
+
+make_server
+expect_ok "warns when an empty workshop mod list is paired with a workshop map" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST= \
+  MOD_TAG_LIST=
+grep -q 'warning: Workshop Mod List is empty and Map RDPort_JungleLaw_2v2_CONQ is not a base-game scenario' "${WORKDIR}/stdout.txt" || fail "empty mod list on a Red Dragon map did not warn"
+if grep -q '^ModList =' "${server}/settings/variables.ini"; then
+  fail "empty mod list warning wrote a mod list"
+fi
+grep -qx 'Map = RDPort_JungleLaw_2v2_CONQ' "${server}/settings/variables.ini" || fail "empty mod list warning did not write the map"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "empty mod list warning stopped the server"
+if grep -q '^note:' "${WORKDIR}/stdout.txt"; then
+  fail "empty tags printed the tags note"
+fi
+
+make_server
+expect_ok "warns when an empty workshop mod list is paired with a workshop map that starts with an underscore" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_3x3_WFulda_4v4_CONQ \
+  MOD_LIST=
+grep -q 'warning: Workshop Mod List is empty and Map _3x3_WFulda_4v4_CONQ is not a base-game scenario' "${WORKDIR}/stdout.txt" || fail "West Fulda with an empty mod list did not warn"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "West Fulda warning stopped the server"
+
+make_server
+expect_ok "notes mod tags when no workshop mod is selected" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
+  MOD_LIST= \
+  MOD_TAG_LIST=Maps-Scenarios
+grep -q 'note: Workshop Mod Tags is Maps-Scenarios and Workshop Mod List is empty' "${WORKDIR}/stdout.txt" || fail "tags without a mod list did not print the note"
+grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "tags without a mod list were not written"
+if grep -q '^ModList =' "${server}/settings/variables.ini"; then
+  fail "tags note wrote a mod list"
+fi
+if grep -q '^warning:' "${WORKDIR}/stdout.txt"; then
+  fail "tags on a base-game map printed a warning"
+fi
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "tags note stopped the server"
+
+make_server
+expect_ok "warns and notes when a workshop map has tags and no mod list" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Oslo_Conquest \
+  MOD_LIST=none \
+  MOD_TAG_LIST=Maps-Scenarios
+grep -q 'warning: Workshop Mod List is empty and Map _2x2_Oslo_Conquest is not a base-game scenario' "${WORKDIR}/stdout.txt" || fail "Oslo with none did not warn"
+grep -q 'note: Workshop Mod Tags is Maps-Scenarios and Workshop Mod List is empty' "${WORKDIR}/stdout.txt" || fail "Oslo with tags did not print the note"
+if grep -q '^ModList =' "${server}/settings/variables.ini"; then
+  fail "none on Oslo was written as a mod list"
+fi
+grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "Oslo tags were not written"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "Oslo warning stopped the server"
+
+make_server
+expect_ok "warns when a base-game map lists the Red Dragon pack" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
+  MOD_LIST=3595948209/16-3811913066/27 \
+  MOD_TAG_LIST=Maps-Scenarios
+grep -q 'warning: Map _2x2_Hesse_2vs2_CONQ is not a Red Dragon scenario' "${WORKDIR}/stdout.txt" || fail "base-game map with the Red Dragon pack did not warn"
+grep -qx 'ModList = 3595948209/16-3811913066/27' "${server}/settings/variables.ini" || fail "base-game map warning did not write the mod list through"
+grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "base-game map warning did not write the tags through"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "base-game map warning stopped the server"
+
+make_server
+expect_ok "names only the map warning for a base-game map with the previous preset" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
+  MOD_LIST=3811913066/15
+grep -q 'warning: Map _2x2_Hesse_2vs2_CONQ is not a Red Dragon scenario' "${WORKDIR}/stdout.txt" || fail "base-game map with version 15 did not warn about the map"
+if grep -q 'warning: Workshop Mod List contains' "${WORKDIR}/stdout.txt"; then
+  fail "base-game map also told the operator to update the Red Dragon version"
+fi
 
 make_server
 expect_ok "warns when the Red Dragon mod list is version 0" \
@@ -304,11 +449,40 @@ expect_ok "warns when the Red Dragon mod list is version 0" \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
   MOD_LIST=3811913066/0
 grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt" || fail "version 0 did not warn"
 grep -qx 'ModList = 3811913066/0' "${server}/settings/variables.ini" || fail "version 0 was not written through"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "version 0 warning stopped the server"
+
+make_server
+expect_ok "warns when the Red Dragon mod list is the previous preset" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066/15
+grep -q 'warning: Workshop Mod List contains 3811913066/15' "${WORKDIR}/stdout.txt" || fail "version 15 did not warn"
+grep -qx 'ModList = 3811913066/15' "${server}/settings/variables.ini" || fail "version 15 was not written through"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "version 15 warning stopped the server"
+
+make_server
+expect_ok "does not warn for a Red Dragon map with the current pack version" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066/27 \
+  MOD_TAG_LIST=Maps-Scenarios
+if grep -qE '^(warning|note):' "${WORKDIR}/stdout.txt"; then
+  fail "a Red Dragon map with 3811913066/27 printed a warning or a tags note"
+fi
+grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "Red Dragon mod list was not written"
+grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "Red Dragon mod tags were not written"
 
 make_server
 expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
@@ -319,8 +493,8 @@ expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
   MOD_LIST=123456/0
-if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
-  fail "another mod's version 0 raised the Red Dragon warning"
+if grep -qE 'warning: Workshop Mod List contains 3811913066/0|warning: Map' "${WORKDIR}/stdout.txt"; then
+  fail "another mod's version 0 raised a Red Dragon warning"
 fi
 grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt" || fail "a set mod list omitted the version hint"
 
@@ -353,7 +527,7 @@ expect_ok "starts once so the settings lock can be held" \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
-grep -qx 'ServerName = WARHOST - Red Dragon 4v4' "${server}/settings/variables.ini" || fail "first server name was not written"
+grep -qx 'ServerName = WARHOST - Hesse 2v2' "${server}/settings/variables.ini" || fail "first server name was not written"
 holder_log="${WORKDIR}/holder.out"
 release="${WORKDIR}/release-lock"
 : > "$holder_log"
@@ -386,7 +560,7 @@ grep -q 'Do not copy WARNO or Workshop files into it.' "${WORKDIR}/stderr.txt" |
 if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
   fail "a locked settings folder still started the server"
 fi
-grep -qx 'ServerName = WARHOST - Red Dragon 4v4' "${server}/settings/variables.ini" || fail "locked folder was overwritten"
+grep -qx 'ServerName = WARHOST - Hesse 2v2' "${server}/settings/variables.ini" || fail "locked folder was overwritten"
 rm -f "$release"
 wait "$holder" || fail "lock holder did not exit"
 expect_ok "starts again after the other container releases the settings folder" \

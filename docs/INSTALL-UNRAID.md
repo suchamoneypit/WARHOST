@@ -23,7 +23,7 @@ You need all of these. Items marked **you** cannot be done by anyone else.
 | **you** Your public WAN IP | Step 3. |
 | **you** Router port forward | Step 3. |
 | An Unraid 7.x server with Docker enabled and the array started | Settings → Docker → Enable Docker: Yes. |
-| The scenario ID of the map you want | Step 4. The default `RDPort_JungleLaw_2v2_CONQ` is already filled in. |
+| The scenario ID of the map you want | Step 4. The default `_2x2_Hesse_2vs2_CONQ`, a base-game map, is already filled in. |
 | For players: WARNO on Steam and, for the Red Dragon maps, Workshop item `3811913066` subscribed and enabled in WARNO's Mod Center | The Workshop page says so; the server does not install the mod for them. |
 
 ## 1. Request the Eugen login and key
@@ -64,9 +64,9 @@ The server also needs **outbound** internet. Eugen's start script in the image c
 
 ## 4. Decide the map and find a scenario ID
 
-**Map** is a scenario ID, not a map name. Eugen's page lists base-game IDs such as `_2x2_Hesse_2vs2_CONQ`; those need no mod, so clear **Workshop Mod List** for them. For a Workshop map pack, the IDs are inside the mod's files, and the Workshop page does not publish them.
+**Map** is a scenario ID, not a map name. Eugen's page lists base-game IDs such as `_2x2_Hesse_2vs2_CONQ`; those need no mod, so leave **Workshop Mod List** and **Workshop Mod Tags** empty for them. For a Workshop map pack, the IDs are inside the mod's files, and the Workshop page does not publish them.
 
-The template defaults to Jungle Law from the Red Dragon map pack: Map `RDPort_JungleLaw_2v2_CONQ`, Workshop Mod List `3811913066/15`. Base-game IDs, that pack's IDs, and the named workshop mods are in `README.md`. Galactic Divide (`3595948209/16`) and A World in Flames (`3388575848/7`) have empty `Scenarios/` folders, so **Map** stays a scenario ID. Tag words are in the README: Galactic Divide is `Gameplay-Interface-Sound-Scenarios-Maps`, and A World in Flames is `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` when a map pack is also required. WEST FULDA 1.0 (`3363584349/1023`), Highway to Oslo (`3474588989/14`), Ramstein Air Base (`3705706772/9`), Arsenal (`3415339374/20`), and Helbe (`3762638679/36`) have their scenario IDs in the README, read from each mod's `Scenarios/` folder on 2026-10-09. The Workshop pages still do not publish those IDs or the `Config.ini` `Version`. Use the procedure below when an author increments `Version`.
+The template defaults to the base-game map Hesse 2v2: Map `_2x2_Hesse_2vs2_CONQ`, with Workshop Mod List and Workshop Mod Tags empty. For the Red Dragon map pack, set Map `RDPort_JungleLaw_2v2_CONQ`, Workshop Mod List `3811913066/27`, and Workshop Mod Tags `Maps-Scenarios`; the README's Red Dragon server example lists the same three values. Base-game IDs, that pack's IDs, and the named workshop mods are in `README.md`. Galactic Divide (`3595948209/16`) and A World in Flames (`3388575848/7`) have empty `Scenarios/` folders, so **Map** stays a scenario ID. Tag words are in the README: Galactic Divide is `Gameplay-Interface-Sound-Scenarios-Maps`, and A World in Flames is `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` when a map pack is also required. WEST FULDA 1.0 (`3363584349/1023`), Highway to Oslo (`3474588989/14`), Ramstein Air Base (`3705706772/9`), Arsenal (`3415339374/20`), and Helbe (`3762638679/36`) have their scenario IDs in the README, read from each mod's `Scenarios/` folder on 2026-10-09. The Workshop pages still do not publish those IDs or the `Config.ini` `Version`. Use the procedure below when an author increments `Version`.
 
 To find scenario IDs yourself, on any PC where Steam has downloaded the mod (subscribe in Steam, let it download):
 
@@ -88,7 +88,7 @@ To find scenario IDs yourself, on any PC where Steam has downloaded the mod (sub
    ```
 
 4. The display name can differ from the ID. The Workshop page lists "Wonsan Harbour"; the file is `RDPort_WonsanNative_2v2_CONQ`.
-5. `Config.ini` in the mod root confirms the item ID (`ID = 3811913066`) and shows the mod's own `Version` number (`15` on 2026-10-09). The comment on that line says to increment it when an update is incompatible with the current version. **Workshop Mod List** must use that number, so the preset is `3811913066/15`. Eugen's page says the version in `ModList` "is usually always 0"; `/0` lets this server register and then the client rejects the join. If the author increments `Version`, change the field to the new number.
+5. `Config.ini` in the mod root confirms the item ID (`ID = 3811913066`) and shows the mod's own `Version` number (`27` on 2026-10-10). The comment on that line says to increment it when an update is incompatible with the current version. **Workshop Mod List** must use that number, so the Red Dragon value is `3811913066/27`. Eugen's page says the version in `ModList` "is usually always 0"; `/0` lets this server register and then the client rejects the join. `3811913066/15` matched this pack on 2026-10-09 and does not match version 27. If the author increments `Version`, change the field to the new number.
 
 Usual Max Players and Team Size for each size are in the README. Eugen does not lock the lobby to the size in the scenario ID. All Red Dragon maps are Conquest, so Combat Rule stays `2` for them. WEST FULDA 1.0, Highway to Oslo, Ramstein Air Base, and Arsenal include Destruction scenarios. Helbe's skirmish files are Conquest. Combat Rule is `2` when the scenario ID contains `CONQ` or `Conquest`, and `1` when it contains `DEST` or `Destruction`. Oslo, Ramstein, and Arsenal use the full words `Conquest` and `Destruction`.
 
@@ -140,15 +140,15 @@ Map is on the main form, under Server Name and before Max Players. **Show more s
 | Eugen Dedicated Key | empty | The key from Eugen's reply. Shown in clear text on this form so servers can be told apart. |
 | Public WAN IP | empty | Your public IP address from step 3. |
 | Game Port | `10400` | Keep for the first server. The next container uses this number plus 1. Forward each number as TCP and UDP. Players join by Server Name. You can change a port later by editing that container; the forward must use the same number. |
-| Server Name | `WARHOST - Red Dragon 4v4` | What players see in the browser. Give each container a different name. No `=` sign. |
-| Map | `RDPort_JungleLaw_2v2_CONQ` | A scenario ID from step 4. `Jungle Law` is rejected on purpose. Known IDs are in the README. |
+| Server Name | `WARHOST - Hesse 2v2` | What players see in the browser. Give each container a different name. No `=` sign. |
+| Map | `_2x2_Hesse_2vs2_CONQ` | A scenario ID from step 4. The default is a base-game map; the Red Dragon example is `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` is rejected on purpose. Known IDs are in the README. |
 | Max Players | `4` | Total slots. Preset 4 for this 2v2. Usual sizes are in the README. Not locked to the map. |
 | Minimum Players | `2` | Players needed before the countdown. Not above Max Players. |
 | Team Size | `2` | Slots on one side. Usually half of Max Players. |
 | Combat Rule | `2` | `2` when the ID contains `CONQ` or `Conquest`, `1` when it contains `DEST` or `Destruction`. |
-| Workshop Mod List (Show more) | `3811913066/15` | Keep for Red Dragon maps unless `Config.ini` `Version` has changed. Clear for a base-game map with no workshop mod. Named mods are in the README. |
+| Workshop Mod List (Show more) | empty | Leave empty for a base-game map. For the Red Dragon pack, enter `3811913066/27`, or the `Config.ini` `Version` if it has changed. `none` also means empty. Named mods are in the README. |
 | Write Config From Form (Show more) | `true` | Keep. |
-| Workshop Mod Tags (Show more) | `Maps-Scenarios` | Browser icons only. It does not download mods. Leave this for the Red Dragon pack. A conversion uses the tag string in step 4. |
+| Workshop Mod Tags (Show more) | empty | Browser icons only. It does not download mods. Leave empty for a base-game map, and enter `Maps-Scenarios` for the Red Dragon pack. A conversion uses the tag string in step 4. `none` also means empty. |
 
 Click **Apply**. Unraid pulls the image and starts the container. A pull error here means Unraid could not fetch the image; the first troubleshooting row and step 2 cover the usual causes.
 
@@ -158,11 +158,10 @@ Work through these in order. Each one proves something different.
 
 ### 7a. The container started
 
-On the **Docker** tab the container shows as started. Click its icon → **Logs**. The first wrapper line is `Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4` and the last 4 characters of the key. The wrapper then prints the Config.ini comparison line, and `warning: Workshop Mod List contains 3811913066/0` when that pair is set. The last wrapper line names the next container's Game Port. Eugen's output follows.
+On the **Docker** tab the container shows as started. Click its icon → **Logs**. The first wrapper line is `Wrote WARNO settings for WARHOST - Hesse 2v2 on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4` and the last 4 characters of the key. When Workshop Mod List is set, that line also names `ModList`, and the wrapper then prints the Config.ini comparison line. It adds `warning: Workshop Mod List contains 3811913066/0` or `warning: Workshop Mod List contains 3811913066/15` when that pair is set on a Red Dragon map, and `warning: Map ... is not a Red Dragon scenario` when the list contains `3811913066` and Map does not start with `RDPort_`. It adds `warning: Workshop Mod List is empty and Map ... is not a base-game scenario` when the list is empty and Map is not one of the base-game IDs in the README, and `note: Workshop Mod Tags is ... and Workshop Mod List is empty` when tags are set without a mod. The last wrapper line names the next container's Game Port. Eugen's output follows.
 
 ```text
-Wrote WARNO settings for WARHOST - Red Dragon 4v4 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/15. Key last 4 XXXX.
-Clients compare each Workshop id/version with Version in that mod's Config.ini. The client message "At least one mod version doesnt match" does not appear in this log.
+Wrote WARNO settings for WARHOST - Hesse 2v2 on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 XXXX.
 Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name.
 ```
 
@@ -177,7 +176,7 @@ ls -la /mnt/user/appdata/warno/10400/settings/
 grep -E '^(ServerName|Map|ModList) ' /mnt/user/appdata/warno/10400/settings/variables.ini
 ```
 
-Expect `login.ini`, `variables.ini`, and `params_for_ai.json` with mode `-rw-------`, and `Map = RDPort_JungleLaw_2v2_CONQ`. A `.warhost-stage.*` directory should not remain after this start. `warhost.lock` is the wrapper's lock file. Do not display `login.ini` on a shared screen; it contains the key.
+Expect `login.ini`, `variables.ini`, and `params_for_ai.json` with mode `-rw-------`, and `Map = _2x2_Hesse_2vs2_CONQ` with no `ModList` line. A `.warhost-stage.*` directory should not remain after this start. `warhost.lock` is the wrapper's lock file. Do not display `login.ini` on a shared screen; it contains the key.
 
 ### 7c. The port is open on Unraid
 
@@ -192,7 +191,7 @@ With host networking the `warno-server` process appears directly in that list. E
 
 ### 7d. A LAN player sees the server
 
-Start WARNO on a PC on the same network with the Workshop mod enabled. Look for the Server Name in the multiplayer server browser and join. This proves the server registered with Eugen's master server and the map loads. It does not prove internet players can reach you.
+Start WARNO on a PC on the same network, with each mod in Workshop Mod List enabled. Look for the Server Name in the multiplayer server browser and join. This proves the server registered with Eugen's master server and the map loads. It does not prove internet players can reach you.
 
 ### 7e. An internet player joins
 
@@ -211,9 +210,9 @@ The container name, Game Port, Settings Folder, and Server Name are unique. The 
 | Name | `WARHOST` | `WARHOST2` |
 | Game Port | `10400` | `10401` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
-| Server Name | `WARHOST - Red Dragon 4v4` | a different name |
+| Server Name | `WARHOST - Hesse 2v2` | a different name |
 
-Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
+Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon example while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
 On 2026-10-09 two containers on one Unraid host showed online with this pattern: Game Port `10400` at `/mnt/user/appdata/warno/10400/settings`, and Game Port `10401` at `/mnt/user/appdata/warno/10401/settings`, each with its own Server Name. A shared `/mnt/user/appdata/warno/settings` stopped the second container before that.
 
@@ -229,12 +228,15 @@ On start, the log names the next port and its settings folder. If the settings f
 | Container stops at once; log ends with `Set Public WAN IP.`, `Set your Eugen login.`, `Set your Eugen dedicated key.`, or `Set Map to a scenario ID...` | A required field is empty | Edit the container, fill the field, Apply. |
 | Container stops at once; log ends with `Eugen dedicated key must be at least 4 characters.` | The key is shorter than 4 characters | Paste the full key from Eugen's reply, and Apply. |
 | Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Replace Map with a scenario ID...` | A map name or placeholder was entered | Step 4. |
-| Log ends with `Workshop mod list must look like 3811913066/15...` | Mod list format | Use `id/version`, hyphen between mods, or clear it. |
+| Log ends with `Workshop mod list must be empty, none, or look like 3811913066/27...` | Mod list format | Use `id/version`, hyphen between mods, or leave it empty. |
 | Log ends with `Official WARNO entrypoint was not found at /server/entrypoint2.sh.` | Eugen changed their image layout | Open a GitHub issue; the wrapper needs an update. |
 | Log ends with `Game port 10400 is already in use` (the number will be the port you set) | That port is already listening on TCP, or bound on UDP, on the Unraid host. A port left in TIME_WAIT after a stop does not do this | Set Game Port to that number plus 1, forward the new port as TCP and UDP, and set Settings Folder to `/mnt/user/appdata/warno/10401/settings` when the new port is `10401`. Give this container a different Server Name. Players join by Server Name. |
 | Container runs but the server never appears in anyone's browser | Outbound traffic to Eugen blocked; wrong login or key; wrong WAN IP | Check the lines after the wrapper's `Wrote WARNO settings` line for errors. Allow outbound to `178.32.126.73:10002`. Re-enter login and key from Eugen's reply. |
 | LAN players join, internet players cannot | Router forward missing or only one protocol; WAN IP wrong or changed; carrier-grade NAT | Step 3. Forward TCP and UDP. Re-check the WAN IP. |
-| Players are told a mod is missing or incompatible, and the log contains `warning: Workshop Mod List contains 3811913066/0` | The field is still the old preset. The server registers and `warno-server` logs nothing about the rejected join | Set **Workshop Mod List** to `3811913066/15`, or to the `Version` line in the mod's `Config.ini` if the author has incremented it, and Apply. |
+| Players are told a mod is missing or incompatible, and the log contains `warning: Workshop Mod List contains 3811913066/0` or `warning: Workshop Mod List contains 3811913066/15` | The field is behind `Config.ini` `Version`. The server registers and `warno-server` logs nothing about the rejected join | Set **Workshop Mod List** to `3811913066/27`, or to the `Version` line in the mod's `Config.ini` if the author has incremented it, and Apply. A container created earlier keeps `3811913066/15` until that field is changed. |
+| A base-game server asks players for a Workshop mod, or the log contains `warning: Map ... is not a Red Dragon scenario` | Workshop Mod List still lists a mod. Unraid fills a cleared field with the template default, and a container added from an earlier version of this template saved the Red Dragon defaults | Set **Workshop Mod List** and **Workshop Mod Tags** to `none`, and Apply. On a container added from the current template, clearing both fields also works. |
+| Log contains `warning: Workshop Mod List is empty and Map ... is not a base-game scenario` | Map is not one of the base-game scenario IDs in the README, and Workshop Mod List is empty. The server still starts | Set **Workshop Mod List** to the pack that contains that map, and **Workshop Mod Tags** to that pack's tags. Or set **Map** to a base-game ID from the README. |
+| Log contains `note: Workshop Mod Tags is ... and Workshop Mod List is empty` | The tags are written and label the server in the browser; they do not select modded content. | Clear **Workshop Mod Tags**, or type `none`, if the server should not show mod icons. Leave them if you meant to label a base-game server. |
 | Players are told a mod is missing or incompatible, and that warning is absent | They have not subscribed to and enabled the mod, or `Version` in `Config.ini` has changed | Players: subscribe in Steam and enable the mod in WARNO's Mod Center. Host: set **Workshop Mod List** to the `Version` line in `Config.ini`. The client message does not appear in this log. |
 | Hand edits to `variables.ini` disappear after a restart | Write Config From Form is `true` | Set it to `false`. All three files must then exist. That start leaves their contents and sets `login.ini` to mode `600`. |
 | Log ends with `This settings folder is already used by a running container` | Two containers share one settings folder | The log names this Game Port's folder. If that folder is the one in use, it also names the folder for the port plus 1. Use the path that is not already taken. Do not copy WARNO or a Workshop folder into it. |
@@ -248,5 +250,6 @@ These need a real Unraid install with a real key. They are listed so nobody mist
 - A line-by-line check that Unraid 7 prefills every field as written here. The dropdown label **WARHOST** for `my-WARHOST.xml` was seen on 2026-10-09, and Key last 4 was absent after a fresh curl of `main`. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.
 - Which sockets (TCP, UDP, or both) `warno-server` opens on the game port.
+- That a container added from the current template keeps cleared workshop fields empty after Apply. Unraid's [Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php), read on 2026-10-10, fills a blank field from the template default, and both workshop defaults are now empty.
 - Whether the server itself downloads Workshop item `3811913066`, or only tells joining clients to. Until that path is known, do not add a copy of the game for each container.
 - Whether the plain-paragraph Overview renders with paragraph breaks on this Unraid server. The template no longer contains `<br>` tags. Unraid's current [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read on 2026-10-09, turns newlines in the basic Overview into line breaks. That has not been checked on a server after this wording change.

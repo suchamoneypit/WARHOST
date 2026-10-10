@@ -40,7 +40,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Jungle Law preset, RCON unset
 
-**Decision:** The published defaults are 2v2 Conquest for workshop item `3811913066`, with Map `RDPort_JungleLaw_2v2_CONQ`. A base-game scenario ID is valid when Workshop Mod List is cleared. RCON is not on the form.
+**Decision:** The published defaults are 2v2 Conquest for workshop item `3811913066`, with Map `RDPort_JungleLaw_2v2_CONQ`. A base-game scenario ID is valid when Workshop Mod List is cleared. RCON is not on the form. The 2026-10-10 entry "Base-game defaults, workshop fields start empty" replaces these defaults; RCON is still not on the form.
 
 **Rationale:** The first template commit (`6ee0739`) left RCON out. The Map default was empty until the scenario IDs from the Red Dragon mod files were recorded.
 
@@ -76,7 +76,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Red Dragon ModList version
 
-**Decision:** The preset Workshop Mod List is `3811913066/15`. The wrapper warns when that item is listed as `3811913066/0` and still starts the server. It does not query Steam for a newer `Version`.
+**Decision:** On 2026-10-09 the preset was `3811913066/15` and the wrapper warned only for `3811913066/0`; the 2026-10-10 entry replaces both.
 
 **Rationale:** Eugen's Docker Hub page says the `ModList` version is usually `0`. This mod's `Config.ini`, read 2026-10-09, says `Version = 15` and tells the author to increment it when an update is incompatible. The operator's start with `3811913066/0` registered with matchmaking and produced no server line about the rejected join. The operator reported that `3811913066/15` allowed a client to join. The container has no copy of `Config.ini`, so a later increment has to be copied into the form by hand.
 
@@ -183,3 +183,21 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 **Decision:** `.cursor/commands/slop-review.md` reviews what the repository ships the way a Community Applications moderator, a first-time installer, a security-minded homelabber, a WARNO host, and a technical editor would read it. It runs in the main chat of a new Agent session, on the model the maintainer picks. Until its report is written, it launches none of this repository's subagents and does not open `.cursor/plans/` or past chats. It reports and stops, and later applies only the finding IDs the maintainer names. It is not part of `/review-and-verify`. The body is generic; the WARHOST facts are in its Project specifics section.
 
 **Rationale:** The project discloses AI use, so the question is whether the shipped text reads as reviewed work, not whether an AI wrote it. A subagent returns one message to the parent, and this repository keeps those messages short. This report is long by design, and the apply step needs its findings in the same chat. A new chat starts without the sessions that wrote the text, and this repository's subagents carry the same authoring assumptions. The template, README, install guide, wrapper, and icon get line-by-line scrutiny. Scripts, tests, workflows, and `.cursor/` are checked only for breakage, leaks, and contradictions.
+
+## 2026-10-10 — Red Dragon ModList version 27
+
+**Decision:** The preset Workshop Mod List is `3811913066/27`. The wrapper warns when that item is listed as `3811913066/0` or `3811913066/15` and still writes that value through. It does not query Steam for a newer `Version`. The next entry keeps `3811913066/27` as the Red Dragon example and makes the template default empty.
+
+**Rationale:** `Config.ini` for workshop item `3811913066`, read 2026-10-10 from the local Steam library, says `Version = 27`. The author's change note the same day says Mod Version = 27 and 28 scenarios: https://steamcommunity.com/sharedfiles/filedetails/changelog/3811913066. The previous preset `3811913066/15` matched Version 15 on 2026-10-09 and does not match 27. Clients compare the number after the slash with that `Version`. The container has no copy of `Config.ini`, so a later increment has to be copied into the form by hand.
+
+## 2026-10-10 — Base-game defaults, workshop fields start empty
+
+**Decision:** The template defaults are Map `_2x2_Hesse_2vs2_CONQ` and Server Name `WARHOST - Hesse 2v2`. Workshop Mod List and Workshop Mod Tags are empty in both the `Default` attribute and the element text. The Red Dragon values, Map `RDPort_JungleLaw_2v2_CONQ`, `3811913066/27`, and `Maps-Scenarios`, are examples in the Map and Workshop field descriptions and in the README's Red Dragon server example. The wrapper treats an unset variable and `none`, in any case, as empty for both workshop fields. When the list contains `3811913066` and Map does not start with `RDPort_`, the wrapper prints one warning and still writes the list. Max Players `4`, Team Size `2`, and Combat Rule `2` are unchanged.
+
+**Rationale:** Unraid's [Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php), read 2026-10-10, fills a blank `<Config>` value from its `Default` in the edit form (`xmlToVar`) and in the `docker run` variables (`xmlToCommand`). With `Default="3811913066/27"`, a cleared Workshop Mod List came back. On 2026-10-10 the operator reported that a second container, WARHOST2, hosting a base-game map kept writing the Red Dragon mod list and tags after both fields were cleared, and players without the pack could not join. An empty default lets a cleared field stay empty. A container added from the earlier template keeps the old `Default` in its saved `my-<Name>.xml`, so `none` is the opt-out that works there without recreating it. Hesse is a base-game 2v2 Conquest ID from Eugen's Map Base Id table in `README.md`, so a fresh install needs no mod and the preset player counts still fit. The warning does not stop the start because a conversion such as Galactic Divide can run on a base-game map. The 28 Red Dragon scenario IDs read on 2026-10-10 all start with `RDPort_`, so the pack does nothing for any other map.
+
+## 2026-10-10 — Empty mod list only fits a base-game map
+
+**Decision:** When Workshop Mod List is empty, the wrapper warns if Map is not one of the 102 base-game scenario IDs in the README, and still starts. Workshop scenario IDs that start with `_` are included in that warning. When Workshop Mod Tags is set and Workshop Mod List is empty, the wrapper prints a note that the tags are written and do not select modded content, and still writes the tags.
+
+**Rationale:** An empty Workshop Mod List is the base-game preset, and only those maps run for players who have no workshop mod. Matching the README table, rather than every ID that starts with `_`, includes West Fulda, Highway to Oslo, Ramstein, Arsenal, and Helbe. The warning does not stop the start, matching the earlier mod-list warnings. The tags note is a disclaimer: the README already says those tags are browser icons and do not download mods.

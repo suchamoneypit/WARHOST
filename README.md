@@ -2,7 +2,7 @@
 
 A mod-friendly, multi-instance capable WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key (provided by Eugen upon request) and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
-The preset is a 4v4 Conquest server for Jungle Law (2v2 map) in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`).
+The preset is a 2v2 Conquest server on the base-game map Hesse (`_2x2_Hesse_2vs2_CONQ`) with no workshop mods, so players need only the game. To host the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`) instead, use the [Red Dragon server example](#red-dragon-server-example).
 
 If you've used other game servers before you likely can toll the unraid template tooltips only, and setup your standard port forward and you are done. Looking for more info? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
 
@@ -65,11 +65,11 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Server Name</td>
-<td><code>WARHOST - Red Dragon 4v4</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
+<td><code>WARHOST - Hesse 2v2</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
 </tr>
 <tr>
 <td nowrap>Map</td>
-<td><code>RDPort_JungleLaw_2v2_CONQ</code>. A scenario ID, not the display name. Base-game and workshop lists are in the tables below.</td>
+<td><code>_2x2_Hesse_2vs2_CONQ</code>, a base-game map that needs no mod. A scenario ID, not the display name. Base-game and workshop lists are in the tables below.</td>
 </tr>
 <tr>
 <td nowrap>Max Players</td>
@@ -89,7 +89,7 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Workshop Mod List (Show more settings)</td>
-<td><code>3811913066/15</code> for the Red Dragon pack. That number is <code>Version</code> in the mod's <code>Config.ini</code> as read on 2026-10-09. If the author increments <code>Version</code>, change this field to match. Clear it for a base-game map. Named mods are in the tables below.</td>
+<td>Empty for a base-game map, which is the preset. For the Red Dragon pack, <code>3811913066/27</code>. That number is <code>Version</code> in the mod's <code>Config.ini</code> as read on 2026-10-10. If the author increments <code>Version</code>, change this field to match. <code>none</code> also means empty. Named mods are in the tables below.</td>
 </tr>
 <tr>
 <td nowrap>Write Config From Form (Show more settings)</td>
@@ -97,16 +97,28 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Workshop Mod Tags (Show more settings)</td>
-<td><code>Maps-Scenarios</code>. Browser icons only. These tags do not download mods.</td>
+<td>Empty for a base-game map. <code>Maps-Scenarios</code> for a map pack such as Red Dragon. Browser icons only. These tags do not download mods. <code>none</code> also means empty.</td>
 </tr>
 </tbody>
 </table>
 
-Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. Scenario IDs and named mods are in the tables below.
+Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below. On a Red Dragon map, a Workshop Mod List of `3811913066/0` or `3811913066/15` is still written and prints a warning; set it to `3811913066/27`.
+
+Unraid fills a cleared field with the template's default when the container is created and when the form is opened again ([Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php) `xmlToVar` and `xmlToCommand`, read 2026-10-10). The workshop fields have no default, so a cleared field stays empty. A container added from an earlier version of this template saved the Red Dragon defaults and refills cleared fields with them; type `none` in both fields there.
 
 ### Map
 
-**Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Clear **Workshop Mod List** for them. The server image does not contain a Steam library, and Workshop mods download on each player's PC. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset keeps workshop item `3811913066` in **Workshop Mod List** and sets **Map** to `RDPort_JungleLaw_2v2_CONQ`. `Jungle Law` and `YOUR_*` placeholders are rejected.
+**Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Leave **Workshop Mod List** and **Workshop Mod Tags** empty for them. The server image does not contain a Steam library, and Workshop mods download on each player's PC. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset sets **Map** to `_2x2_Hesse_2vs2_CONQ` with no workshop mod. When Map is not a Red Dragon scenario and Workshop Mod List still contains `3811913066`, the log warns that players without that mod cannot join, and the value is still written. When Workshop Mod List is empty and Map is not one of the base-game scenario IDs below, including a workshop ID that starts with `_`, the log warns and the server still starts. When Workshop Mod Tags is set and Workshop Mod List is empty, the log notes that the tags are written and do not select a mod. `Jungle Law` and `YOUR_*` placeholders are rejected.
+
+#### Red Dragon server example
+
+| Field | Value |
+| --- | --- |
+| Map | `RDPort_JungleLaw_2v2_CONQ` |
+| Workshop Mod List | `3811913066/27` |
+| Workshop Mod Tags | `Maps-Scenarios` |
+
+Joining players subscribe to Workshop item `3811913066` and enable it in WARNO's Mod Center. The other Red Dragon scenario IDs are in the [Red Dragon map pack](#red-dragon-map-pack) table.
 
 The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. A 1v1 ID usually uses Max Players 2 and Team Size 1, a 2v2 uses 4 and 2, a 3v3 uses 6 and 3, a 4v4 uses 8 and 4, and a 10v10 uses 20 and 10. Setting Max Players to 8 on a 2v2 map has not been tested. Combat Rule is `2` when the ID contains `CONQ` or `Conquest`, and `1` when it contains `DEST` or `Destruction`.
 
@@ -224,15 +236,19 @@ The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.i
 
 #### Red Dragon map pack
 
-The Red Dragon scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-09. The procedure is in the install guide, step 4. The Workshop page says Wonsan Harbour; the file name is `WonsanNative`.
+The Red Dragon scenario IDs are the file names in the mod's `Scenarios/` folder on a PC subscribed to item `3811913066` (`steamapps/workshop/content/1611600/3811913066/Scenarios/`, each ID appearing as `<ID>_Definition.dat` and three sibling files). The list below was read from those files on 2026-10-10. The procedure is in the install guide, step 4. The Workshop page says Wonsan Harbour; the file name is `WonsanNative`. The page description, fetched the same day, still lists 18 maps. The [change note](https://steamcommunity.com/sharedfiles/filedetails/changelog/3811913066) for Mod Version 27 names the 10 added layouts. The two Strait to the Point Land & Sea rows take their size from the `2v2` and `4v4` tokens in the file names.
 
 <details>
-<summary>Red Dragon map pack (18 scenario IDs)</summary>
+<summary>Red Dragon map pack (28 scenario IDs)</summary>
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
+| Hell in a Very Small Place | `RDPort_HellInAVerySmallPlace_1v1_CONQ` | 1v1 |
 | Mud Fight | `RDPort_MudFight_1v1_CONQ` | 1v1 |
+| Paddy Field | `RDPort_PaddyField_1v1_CONQ` | 1v1 |
+| Strait to the Point (file name `StraitSmall`) | `RDPort_StraitSmall_1v1_CONQ` | 1v1 |
 | Tropic Thunder | `RDPort_TropicThunder_1v1_CONQ` | 1v1 |
+| Wonsan Harbour Land & Sea (file name `WonsanLandSea`) | `RDPort_WonsanLandSea_1v1_CONQ` | 1v1 |
 | Another D-Day | `RDPort_AnotherDDay_2v2_CONQ` | 2v2 |
 | Apocalypse Imminent | `RDPort_ApocalypseImminent_2v2_CONQ` | 2v2 |
 | Chosin Reservoir | `RDPort_ChosinReservoir_2v2_CONQ` | 2v2 |
@@ -241,12 +257,18 @@ The Red Dragon scenario IDs are the file names in the mod's `Scenarios/` folder 
 | Jungle Law | `RDPort_JungleLaw_2v2_CONQ` | 2v2 |
 | Operation Chromite | `RDPort_OperationChromite_2v2_CONQ` | 2v2 |
 | Paddy Field | `RDPort_PaddyField_2v2_CONQ` | 2v2 |
+| Strait to the Point Land & Sea (file name `StraitSmallLandSea`) | `RDPort_StraitSmallLandSea_2v2_CONQ` | 2v2 |
 | Wonsan Harbour (file name `WonsanNative`) | `RDPort_WonsanNative_2v2_CONQ` | 2v2 |
 | 38th Perpendicular | `RDPort_38thPerpendicular_3v3_CONQ` | 3v3 |
+| Another D-Day in Paradise Land & Sea | `RDPort_AnotherDDayLandSea_3v3_CONQ` | 3v3 |
 | Back to Inchon | `RDPort_BackToInchon_3v3_CONQ` | 3v3 |
+| Gunboat Diplomacy Land & Sea | `RDPort_GunboatLandSea_3v3_CONQ` | 3v3 |
 | Strait to the Point | `RDPort_StraitToThePoint_3v3_CONQ` | 3v3 |
 | 38th Parallel | `RDPort_38thParallel_4v4_CONQ` | 4v4 |
+| Battle of Yuchalnok Pass | `RDPort_BattleOfYuchalnokPass_4v4_CONQ` | 4v4 |
+| Final Meltdown | `RDPort_FinalMeltdown_4v4_CONQ` | 4v4 |
 | Floods | `RDPort_Floods_4v4_CONQ` | 4v4 |
+| Strait to the Point Land & Sea (file name `StraitLandSea`) | `RDPort_StraitLandSea_4v4_CONQ` | 4v4 |
 | Sun of Juche | `RDPort_SunOfJuche_4v4_CONQ` | 4v4 |
 | Asgard | `RDPort_Asgard_10v10_CONQ` | 10v10 |
 
@@ -260,16 +282,16 @@ Every map in that table is Conquest, so leave **Combat Rule** at `2` for them.
 | --- | --- | --- | --- |
 | [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) | `3595948209` | `3595948209/16` | `Gameplay-Interface-Sound-Scenarios-Maps` |
 | [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) | `3388575848` | `3388575848/7` | `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` with a map pack |
-| [WARNO: Red Dragon - Map Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) | `3811913066` | `3811913066/15` | `Maps-Scenarios` |
+| [WARNO: Red Dragon - Map Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) | `3811913066` | `3811913066/27` | `Maps-Scenarios` |
 | [WEST FULDA 1.0](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349) | `3363584349` | `3363584349/1023` | `Maps-Scenarios` |
 | [Highway to Oslo](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989) | `3474588989` | `3474588989/14` | `Maps-Scenarios` |
 | [Ramstein Air Base](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772) | `3705706772` | `3705706772/9` | `Maps-Scenarios` |
 | [Arsenal](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374) | `3415339374` | `3415339374/20` | `Maps-Scenarios` |
 | [Helbe](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679) | `3762638679` | `3762638679/36` | `Maps-Scenarios` |
 
-Each Workshop Mod List value is `Version` in that mod's `Config.ini`, read on 2026-10-09 from `steamapps/workshop/content/1611600/<id>/Config.ini`. The Workshop page does not publish that number. If the author increments `Version`, change the field to match.
+Each Workshop Mod List value is `Version` in that mod's `Config.ini`, read from `steamapps/workshop/content/1611600/<id>/Config.ini`. Red Dragon was re-read on 2026-10-10. The others were read on 2026-10-09. The Workshop page does not publish that number. If the author increments `Version`, change the field to match.
 
-Galactic Divide and A World in Flames are a total conversion and a modern-day overhaul. Their `Scenarios/` folders are empty. **Map** stays a scenario ID from the base game or from a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209/16-3811913066/15`.
+Galactic Divide and A World in Flames are a total conversion and a modern-day overhaul. Their `Scenarios/` folders are empty. **Map** stays a scenario ID from the base game or from a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209/16-3811913066/27`.
 
 The scenario IDs below are the file names in each mod's `Scenarios/` folder, read on 2026-10-09. The ID is the name before `_Definition.dat`. Where the Workshop page uses a different size or place name, the file name is the value for **Map**. Files whose names start with `SM_` are Army General file names in the same list. This repository has not seen them used as a lobby **Map**.
 
@@ -397,9 +419,9 @@ The container name, Game Port, Settings Folder, and Server Name are unique. The 
 | Name | `WARHOST` | `WARHOST2` |
 | Game Port | `10400` | `10401` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
-| Server Name | `WARHOST - Red Dragon 4v4` | a different name |
+| Server Name | `WARHOST - Hesse 2v2` | a different name |
 
-Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
+Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon example while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
 Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. If the image has no `flock` command, the start warns and continues. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 
@@ -442,7 +464,7 @@ The image is already published. If you fork this repository, repeat these steps 
 3. Run the **Rebuild WARHOST image** workflow.
 4. Open the package `warhost` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this for `warhost`, and the package page is the place to confirm it.
 
-Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and Jungle Law is the running scenario. Submit the repository to Community Apps after that test.
+Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and the preset Hesse map is the running scenario. Submit the repository to Community Apps after that test.
 
 Community Apps reads the default branch, `main`. A first submission needs that branch to be a public, active repository, with the MIT `LICENSE` at the root, `ca_profile.xml` with a non-empty Profile, and `templates/warhost.xml`. Open [https://ca.unraid.net/submit](https://ca.unraid.net/submit), run Validate, then Scan, and submit when the scan is clean. Those two buttons need your Community Apps login. The help pages are [submission help](https://ca.unraid.net/submit/help), [repository XML](https://ca.unraid.net/submit/help/repository-xml), and [repository information XML](https://ca.unraid.net/submit/help/repository-info-xml).
 
