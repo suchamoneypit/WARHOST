@@ -8,8 +8,9 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 
 | Path | Role |
 | --- | --- |
-| `templates/warhost.xml` | Unraid container template. Container name `WARHOST`. |
+| `templates/warhost.xml` | Unraid container template. Container name `WARHOST`. `<ReadMe>` and `<License>` are the raw `README.md` and `LICENSE` URLs on `main`. |
 | `ca_profile.xml` | Community Apps repository profile |
+| `LICENSE` | MIT license for the repository files. Copyright 2026 suchamoneypit. |
 | `Dockerfile` | `FROM eugensystems/warno:latest`, then replaces the entrypoint |
 | `entrypoint-unraid.sh` | Writes settings, then execs Eugen's entrypoint |
 | `samples/` | Placeholder shapes for the three generated files |
@@ -69,7 +70,7 @@ RCON is unset. Eugen documents `-rcon_password` and `-rcon_port` as arguments to
 
 ## Image chain
 
-`Dockerfile` bases the Unraid image on `eugensystems/warno:latest` and sets the entrypoint to the wrapper. The wrapper then execs the upstream script.
+`Dockerfile` bases the Unraid image on `eugensystems/warno:latest` and sets the entrypoint to the wrapper. The wrapper then execs the upstream script. The Dockerfile leaves `org.opencontainers.image.licenses` unset. `LICENSE` is the MIT license for the files in this repository. The Docker Hub repository API for `eugensystems/warno`, fetched 2026-10-09 from <https://hub.docker.com/v2/repositories/eugensystems/warno/>, has no license field, and the description text does not state one. Community Apps treats that image license as separate from `LICENSE`: [submission help](https://ca.unraid.net/submit/help), fetched the same day.
 
 Registry config for `eugensystems/warno:latest` on 2026-10-09:
 
@@ -104,7 +105,7 @@ Both GitHub workflows (`Check repository`, `Rebuild WARNO image`) completed succ
 - Other packs named in `README.md`: [3363584349](https://steamcommunity.com/sharedfiles/filedetails/?id=3363584349) `Version` 1023, [3474588989](https://steamcommunity.com/sharedfiles/filedetails/?id=3474588989) `Version` 14, [3705706772](https://steamcommunity.com/sharedfiles/filedetails/?id=3705706772) `Version` 9, [3415339374](https://steamcommunity.com/sharedfiles/filedetails/?id=3415339374) `Version` 20, [3762638679](https://steamcommunity.com/sharedfiles/filedetails/?id=3762638679) `Version` 36. `Config.ini` and `Scenarios/` were read on 2026-10-09. Their pages do not publish either fact.
 - Conversions named in `README.md`: [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) (`3595948209`) `Version` 16 and [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) (`3388575848`) `Version` 7, read from `Config.ini` on 2026-10-09. Both `Scenarios/` folders are empty. Pages fetched on 2026-10-09. Galactic Divide's page calls it a total conversion and links the tags Gameplay, Interface, Sound, Scenarios, and Maps. A World in Flames's page calls it an overhaul for the modern day and links Gameplay and Interface. Neither page states a scenario ID or a `Version`.
 - Workshop files on a subscribed PC: `steamapps/workshop/content/1611600/<workshop id>`
-- Community Apps submission: https://ca.unraid.net/submit
+- Community Apps submission: https://ca.unraid.net/submit — help fetched 2026-10-09: https://ca.unraid.net/submit/help , https://ca.unraid.net/submit/help/repository-xml , https://ca.unraid.net/submit/help/repository-info-xml , https://ca.unraid.net/submit/help/xml-field-reference , https://ca.unraid.net/submit/help/builders . Starter repository: https://github.com/unraid/unraid-community-apps-starter . GitHub license detection: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository . The GitHub API for this repository reported `license.spdx_id` `MIT` on 2026-10-09. The linked `Squidly271/community.applications` README URL returned HTTP 404 the same day; the Unraid org copy of that plugin has no root README.
 - Support: https://github.com/suchamoneypit/WARHOST/issues
 
 The workshop page lists Jungle Law as a 2v2 Conquest scenario name and describes the pack as an unofficial conversion. It does not publish scenario IDs. The 102 base-game IDs in `README.md` are Eugen's Map Base Id column. They were copied from the template text that quoted the Docker Hub table read on 2026-10-09, then removed from the form. The 18 Red Dragon IDs in `README.md` are the file names in the mod's `Scenarios/` folder (`<ID>_Assets.dat`, `_Definition.dat`, `_Details.dat`, `_GameData.dat`) as downloaded by Steam to `steamapps/workshop/content/1611600/3811913066/`; they were re-read from those files on 2026-10-09 and matched the README exactly. The page lists "Wonsan Harbour" where the file is `RDPort_WonsanNative_2v2_CONQ`. The mod's `Config.ini` shows `ID = 3811913066` and `Version = 15`, re-read on 2026-10-09; the comment says to increment `Version` when an update is incompatible. The template's `ModList` is `3811913066/15`. Eugen's Docker Hub page says the `ModList` version "is usually always 0". On 2026-10-09 the operator started with `3811913066/0`: the log showed `Variable ModList set to "3811913066/0"` and `Connection to match making server validated`, and no line about the rejected join. The operator reported that `3811913066/15` is what let a client join. The page showed a download size of 9.264 GB when fetched on 2026-10-09.

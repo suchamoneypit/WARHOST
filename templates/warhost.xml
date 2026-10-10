@@ -15,13 +15,15 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
   <WebUI/>
   <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/icon.png</Icon>
+  <ReadMe>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md</ReadMe>
+  <License>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE</License>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
@@ -32,7 +34,7 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. Use /mnt/user/appdata/warno/10400/settings. The next container uses this path with the port number plus 1, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>

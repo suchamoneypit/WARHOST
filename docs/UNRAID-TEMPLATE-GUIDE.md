@@ -13,6 +13,7 @@ Sources checked on 2026-10-09:
 
 | Path | Purpose |
 | --- | --- |
+| `LICENSE` | `LICENSE` covers templates, metadata, documentation, and `entrypoint-unraid.sh`; Community Apps asks for that license on the templates, metadata, and docs. Community Apps requires this file at the repository root. The container image license is a separate claim. |
 | `templates/<app>.xml` | The Unraid container template. One file per container type. |
 | `ca_profile.xml` | Community Applications repository profile: `Profile`, `Icon`, `WebPage`, `Forum`. |
 | `icon.png` | Icon referenced by raw GitHub URL from the template and profile. |
@@ -103,13 +104,24 @@ A passing local check says nothing about Unraid behavior. A container that stays
 
 ## Community Applications submission
 
-Submit at [https://ca.unraid.net/submit](https://ca.unraid.net/submit) after at least one install has reached the Unraid level above. `ca_profile.xml` must have non-empty `Profile`, `Icon`, `WebPage`, and `Forum` (a GitHub issues URL is acceptable for `Forum`).
+Submit at [https://ca.unraid.net/submit](https://ca.unraid.net/submit) after at least one install has reached the Unraid level above. The submission help pages, checked on 2026-10-09, are the source of truth: [submission help](https://ca.unraid.net/submit/help), [repository XML](https://ca.unraid.net/submit/help/repository-xml), [repository information XML](https://ca.unraid.net/submit/help/repository-info-xml), [XML field reference](https://ca.unraid.net/submit/help/xml-field-reference), and the [builder guide](https://ca.unraid.net/submit/help/builders). The maintained scaffold is [unraid/unraid-community-apps-starter](https://github.com/unraid/unraid-community-apps-starter). Copy its shape into an existing repository; delete the example plugin and example app files you do not publish.
+
+Community Apps scans the default branch. A first submission's Before you begin step requires all of the following on that branch:
+
+1. The repository is public and active: not private, archived, or disabled.
+2. An OSI-approved `LICENSE` file is at the repository root. GitHub detects the license when that file matches a known license text and the copyright line is a real name, not the starter's `[year] [fullname]`. The [GitHub licensing guide](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository) is the detection reference. `LICENSE` covers templates, metadata, documentation, and `entrypoint-unraid.sh`; Community Apps asks for that license on the templates, metadata, and docs. The container image license is separate. Leave the image unlabeled when it is built `FROM` someone else's image whose license the upstream page does not grant to you.
+3. Valid Docker template XML, plugin wrapper XML, or both. One file per app. Each Docker template needs `<Repository>`. Each plugin wrapper needs `<PluginURL>`. `<Name>` and `<Overview>` must be readable on their own; moderators review from those. `<TemplateURL>` is the raw URL of that exact file. `<Support>` or `<Project>` gives the review a place to go.
+4. `ca_profile.xml` at the repository root, with a non-empty `<Profile>`. An empty Profile blocks finalizing the submission.
+
+`<Icon>`, `<WebPage>`, and `<Forum>` are the recommended profile fields. A GitHub issues URL is an acceptable `<Forum>` when there is no Unraid forum thread. Add Discord, donation, photo, or video tags only when those destinations are real. `<ReadMe>` and `<License>` on a Docker template point at the raw README and the raw `LICENSE` on the default branch.
+
+After each meaningful XML change, run Validate and then Scan at [https://ca.unraid.net/submit/new](https://ca.unraid.net/submit/new). Those buttons need the maintainer's Community Apps login. This repository cannot run them.
 
 ## Reuse checklist
 
 When copying this layout for another game server:
 
-1. Rename the template file, container `<Name>`, `<Repository>`, `<Registry>`, `<TemplateURL>`, `<Icon>`, `<Support>`, `<Project>`, and the paths in `ca_profile.xml`.
+1. Rename the template file, container `<Name>`, `<Repository>`, `<Registry>`, `<TemplateURL>`, `<Icon>`, `<ReadMe>`, `<License>`, `<Support>`, `<Project>`, and the paths in `ca_profile.xml`. Replace the `LICENSE` copyright line. Keep the rest of the MIT text unchanged so GitHub can detect it.
 2. Replace every form field with the new game's variables; keep secrets masked and empty by default, except a value the operator must read on an admin-only edit page, as with the Eugen login and dedicated key.
 3. Decide bridge vs host and update the Overview, README, and port descriptions together.
 4. Rewrite the wrapper entrypoint and `tests/` for the new settings files, and update the expected-file assertions.

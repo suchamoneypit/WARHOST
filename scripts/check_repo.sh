@@ -89,6 +89,34 @@ if profile is not None:
         if element is None or not (element.text or "").strip():
             fail(f"ca_profile.xml is missing non-empty <{tag}>")
 
+license_path = root / "LICENSE"
+if not license_path.is_file():
+    fail("LICENSE is missing from the repository root")
+else:
+    license_text = license_path.read_text()
+    if "[year]" in license_text or "[fullname]" in license_text:
+        fail("LICENSE still has the Community Apps starter copyright placeholder")
+    if not license_text.startswith("MIT License\n"):
+        fail("LICENSE must start with the standard MIT heading so GitHub can detect it")
+    if "Permission is hereby granted, free of charge, to any person obtaining a copy" not in license_text:
+        fail("LICENSE is missing the MIT permission sentence")
+    if 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND' not in license_text:
+        fail("LICENSE is missing the MIT warranty sentence")
+
+if template is not None:
+    readme_url = template.find("ReadMe")
+    license_url = template.find("License")
+    expected_readme = "https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md"
+    expected_license = "https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE"
+    if readme_url is None or (readme_url.text or "").strip() != expected_readme:
+        fail(f"template ReadMe must be {expected_readme}")
+    if license_url is None or (license_url.text or "").strip() != expected_license:
+        fail(f"template License must be {expected_license}")
+
+dockerfile_text = (root / "Dockerfile").read_text()
+if "org.opencontainers.image.licenses" in dockerfile_text:
+    fail("Dockerfile must leave the image license unlabeled; LICENSE covers the repository files")
+
 allowed_keys = {
     "YOUR_EUGEN_DEDICATED_KEY_HERE",
     "%s",

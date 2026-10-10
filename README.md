@@ -444,7 +444,15 @@ The image is already published. If you fork this repository, repeat these steps 
 3. Run the **Rebuild WARHOST image** workflow.
 4. Open the package `warhost` and set its visibility to Public. Unraid cannot pull a private package. The workflow tries to do this for `warhost`, and the package page is the place to confirm it.
 
-Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and Jungle Law is the running scenario. Submit the repository to Community Apps after that test. The submission site is [https://ca.unraid.net/submit](https://ca.unraid.net/submit).
+Then install the template on your Unraid server and confirm the container stays up, the settings files contain your key only on that server, and Jungle Law is the running scenario. Submit the repository to Community Apps after that test.
+
+Community Apps reads the default branch, `main`. A first submission needs that branch to be a public, active repository, with the MIT `LICENSE` at the root, `ca_profile.xml` with a non-empty Profile, and `templates/warhost.xml`. Open [https://ca.unraid.net/submit](https://ca.unraid.net/submit), run Validate, then Scan, and submit when the scan is clean. Those two buttons need your Community Apps login. The help pages are [submission help](https://ca.unraid.net/submit/help), [repository XML](https://ca.unraid.net/submit/help/repository-xml), and [repository information XML](https://ca.unraid.net/submit/help/repository-info-xml).
+
+## License
+
+Templates, metadata, documentation, and `entrypoint-unraid.sh` are under the MIT license in [`LICENSE`](LICENSE). Copyright 2026 suchamoneypit. GitHub detects that file as MIT, an OSI-approved license. Community Apps asks for that license on the repository contents: the templates, metadata, and docs. The template `<License>` tag is `https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE`. The template `<ReadMe>` tag is `https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md`.
+
+The image is built `FROM eugensystems/warno`. The [Docker Hub page](https://hub.docker.com/r/eugensystems/warno), read on 2026-10-09, states no license for that image. Community Apps treats the container image license as separate from this repository's `LICENSE`. The Dockerfile leaves the image license unlabeled.
 
 ## Documentation
 

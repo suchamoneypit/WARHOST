@@ -37,6 +37,7 @@ What you get back is a **login** and a **key**. Enter the login exactly as it ap
 The image to confirm is `ghcr.io/suchamoneypit/warhost:latest`. The repository is `WARHOST` (`https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09). Repeat the checks below if months have passed or you forked the repository.
 
 - The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. GitHub redirects the old repository URL. It does not redirect the old template filename.
+- The template ReadMe is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE.
 - The image must be pullable without logging in. Open <https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost>; the package must be **Public**. From any Linux or macOS terminal, this must print `200`:
 
   ```sh
