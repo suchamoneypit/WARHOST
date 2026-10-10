@@ -86,6 +86,14 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 **Rationale:** Those four player fields change with the map, and the preset is easy to miss if they sit behind Show more settings. Unraid prints each description under the input (`CreateDocker.php` `templateDisplayConfig`, read 2026-10-09), so the scenario-ID and workshop catalogs would make the default page very long. The Jungle Law preset is already filled in, so a first install can leave Show more settings closed. Map stays required; it is hidden because it is prefilled, not because it is optional.
 
+Replaced the same day by the next entry, after those catalogs moved to `README.md`.
+
+## 2026-10-09 — Map on the main form
+
+**Decision:** Map uses `Display="always"` and follows Server Name, before Max Players. Workshop Mod List, Write Config From Form, and Workshop Mod Tags use `Display="advanced"`, in that order.
+
+**Rationale:** The scenario-ID and workshop catalogs are in `README.md`, so the Map line on the form is one sentence. Map is the lobby operators change with the server, so it stays on the main form under Server Name. Workshop Mod List, the write-config switch, and Workshop Mod Tags stay behind Show more settings.
+
 ## 2026-10-09 — Template icon
 
 **Decision:** `icon.png` is the Community Applications / Unraid Docker icon. The template and `ca_profile.xml` `<Icon>` tags point at the raw GitHub URL of `icon.png` on `main`. The asset is a generated NATO-vs-Pact illustration with a WARHOST wordmark and a server-rack motif, chosen for this repository (not an Eugen press-kit file).

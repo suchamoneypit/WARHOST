@@ -70,8 +70,12 @@ Fill in:
 <td><code>WARHOST - Red Dragon 4v4</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
 </tr>
 <tr>
+<td nowrap>Map</td>
+<td><code>RDPort_JungleLaw_2v2_CONQ</code>. A scenario ID, not the display name. Base-game and workshop lists are in the tables below.</td>
+</tr>
+<tr>
 <td nowrap>Max Players</td>
-<td><code>4</code> for this 2v2 preset. Usual sizes are under Map. The lobby is not locked to the size in the scenario ID.</td>
+<td><code>4</code> for this 2v2 preset. Usual sizes are in the Map section below. The lobby is not locked to the size in the scenario ID.</td>
 </tr>
 <tr>
 <td nowrap>Minimum Players</td>
@@ -85,10 +89,22 @@ Fill in:
 <td nowrap>Combat Rule</td>
 <td><code>2</code> when the scenario ID contains <code>CONQ</code> or <code>Conquest</code>, <code>1</code> when it contains <code>DEST</code> or <code>Destruction</code></td>
 </tr>
+<tr>
+<td nowrap>Workshop Mod List (Show more settings)</td>
+<td><code>3811913066/15</code> for the Red Dragon pack. That number is <code>Version</code> in the mod's <code>Config.ini</code> as read on 2026-10-09. If the author increments <code>Version</code>, change this field to match. Clear it for a base-game map. Named mods are in the tables below.</td>
+</tr>
+<tr>
+<td nowrap>Write Config From Form (Show more settings)</td>
+<td><code>true</code>. Rewrites the three settings files from this form on every start. <code>false</code> leaves those files and sets <code>login.ini</code> to mode 600.</td>
+</tr>
+<tr>
+<td nowrap>Workshop Mod Tags (Show more settings)</td>
+<td><code>Maps-Scenarios</code>. Browser icons only. These tags do not download mods.</td>
+</tr>
 </tbody>
 </table>
 
-**Show more settings** holds Write Config From Form, Workshop Mod Tags, Workshop Mod List, and Map. Workshop Mod Tags are browser icons only and do not download mods. The preset is Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. That version is `Version` in the mod's `Config.ini` as read on 2026-10-09. If the author increments `Version`, change **Workshop Mod List** to match. Scenario IDs and named mods are in the tables below.
+Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Jungle Law: Map `RDPort_JungleLaw_2v2_CONQ`, mod `3811913066/15`. Scenario IDs and named mods are in the tables below.
 
 ### Map
 

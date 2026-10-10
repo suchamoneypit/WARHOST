@@ -128,7 +128,7 @@ It then appears in the **Apps** tab under **Private**. The user-template downloa
 
 Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
-Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. Click **Show more settings** for the map and the workshop mods. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README, not on the form.
+Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README, not on the form.
 
 | Field | Default | Enter |
 | --- | --- | --- |
@@ -140,14 +140,14 @@ Max Players, Minimum Players, Team Size, and Combat Rule are on the main form. C
 | Public WAN IP | empty | Your public IP address from step 3. |
 | Game Port | `10400` | Keep for the first server. The next container uses this number plus 1. Forward each number as TCP and UDP. Players join by Server Name. You can change a port later by editing that container; the forward must use the same number. |
 | Server Name | `WARHOST - Red Dragon 4v4` | What players see in the browser. Give each container a different name. No `=` sign. |
+| Map | `RDPort_JungleLaw_2v2_CONQ` | A scenario ID from step 4. `Jungle Law` is rejected on purpose. Known IDs are in the README. |
 | Max Players | `4` | Total slots. Preset 4 for this 2v2. Usual sizes are in the README. Not locked to the map. |
 | Minimum Players | `2` | Players needed before the countdown. Not above Max Players. |
 | Team Size | `2` | Slots on one side. Usually half of Max Players. |
 | Combat Rule | `2` | `2` when the ID contains `CONQ` or `Conquest`, `1` when it contains `DEST` or `Destruction`. |
+| Workshop Mod List (Show more) | `3811913066/15` | Keep for Red Dragon maps unless `Config.ini` `Version` has changed. Clear for a base-game map with no workshop mod. Named mods are in the README. |
 | Write Config From Form (Show more) | `true` | Keep. |
 | Workshop Mod Tags (Show more) | `Maps-Scenarios` | Browser icons only. It does not download mods. Leave this for the Red Dragon pack. A conversion uses the tag string in step 4. |
-| Workshop Mod List (Show more) | `3811913066/15` | Keep for Red Dragon maps unless `Config.ini` `Version` has changed. Clear for a base-game map with no workshop mod. Named mods are in the README. |
-| Map (Show more) | `RDPort_JungleLaw_2v2_CONQ` | A scenario ID from step 4. `Jungle Law` is rejected on purpose. Known IDs are in the README. |
 
 Click **Apply**. Unraid pulls the image and starts the container. A pull error here means Unraid could not fetch the image; the first troubleshooting row and step 2 cover the usual causes.
 
