@@ -160,6 +160,12 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 
 **Rationale:** A fixed `.login.ini.new` path opened with `>` follows a symlink planted in the settings folder. Traps do not run after `SIGKILL` or a host crash. The next start that holds the settings lock deletes those leftovers. Clearing them without the lock could delete another container's in-progress directory when `flock` is missing.
 
+## 2026-10-09 — Settings folder path includes the game port
+
+**Decision:** The default host settings folder is `/mnt/user/appdata/warno/10400/settings`, the same number as Game Port `10400`. Each added container uses that path with its own Game Port, so port `10401` uses `/mnt/user/appdata/warno/10401/settings`. The Settings Folder description tells the next container to use this path with the port number plus 1. A shared-folder stop names this Game Port's folder, and the folder for the port plus 1 when that path is the one in use. A taken-port stop names the settings folder for that new port, for example `/mnt/user/appdata/warno/10401/settings`. The startup line names that same next folder. This supersedes the host-folder sentence in "Brand the project WARHOST." The container path stays `/server/settings`. The appdata directory name stays `warno`.
+
+**Rationale:** A shared `/mnt/user/appdata/warno/settings` made a second container look like a copy of the first. On 2026-10-09 that shared folder stopped the second container, and both servers showed online with `/mnt/user/appdata/warno/10400/settings` and `/mnt/user/appdata/warno/10401/settings`. The plus-1 step is then the same one already used for Game Port.
+
 ## 2026-10-09 — Number each publish to main
 
 **Decision:** Every push to `main` gets a git tag and a GitHub Release from `.github/workflows/release.yml`. The first is `v0.90`. Later publishes add one to the two-digit minor part (`v0.91`, `v0.99` then `v1.00`, `v1.00` then `v1.01`) unless that publish includes a higher `VERSION` file. `1.0` in that file is `v1.00`. A file that still equals the latest tag increments. A file below the latest tag stops the release. The annotated tag is created when that name is missing. A later run on a commit that already has a version tag keeps the lowest of those tags. The Unraid template stays on `ghcr.io/suchamoneypit/warhost:latest`. Daily and manual image rebuilds do not create a version.

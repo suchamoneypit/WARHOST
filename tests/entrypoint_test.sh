@@ -171,7 +171,7 @@ grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
 grep -q 'ModList 3811913066/15' "${WORKDIR}/stdout.txt" || fail "default log did not name the mod list"
 grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not name the key last 4"
-grep -qx 'Next container on this host: Game Port 10401, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
+grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
 if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the old mod version"
 fi
@@ -336,7 +336,7 @@ expect_ok "keeps hand-edited files when write config is false" \
   EXPOSEDPORT=10401
 grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "hand-edited login.ini was replaced"
 grep -qx 'Left existing WARNO settings in place.' "${WORKDIR}/stdout.txt" || fail "write-config false did not say it left files alone"
-grep -qx 'Next container on this host: Game Port 10402, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
+grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
 
 make_server
 expect_fail "refuses write-config false when settings files are missing" \
@@ -380,6 +380,7 @@ expect_fail "refuses a second container on the same settings folder" \
   MAP=TestScenario_2v2 \
   SERVER_NAME="Second Server"
 grep -q 'This settings folder is already used by a running container.' "${WORKDIR}/stderr.txt" || fail "shared folder error did not say the folder is in use"
+grep -q '/mnt/user/appdata/warno/10400/settings' "${WORKDIR}/stderr.txt" || fail "shared folder error did not name this port's folder"
 grep -q '/mnt/user/appdata/warno/10401/settings' "${WORKDIR}/stderr.txt" || fail "shared folder error did not name the next folder"
 grep -q 'Do not copy WARNO or Workshop files into it.' "${WORKDIR}/stderr.txt" || fail "shared folder error did not warn against copying the game"
 if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then

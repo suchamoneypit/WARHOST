@@ -33,7 +33,7 @@ In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints th
 
 The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml` shows **WARHOST**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARHOST`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARHOST**. Delete an earlier download if it is still in that folder: `warno-dedicated-server.xml` or `my-WARNO-Dedicated-Server.xml`. This route is the one the Community Applications author gives for Unraid 6.10 and later. On 2026-10-09 Unraid 7.3.3 showed `my-WARHOST.xml` in that dropdown as **WARHOST**. The install guide records what that try did and did not prove. `sh scripts/print_template_fetch.sh --private` saves `warhost.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
 
-The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. The pull check is in the install guide, step 2. The first server's settings folder is `/mnt/user/appdata/warno/settings`. Every container shares that one image. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
+The template installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. The pull check is in the install guide, step 2. The first server's settings folder is `/mnt/user/appdata/warno/10400/settings`. Every container shares that one image. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
 
 Fill in:
 
@@ -59,7 +59,7 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Settings Folder</td>
-<td><code>/mnt/user/appdata/warno/settings</code> for the first server. Each added server needs its own folder, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only.</td>
+<td><code>/mnt/user/appdata/warno/10400/settings</code> for the first server. The next container uses this path with the port number plus 1, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only.</td>
 </tr>
 <tr>
 <td nowrap>Game Port</td>
@@ -392,16 +392,16 @@ Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `
 
 Each server is its own container. Add another one from this same template. Do not use Unraid's reinstall action. Reinstall replaces the container you already have.
 
-For the next container:
+The container name, Game Port, Settings Folder, and Server Name are unique. The directory before `/settings` is that container's Game Port. The next container adds 1 to that port, in both the Game Port field and that directory.
 
-- **Name:** a new container name
-- **Game Port:** the previous game port plus 1 (`10401` after `10400`). Forward that port to this Unraid server as TCP and UDP.
-- **Server Name:** a different name from the one already in the browser
-- **Settings Folder:** a new folder, for example `/mnt/user/appdata/warno/10401/settings`
-- **Public WAN IP:** the same address as the first server
-- **Eugen login and key:** the same pair, for up to five servers. A sixth container needs another login and key pair.
+| Field | First server | Second server |
+| --- | --- | --- |
+| Name | `WARHOST` | `WARHOST2` |
+| Game Port | `10400` | `10401` |
+| Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
+| Server Name | `WARHOST - Red Dragon 4v4` | a different name |
 
-Players join from the WARNO server browser by Server Name. They are not given a port to type.
+Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
 Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. If the image has no `flock` command, the start warns and continues. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 

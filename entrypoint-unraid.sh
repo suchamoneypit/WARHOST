@@ -240,9 +240,9 @@ prepare_server_runtime() {
     exec 9>"${SETTINGS_DIR}/warhost.lock"
     if ! flock -n 9; then
       if [ -n "$NEXT_PORT" ]; then
-        die "This settings folder is already used by a running container. Give this container its own folder, for example /mnt/user/appdata/warno/${NEXT_PORT}/settings. Do not copy WARNO or Workshop files into it."
+        die "This settings folder is already used by a running container. This Game Port uses /mnt/user/appdata/warno/${EXPOSEDPORT}/settings. If that folder is the one in use, set Game Port to ${NEXT_PORT} and Settings Folder to /mnt/user/appdata/warno/${NEXT_PORT}/settings. Do not copy WARNO or Workshop files into it."
       fi
-      die "This settings folder is already used by a running container. Give this container its own folder, for example /mnt/user/appdata/warno/<port>/settings. Do not copy WARNO or Workshop files into it."
+      die "This settings folder is already used by a running container. Give this container its own folder, for example /mnt/user/appdata/warno/${EXPOSEDPORT}/settings. Do not copy WARNO or Workshop files into it."
     fi
     settings_locked=1
   else
@@ -251,7 +251,7 @@ prepare_server_runtime() {
   sweep_stale_staging
   if local_port_taken "$EXPOSEDPORT"; then
     if [ -n "$NEXT_PORT" ]; then
-      die "Game port ${EXPOSEDPORT} is already in use. Set this container's Game Port to ${NEXT_PORT}, forward ${NEXT_PORT} as TCP and UDP, and give it its own settings folder and Server Name. Players join by Server Name."
+      die "Game port ${EXPOSEDPORT} is already in use. Set this container's Game Port to ${NEXT_PORT}, forward ${NEXT_PORT} as TCP and UDP, and set Settings Folder to /mnt/user/appdata/warno/${NEXT_PORT}/settings. Give it a different Server Name. Players join by Server Name."
     fi
     die "Game port ${EXPOSEDPORT} is already in use. Pick a free Game Port, forward it as TCP and UDP, and give this container its own settings folder and Server Name. Players join by Server Name."
   fi
@@ -259,7 +259,7 @@ prepare_server_runtime() {
 
 note_next_container() {
   if [ -n "$NEXT_PORT" ]; then
-    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name."
+    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name."
     return 0
   fi
   printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name."

@@ -15,7 +15,7 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
@@ -32,10 +32,10 @@ WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, varia
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers); the preset is Jungle Law 2v2, map and mod IDs are in the project README, and each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings.]]>
   </Description>
 
-  <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/settings" Mode="rw" Description="Ini files for this container only. The next server needs its own folder, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/settings</Config>
+  <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. Use /mnt/user/appdata/warno/10400/settings. The next container uses this path with the port number plus 1, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>
   <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Key from the same reply. Shown in clear text on this form so servers can be told apart." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Public address players connect to. Not a hostname, and not this Unraid server's LAN address." Type="Variable" Display="always" Required="true" Mask="false"></Config>
