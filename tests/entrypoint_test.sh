@@ -8,7 +8,8 @@ WORKDIR=$(mktemp -d)
 EMPTY_PORT_TABLE="${WORKDIR}/empty-ports"
 mkdir -p "$EMPTY_PORT_TABLE"
 holder=
-trap 'if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
+stage_pid=
+trap 'if [ -n "${stage_pid:-}" ]; then kill "$stage_pid" 2>/dev/null || true; wait "$stage_pid" 2>/dev/null || true; fi; if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
 
 SERVER_COUNT=0
 
@@ -83,6 +84,69 @@ expect_fail() {
   printf 'ok %s\n' "$label"
 }
 
+assert_no_stage_dirs() {
+  root=$1
+  for dir in "${root}/.warhost-stage."*; do
+    if [ -L "$dir" ]; then
+      continue
+    fi
+    if [ -e "$dir" ]; then
+      fail "staging path remained: ${dir}"
+    fi
+  done
+}
+
+held_state() {
+  if [ -z "${stage_pid:-}" ] || [ ! -r "/proc/${stage_pid}/stat" ]; then
+    printf '%s' "gone"
+    return 0
+  fi
+  rest=$(cat "/proc/${stage_pid}/stat" 2>/dev/null) || {
+    printf '%s' "gone"
+    return 0
+  }
+  rest=${rest##*) }
+  printf '%s' "${rest%% *}"
+}
+
+wait_held_exit() {
+  label=$1
+  i=0
+  while [ "$i" -lt 50 ]; do
+    state=$(held_state)
+    if [ "$state" = "gone" ] || [ "$state" = "Z" ]; then
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 0.05
+  done
+  kill -KILL "$stage_pid" 2>/dev/null || true
+  wait "$stage_pid" 2>/dev/null || true
+  stage_pid=
+  fail "$label"
+}
+
+start_held() {
+  hold_file=$1
+  shift
+  : > "$hold_file"
+  : > "${WORKDIR}/held-stdout.txt"
+  : > "${WORKDIR}/held-stderr.txt"
+  env -i WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" WARHOST_STAGING_HOLD="$hold_file" "$@" sh "$ENTRY" >"${WORKDIR}/held-stdout.txt" 2>"${WORKDIR}/held-stderr.txt" &
+  stage_pid=$!
+}
+
+release_held() {
+  rm -f "$1"
+  wait_held_exit "held wrapper did not finish"
+  if wait "$stage_pid"; then
+    stage_pid=
+    return 0
+  fi
+  stage_pid=
+  fail "held wrapper failed"
+}
+
 make_server
 ENTRY_ARGS=--from-unraid
 expect_ok "writes settings and execs Eugen entrypoint" \
@@ -113,6 +177,10 @@ if grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout
 fi
 mode=$(stat -c '%a' "${settings}/login.ini")
 [ "$mode" = "600" ] || fail "login.ini mode was ${mode}"
+assert_no_stage_dirs "$settings"
+if [ -e "${settings}/.login.ini.new" ] || [ -L "${settings}/.login.ini.new" ]; then
+  fail "fixed staging path .login.ini.new was used"
+fi
 
 expect_fail "rejects a quoted dedicated key" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
@@ -405,6 +473,234 @@ expect_fail "refuses a game port that is already listening on TCP" \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
 grep -q 'Game port 10400 is already in use.' "${WORKDIR}/stderr.txt" || fail "listening port error did not name the port"
+
+make_server
+mkdir -p "${server}/settings"
+outside="${WORKDIR}/symlink-outside"
+printf 'untouched-outside\n' > "$outside"
+ln -s "$outside" "${server}/settings/.login.ini.new"
+ln -s "$outside" "${server}/settings/.variables.ini.new"
+ln -s "$outside" "${server}/settings/.params_for_ai.json.new"
+expect_ok "does not follow a symlink at the old staging path" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+grep -qx 'untouched-outside' "$outside" || fail "old staging symlink target changed"
+if grep -F 'host-key-value' "$outside" >/dev/null; then
+  fail "credentials were written through the old staging symlink"
+fi
+[ -L "${server}/settings/.login.ini.new" ] || fail "old login staging symlink was replaced"
+grep -qx 'dedicated_key="host-key-value"' "${server}/settings/login.ini" || fail "credentials did not reach login.ini"
+assert_no_stage_dirs "${server}/settings"
+
+make_server
+mkdir -p "${server}/settings"
+outside_dir="${WORKDIR}/final-symlink-dir"
+mkdir -p "$outside_dir"
+chmod 755 "$outside_dir"
+ln -s "$outside_dir" "${server}/settings/login.ini"
+ln -s "$outside_dir" "${server}/settings/variables.ini"
+ln -s "$outside_dir" "${server}/settings/params_for_ai.json"
+expect_ok "replaces settings symlinks that point at a directory" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+[ ! -L "${server}/settings/login.ini" ] || fail "login.ini stayed a symlink"
+[ -f "${server}/settings/login.ini" ] || fail "login.ini was not a regular file"
+grep -qx 'dedicated_key="host-key-value"' "${server}/settings/login.ini" || fail "credentials did not replace the login.ini symlink"
+if [ -e "${outside_dir}/login.ini" ] || [ -e "${outside_dir}/variables.ini" ] || [ -e "${outside_dir}/params_for_ai.json" ]; then
+  fail "credentials were written through a directory symlink"
+fi
+outside_mode=$(stat -c '%a' "$outside_dir")
+[ "$outside_mode" = "755" ] || fail "directory symlink target mode became ${outside_mode}"
+assert_no_stage_dirs "${server}/settings"
+
+make_server
+mkdir -p "${server}/settings"
+file_target="${WORKDIR}/final-symlink-file"
+printf 'untouched-file\n' > "$file_target"
+ln -s "$file_target" "${server}/settings/login.ini"
+expect_ok "replaces a settings symlink that points at a file" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+grep -qx 'untouched-file' "$file_target" || fail "file symlink target changed"
+[ ! -L "${server}/settings/login.ini" ] || fail "login.ini file symlink was not replaced"
+grep -qx 'dedicated_key="host-key-value"' "${server}/settings/login.ini" || fail "credentials did not replace the file symlink"
+
+make_server
+mkdir -p "${server}/settings/login.ini"
+expect_fail "refuses to publish login.ini when that path is a directory" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+if grep -R -F 'host-key-value' "${server}/settings" >/dev/null 2>&1; then
+  fail "a directory named login.ini received the dedicated key"
+fi
+assert_no_stage_dirs "${server}/settings"
+
+make_server
+hold="${WORKDIR}/stage-hold"
+start_held "$hold" \
+  PATH="$PATH" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+staged=
+i=0
+while [ "$i" -lt 50 ]; do
+  for dir in "${server}/settings/.warhost-stage."*; do
+    if [ -f "$dir/login.ini" ]; then
+      staged=$dir
+      break
+    fi
+  done
+  [ -n "$staged" ] && break
+  i=$((i + 1))
+  sleep 0.05
+done
+[ -n "$staged" ] || fail "staging directory did not appear"
+[ ! -L "$staged" ] || fail "staging directory was a symlink"
+stage_mode=$(stat -c '%a' "$staged")
+[ "$stage_mode" = "700" ] || fail "staging directory mode was ${stage_mode}"
+login_mode=$(stat -c '%a' "${staged}/login.ini")
+[ "$login_mode" = "600" ] || fail "staged login.ini mode was ${login_mode}"
+if [ -f "${server}/settings/login.ini" ]; then
+  fail "login.ini was published while staging was held"
+fi
+kill -TERM "$stage_pid" 2>/dev/null || true
+wait_held_exit "staging wrapper did not exit on TERM"
+wait "$stage_pid" 2>/dev/null || true
+stage_pid=
+assert_no_stage_dirs "${server}/settings"
+if [ -f "${server}/settings/login.ini" ]; then
+  fail "TERM during staging still published login.ini"
+fi
+if grep -R -F 'host-key-value' "${server}/settings" >/dev/null 2>&1; then
+  fail "TERM during staging left the dedicated key in the settings folder"
+fi
+if grep -F 'host-key-value' "${WORKDIR}/held-stdout.txt" "${WORKDIR}/held-stderr.txt" >/dev/null; then
+  fail "TERM during staging printed the dedicated key"
+fi
+printf 'ok removes the staging directory on TERM\n'
+
+make_server
+mkdir -p "${server}/settings/.warhost-stage.stale"
+printf 'stale-canary\n' > "${server}/settings/.warhost-stage.stale/canary"
+chmod 700 "${server}/settings/.warhost-stage.stale"
+outside_dir="${WORKDIR}/outside-stage"
+mkdir -p "$outside_dir"
+printf 'keep-me\n' > "${outside_dir}/marker"
+ln -s "$outside_dir" "${server}/settings/.warhost-stage.linked"
+hold="${WORKDIR}/stale-hold"
+start_held "$hold" \
+  PATH="$PATH" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+stale_gone=0
+i=0
+while [ "$i" -lt 50 ]; do
+  if [ ! -d "${server}/settings/.warhost-stage.stale" ]; then
+    for dir in "${server}/settings/.warhost-stage."*; do
+      if [ -f "$dir/login.ini" ] && [ "$dir" != "${server}/settings/.warhost-stage.stale" ]; then
+        stale_gone=1
+        break
+      fi
+    done
+  fi
+  [ "$stale_gone" -eq 1 ] && break
+  i=$((i + 1))
+  sleep 0.05
+done
+[ "$stale_gone" -eq 1 ] || fail "stale staging directory was still present when the new files were written"
+if [ -f "${server}/settings/login.ini" ]; then
+  fail "settings were published before the stale directory was gone"
+fi
+[ -L "${server}/settings/.warhost-stage.linked" ] || fail "staging sweep removed a symlink"
+grep -qx 'keep-me' "${outside_dir}/marker" || fail "staging sweep followed a symlink"
+release_held "$hold"
+grep -qx 'dedicated_key="host-key-value"' "${server}/settings/login.ini" || fail "stale secret replaced the new login.ini"
+if grep -R -F 'stale-canary' "${server}/settings" >/dev/null 2>&1; then
+  fail "stale staging canary remained in the settings folder"
+fi
+[ -L "${server}/settings/.warhost-stage.linked" ] || fail "staging symlink disappeared after publish"
+grep -qx 'keep-me' "${outside_dir}/marker" || fail "staging symlink target changed after publish"
+assert_no_stage_dirs "${server}/settings"
+printf 'ok removes a stale staging directory before publishing\n'
+
+make_server
+mkdir -p "${server}/settings"
+printf 'preserved-login\n' > "${server}/settings/login.ini"
+printf 'preserved-variables\n' > "${server}/settings/variables.ini"
+printf '{}\n' > "${server}/settings/params_for_ai.json"
+chmod 666 "${server}/settings/login.ini"
+chmod 644 "${server}/settings/variables.ini"
+chmod 644 "${server}/settings/params_for_ai.json"
+expect_ok "restricts a hand-written login.ini when write config is false" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  WRITE_CONFIG=false \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10402
+grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "manual login.ini contents changed"
+manual_mode=$(stat -c '%a' "${server}/settings/login.ini")
+[ "$manual_mode" = "600" ] || fail "manual login.ini mode was ${manual_mode}"
+variables_mode=$(stat -c '%a' "${server}/settings/variables.ini")
+[ "$variables_mode" = "644" ] || fail "manual variables.ini mode changed to ${variables_mode}"
+params_mode=$(stat -c '%a' "${server}/settings/params_for_ai.json")
+[ "$params_mode" = "644" ] || fail "manual params_for_ai.json mode changed to ${params_mode}"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "manual mode did not reach the upstream entrypoint"
+
+mkdir -p "${WORKDIR}/fake-bin"
+cat > "${WORKDIR}/fake-bin/mktemp" << 'EOF'
+#!/bin/sh
+exit 1
+EOF
+chmod 755 "${WORKDIR}/fake-bin/mktemp"
+make_server
+hold="${WORKDIR}/fallback-hold"
+start_held "$hold" \
+  PATH="${WORKDIR}/fake-bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=TestScenario_2v2
+fallback="${server}/settings/.warhost-stage.${stage_pid}.0"
+i=0
+while [ "$i" -lt 50 ]; do
+  if [ -f "${fallback}/login.ini" ]; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+[ -f "${fallback}/login.ini" ] || fail "mkdir fallback did not stage under the shell pid"
+fallback_mode=$(stat -c '%a' "$fallback")
+[ "$fallback_mode" = "700" ] || fail "mkdir fallback directory mode was ${fallback_mode}"
+release_held "$hold"
+grep -qx 'dedicated_key="host-key-value"' "${server}/settings/login.ini" || fail "mkdir fallback did not publish login.ini"
+assert_no_stage_dirs "${server}/settings"
+printf 'ok stages with mkdir when mktemp fails\n'
 
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"

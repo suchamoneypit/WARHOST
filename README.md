@@ -397,11 +397,13 @@ On each start, **Write Config From Form** (`true`) rewrites these files in the s
 - `variables.ini`
 - `params_for_ai.json`
 
+The wrapper writes those files in a private `.warhost-stage.*` directory in that folder and renames them into place. That directory is removed when the start finishes or is stopped. A crash or power loss can leave one; the next start that locks the settings folder removes it. Do not keep other files under that name.
+
 `samples/` shows the shape of those files with placeholders only. Do not replace the placeholders in this repository.
 
 The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same size (`DeltaMaxTeamSize = 0`). AI decks are empty. RCON is not configured.
 
-Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start overwrites hand edits. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
+Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start overwrites hand edits. While it is `false`, the three files stay as edited and `login.ini` is set to mode `600`. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
 
 ## Keys
 

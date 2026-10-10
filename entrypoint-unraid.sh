@@ -146,8 +146,95 @@ local_port_taken() {
   return 1
 }
 
+# Private staging names are exactly this prefix plus a unique suffix.
+# SIGKILL, a host crash, and power loss skip the traps below. That leftover
+# is accepted until the next start that holds warhost.lock.
+stage_dir=
+settings_locked=0
+
+discard_stage_dir() {
+  dir=${stage_dir:-}
+  stage_dir=
+  if [ -z "$dir" ]; then
+    return 0
+  fi
+  case "$dir" in
+    "${SETTINGS_DIR}/.warhost-stage."*) ;;
+    *) return 0 ;;
+  esac
+  if [ -L "$dir" ] || [ ! -d "$dir" ]; then
+    return 0
+  fi
+  rm -rf "$dir"
+}
+
+on_stage_exit() {
+  discard_stage_dir
+}
+
+on_stage_signal() {
+  discard_stage_dir
+  exit 1
+}
+
+sweep_stale_staging() {
+  if [ "$settings_locked" -ne 1 ]; then
+    return 0
+  fi
+  stale=
+  for stale in "${SETTINGS_DIR}/.warhost-stage."*; do
+    case "$stale" in
+      "${SETTINGS_DIR}/.warhost-stage."*) ;;
+      *) continue ;;
+    esac
+    if [ -L "$stale" ] || [ ! -d "$stale" ]; then
+      continue
+    fi
+    rm -rf "$stale"
+  done
+}
+
+# A symlink at the final name is removed, not followed. mv would otherwise
+# place the file inside a directory that the symlink points at.
+publish_staged_file() {
+  src=$1
+  dest=$2
+  if [ -L "$dest" ]; then
+    rm -f "$dest" || die "Could not replace ${dest}."
+  fi
+  if [ -d "$dest" ]; then
+    die "${dest} is a directory, so it was not replaced."
+  fi
+  mv "$src" "$dest" || die "Could not replace ${dest}."
+}
+
+# mktemp -d is atomic when this shell has it. The mkdir loop is the fallback.
+make_private_stage_dir() {
+  if command -v mktemp >/dev/null 2>&1; then
+    created=$(mktemp -d "${SETTINGS_DIR}/.warhost-stage.XXXXXXXXXX" 2>/dev/null) || created=
+    if [ -n "$created" ] && [ ! -L "$created" ] && [ -d "$created" ]; then
+      printf '%s\n' "$created"
+      return 0
+    fi
+    if [ -n "$created" ] && [ -L "$created" ]; then
+      rm -f "$created"
+    fi
+  fi
+  n=0
+  while [ "$n" -lt 100 ]; do
+    candidate="${SETTINGS_DIR}/.warhost-stage.$$.${n}"
+    if mkdir "$candidate" 2>/dev/null; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    n=$((n + 1))
+  done
+  return 1
+}
+
 prepare_server_runtime() {
   mkdir -p "$SETTINGS_DIR"
+  settings_locked=0
   if command -v flock >/dev/null 2>&1; then
     # fd 9 stays open across exec so the lock lasts as long as the server.
     exec 9>"${SETTINGS_DIR}/warhost.lock"
@@ -157,9 +244,11 @@ prepare_server_runtime() {
       fi
       die "This settings folder is already used by a running container. Give this container its own folder, for example /mnt/user/appdata/warno/<port>/settings. Do not copy WARNO or Workshop files into it."
     fi
+    settings_locked=1
   else
     printf '%s\n' "warning: flock is not available, so this start cannot tell whether another container is using this settings folder."
   fi
+  sweep_stale_staging
   if local_port_taken "$EXPOSEDPORT"; then
     if [ -n "$NEXT_PORT" ]; then
       die "Game port ${EXPOSEDPORT} is already in use. Set this container's Game Port to ${NEXT_PORT}, forward ${NEXT_PORT} as TCP and UDP, and give it its own settings folder and Server Name. Players join by Server Name."
@@ -295,15 +384,22 @@ if [ "$write_config" = "true" ]; then
   esac
 
   prepare_server_runtime
-  tmp_login="${SETTINGS_DIR}/.login.ini.new"
-  tmp_variables="${SETTINGS_DIR}/.variables.ini.new"
-  tmp_ai="${SETTINGS_DIR}/.params_for_ai.json.new"
-  cleanup() {
-    rm -f "$tmp_login" "$tmp_variables" "$tmp_ai"
-  }
-  trap cleanup EXIT
-
   umask 077
+  stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
+  trap 'on_stage_exit' EXIT
+  trap 'on_stage_signal' HUP INT TERM
+  if [ -z "$stage_dir" ] || [ -L "$stage_dir" ] || [ ! -d "$stage_dir" ]; then
+    die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
+  fi
+  case "$stage_dir" in
+    "${SETTINGS_DIR}/.warhost-stage."*) ;;
+    *) die "Could not create a private settings staging directory under ${SETTINGS_DIR}." ;;
+  esac
+  chmod 700 "$stage_dir" || die "Could not restrict the settings staging directory."
+
+  tmp_login="${stage_dir}/login.ini"
+  tmp_variables="${stage_dir}/variables.ini"
+  tmp_ai="${stage_dir}/params_for_ai.json"
   printf 'login="%s"\n' "$EUGEN_LOGIN" > "$tmp_login"
   printf 'dedicated_key="%s"\n' "$EUGEN_DEDICATED_KEY" >> "$tmp_login"
 
@@ -338,11 +434,21 @@ if [ "$write_config" = "true" ]; then
 
   printf '%s\n' '{' '  "0": [],' '  "1": []' '}' > "$tmp_ai"
 
-  mv "$tmp_login" "${SETTINGS_DIR}/login.ini"
-  mv "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
-  mv "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
+  # WARHOST_STAGING_HOLD is a test seam, not a form field. When it names an
+  # existing file, wait until that file is gone before renaming into place.
+  if [ -n "${WARHOST_STAGING_HOLD:-}" ]; then
+    while [ -e "$WARHOST_STAGING_HOLD" ]; do
+      sleep 0.05 || true
+    done
+  fi
+
+  publish_staged_file "$tmp_login" "${SETTINGS_DIR}/login.ini"
+  publish_staged_file "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
+  publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
   chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
+  discard_stage_dir
   trap - EXIT
+  trap - HUP INT TERM
   umask 022
 
   if [ -n "$MOD_LIST" ]; then
@@ -356,6 +462,9 @@ else
     die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."
   fi
   prepare_server_runtime
+  if ! chmod 600 "${SETTINGS_DIR}/login.ini"; then
+    die "Could not restrict permissions on ${SETTINGS_DIR}/login.ini."
+  fi
   printf 'Left existing WARNO settings in place.\n'
 fi
 

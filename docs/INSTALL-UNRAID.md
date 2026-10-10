@@ -172,11 +172,11 @@ Eugen's server prints after those wrapper lines. Nobody has recorded the full he
 From the Unraid terminal:
 
 ```sh
-ls -l /mnt/user/appdata/warno/settings/
+ls -la /mnt/user/appdata/warno/settings/
 grep -E '^(ServerName|Map|ModList) ' /mnt/user/appdata/warno/settings/variables.ini
 ```
 
-Expect `login.ini`, `variables.ini`, and `params_for_ai.json` with mode `-rw-------`, and `Map = RDPort_JungleLaw_2v2_CONQ`. `warhost.lock` is the wrapper's lock file. Do not display `login.ini` on a shared screen; it contains the key.
+Expect `login.ini`, `variables.ini`, and `params_for_ai.json` with mode `-rw-------`, and `Map = RDPort_JungleLaw_2v2_CONQ`. A `.warhost-stage.*` directory should not remain after this start. `warhost.lock` is the wrapper's lock file. Do not display `login.ini` on a shared screen; it contains the key.
 
 ### 7c. The port is open on Unraid
 
@@ -233,7 +233,7 @@ On start, the log names the next port. If the settings folder is already in use,
 | LAN players join, internet players cannot | Router forward missing or only one protocol; WAN IP wrong or changed; carrier-grade NAT | Step 3. Forward TCP and UDP. Re-check the WAN IP. |
 | Players are told a mod is missing or incompatible, and the log contains `warning: Workshop Mod List contains 3811913066/0` | The field is still the old preset. The server registers and `warno-server` logs nothing about the rejected join | Set **Workshop Mod List** to `3811913066/15`, or to the `Version` line in the mod's `Config.ini` if the author has incremented it, and Apply. |
 | Players are told a mod is missing or incompatible, and that warning is absent | They have not subscribed to and enabled the mod, or `Version` in `Config.ini` has changed | Players: subscribe in Steam and enable the mod in WARNO's Mod Center. Host: set **Workshop Mod List** to the `Version` line in `Config.ini`. The client message does not appear in this log. |
-| Hand edits to `variables.ini` disappear after a restart | Write Config From Form is `true` | Set it to `false`. All three files must then exist. |
+| Hand edits to `variables.ini` disappear after a restart | Write Config From Form is `true` | Set it to `false`. All three files must then exist. That start leaves their contents and sets `login.ini` to mode `600`. |
 | Log ends with `This settings folder is already used by a running container` | Two containers share one settings folder | Give this container its own folder, for example `/mnt/user/appdata/warno/10401/settings`. Do not copy WARNO or a Workshop folder into it. |
 | A sixth container on the same login and key fails to come online | Eugen documents a limit of five servers per login and key pair; the exact error has not been observed. This wrapper does not count running servers | Stop one, or request another login and key pair. |
 | Players on a new WARNO patch cannot join | The image is older than the game | The rebuild runs daily. On Unraid, check for updates on the Docker tab and update the container. |
