@@ -1,12 +1,10 @@
 # WARHOST — WARNO Dedicated Server for Unraid
 
-WARNO was a game made in France, but WARHOST was created in the United States.
+A mod-friendly, multi-instance capable WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key (provided by Eugen upon request) and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
-A mod-friendly WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
+The preset is a 4v4 Conquest server for Jungle Law (2v2 map) in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`).
 
-The preset is a 2v2 Conquest server for Jungle Law in the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`).
-
-First install? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
+If you've used other game servers before you likely can toll the unraid template tooltips only, and setup your standard port forward and you are done. Looking for more info? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
 
 ## What you need
 
@@ -17,7 +15,7 @@ First install? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It cover
 
 ## Install
 
-Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown.
+Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown. APPROVED, PENDING PUBLISH AS OF 10/9/26
 
 In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints the command in step 1. In Cursor, `/unraid-template-installscript` runs that script and shows the same output. Paste it; the URL and the flash filename both come from the template. The download URL uses the repository name `WARHOST` and the template file on `main`.
 
@@ -468,6 +466,9 @@ The image is built `FROM eugensystems/warno`. The [Docker Hub page](https://hub.
 ## Made with AI tools
 
 This project was built with AI coding assistants (mainly [Cursor](https://cursor.com)). Humans directed the work, reviewed what shipped, and remain responsible for it. Treat the template like any other community Docker or Unraid project: verify on your own server, and open an issue if something is wrong. Notes for working on the Cursor setup in this repository are in [docs/CURSOR-QUICKSTART.md](docs/CURSOR-QUICKSTART.md).
+
+WARNO was a game made in France, but WARHOST was created in the United States.
+
 
 ## Support
 
