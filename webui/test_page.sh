@@ -5,10 +5,18 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 WORKDIR=$(mktemp -d)
 PAGE_PID=
+ROOT_PAGE_PID=
+ROOT_RUN=
 cleanup() {
   if [ -n "${PAGE_PID:-}" ]; then
     kill -- "-$PAGE_PID" 2>/dev/null || kill "$PAGE_PID" 2>/dev/null || true
     wait "$PAGE_PID" 2>/dev/null || true
+  fi
+  if [ -n "${ROOT_PAGE_PID:-}" ]; then
+    sudo kill -- "-$ROOT_PAGE_PID" 2>/dev/null || sudo kill "$ROOT_PAGE_PID" 2>/dev/null || true
+  fi
+  if [ -n "${ROOT_RUN:-}" ]; then
+    sudo rm -rf "$ROOT_RUN"
   fi
   rm -rf "$WORKDIR"
 }
@@ -19,6 +27,14 @@ fail() {
   if [ -f "${WORKDIR}/page.log" ]; then
     printf '%s\n' '--- page log ---' >&2
     cat "${WORKDIR}/page.log" >&2
+  fi
+  if [ -f "${WORKDIR}/root-drop.log" ]; then
+    printf '%s\n' '--- root drop log ---' >&2
+    cat "${WORKDIR}/root-drop.log" >&2
+  fi
+  if [ -f "${WORKDIR}/root-user.log" ]; then
+    printf '%s\n' '--- root user log ---' >&2
+    cat "${WORKDIR}/root-user.log" >&2
   fi
   exit 1
 }
@@ -165,3 +181,78 @@ grep -qx 'secret-target' "$outside" || fail "save wrote through a symlink"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "symlink save did not replace variables.ini"
 
 printf 'ok lobby page saves and rejects\n'
+
+if sudo -n true 2>/dev/null; then
+  sudo useradd --system --user-group --no-create-home --shell /usr/sbin/nologin warhost-web 2>/dev/null || true
+  getent passwd warhost-web >/dev/null || fail "warhost-web user was not created"
+  root_settings="${WORKDIR}/root-settings"
+  mkdir -p "$root_settings"
+  printf 'ServerName = WARHOST - Hesse 2v2\nMap = _2x2_Hesse_2vs2_CONQ\n' > "${root_settings}/variables.ini"
+  ROOT_RUN="${ROOT}/webui/run"
+
+  wait_ready() {
+    ready_port=$1
+    i=0
+    while [ "$i" -lt 50 ]; do
+      if sudo grep -qx "$ready_port" "${root_settings}/.warhost-webui.ready" 2>/dev/null; then
+        return 0
+      fi
+      i=$((i + 1))
+      sleep 0.05
+    done
+    return 1
+  }
+
+  sudo -n setsid env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
+    SETTINGS_DIR="$root_settings" \
+    WARHOST_WEB_PORT=39522 \
+    WARHOST_WEBUI_DROP_FAIL=1 \
+    EXPOSEDPORT=38522 \
+    python3 "${ROOT}/webui/server.py" --serve >"${WORKDIR}/root-drop.log" 2>&1 &
+  wait_ready 39522 || fail "root lobby page did not become ready after a failed privilege drop"
+  ROOT_PAGE_PID=$(sudo cat "${root_settings}/.warhost-webui.pid")
+  code=$(curl -s -o "${WORKDIR}/root-body.txt" -w '%{http_code}' "http://127.0.0.1:39522/")
+  [ "$code" = "200" ] || fail "failed privilege drop returned ${code}"
+  grep -q 'stayed root' "${WORKDIR}/root-drop.log" || fail "failed privilege drop did not warn"
+  uid=$(ps -o uid= -p "$ROOT_PAGE_PID" | tr -d ' ')
+  [ "$uid" = "0" ] || fail "failed privilege drop was not still root"
+  sudo kill -- "-$ROOT_PAGE_PID" 2>/dev/null || sudo kill "$ROOT_PAGE_PID" 2>/dev/null || true
+  i=0
+  while [ "$i" -lt 20 ] && ps -p "$ROOT_PAGE_PID" >/dev/null 2>&1; do
+    i=$((i + 1))
+    sleep 0.05
+  done
+  ROOT_PAGE_PID=
+  sudo rm -f "${root_settings}/.warhost-webui.ready" "${root_settings}/.warhost-webui.pid" "${root_settings}/.warhost-webui.log"
+
+  sudo -n setsid env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
+    SETTINGS_DIR="$root_settings" \
+    WARHOST_WEB_PORT=39523 \
+    EXPOSEDPORT=38523 \
+    python3 "${ROOT}/webui/server.py" --serve >"${WORKDIR}/root-user.log" 2>&1 &
+  wait_ready 39523 || fail "root lobby page did not become ready"
+  ROOT_PAGE_PID=$(sudo cat "${root_settings}/.warhost-webui.pid")
+  code=$(curl -s -o "${WORKDIR}/root-body.txt" -w '%{http_code}' "http://127.0.0.1:39523/")
+  [ "$code" = "200" ] || fail "dropped lobby page returned ${code}"
+  web_uid=$(id -u warhost-web)
+  uid=$(ps -o uid= -p "$ROOT_PAGE_PID" | tr -d ' ')
+  [ "$uid" = "$web_uid" ] || fail "lobby page did not drop to warhost-web"
+  if grep -F 'host-key-value' "${WORKDIR}/root-drop.log" "${WORKDIR}/root-user.log" >/dev/null; then
+    fail "root lobby page log contained a dedicated key"
+  fi
+  sudo kill -- "-$ROOT_PAGE_PID" 2>/dev/null || sudo kill "$ROOT_PAGE_PID" 2>/dev/null || true
+  ROOT_PAGE_PID=
+  launch_settings="${WORKDIR}/launch-settings"
+  mkdir -p "$launch_settings"
+  printf 'ServerName = WARHOST - Hesse 2v2\n' > "${launch_settings}/variables.ini"
+  sudo -n env SETTINGS_DIR="$launch_settings" EXPOSEDPORT=38524 WARHOST_WEBUI_DROP_FAIL=1 \
+    sh "${ROOT}/webui/launch.sh" >"${WORKDIR}/launch-out.txt" 2>"${WORKDIR}/launch-err.txt"
+  grep -qx 'Lobby page listening on port 39524.' "${WORKDIR}/launch-out.txt" || fail "launch did not say it was listening"
+  grep -q 'stayed root' "${WORKDIR}/launch-err.txt" || fail "launch did not warn on the container log"
+  ROOT_PAGE_PID=$(sudo cat "${launch_settings}/.warhost-webui.pid")
+  sudo kill -- "-$ROOT_PAGE_PID" 2>/dev/null || sudo kill "$ROOT_PAGE_PID" 2>/dev/null || true
+  ROOT_PAGE_PID=
+  printf 'ok lobby page keeps listening when the privilege drop fails\n'
+else
+  printf 'ok lobby page root drop skipped\n'
+fi

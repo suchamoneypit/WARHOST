@@ -97,7 +97,7 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Lobby Page (Show more settings)</td>
-<td><code>false</code>. <code>true</code> serves a lobby page on this Unraid host at the game port plus 1000, so <code>10400</code> uses <code>http://&lt;unraid&gt;:11400/</code>. Do not forward that port. Saving writes <code>variables.ini</code>; restart the container to load it. The Docker WebUI button opens 11400, which is the first server only.</td>
+<td><code>false</code>. While Lobby Page is false, the WebUI button still opens that port and the browser connection is refused. The log says nothing is listening. <code>true</code> serves a lobby page on this Unraid host at the game port plus 1000, so <code>10400</code> uses <code>http://&lt;unraid&gt;:11400/</code>. Do not forward that port. The log says <code>Lobby page listening on port 11400.</code> Saving writes <code>variables.ini</code>; restart the container to load it. The Docker WebUI button opens 11400, which is the first server only.</td>
 </tr>
 <tr>
 <td nowrap>Workshop Mod Tags (Show more settings)</td>
@@ -441,13 +441,13 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 ## Lobby page
 
-**Lobby Page** defaults to `false`. The dedicated server starts the same way with it off, and no extra process listens.
+**Lobby Page** defaults to `false`. The dedicated server starts the same way with it off, and no extra process listens. The log says `Lobby page is off. Nothing is listening on port 11400.` If that port is already taken, the log says `Lobby page is off. Port 11400 is already in use.` The WebUI button still opens that port, so the browser reports that the address refused to connect until Lobby Page is `true`.
 
-Set it to `true` and the container also serves a page at the game port plus 1000. Game port `10400` is `http://<unraid>:11400/`. The next server, on `10401`, is `http://<unraid>:11401/`. Do not forward the page port. The game port stays the one you forward as TCP and UDP. The Docker WebUI button uses `http://[IP]:[PORT:11400]/`. On host networking that button opens 11400, so it matches the first server only.
+Set it to `true` and the container also serves a page at the game port plus 1000. Game port `10400` is `http://<unraid>:11400/`. The next server, on `10401`, is `http://<unraid>:11401/`. Do not forward the page port. The game port stays the one you forward as TCP and UDP. The Docker WebUI button uses `http://[IP]:[PORT:11400]/`. On host networking that button opens 11400, so it matches the first server only. When the page is accepting connections, the log says `Lobby page listening on port 11400.` before the game server output.
 
 The page lists the scenarios from this README and the match dropdowns (command and control, combat rules, opposition, starting resources, income, score limit, and time limit). Save replaces `variables.ini`, keeps the previous copy as `variables.ini.bak`, and leaves the running match as it is. Restart that container in Unraid to load the save. Reset from Unraid form writes the form's current map, name, slots, combat rule, and mods, including the seeded match values (`InitMoney` 750 and a 20 minute limit), and also waits for that restart.
 
-If the page fails to start, or its port is already taken, the log warns and the game server still starts. The page does not show the Eugen login or dedicated key.
+If the page fails to start, or its port is already taken, the log warns and the game server still starts. A privilege drop that fails leaves the page running and the container log warns that it stayed root. The page does not show the Eugen login or dedicated key. `ghcr.io/suchamoneypit/warhost:latest` has no lobby page until the webui branch is on main and the image rebuild finishes; until then the WebUI button still opens port 11400 and the browser connection is refused.
 
 ## Keys
 
