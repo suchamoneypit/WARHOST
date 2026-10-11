@@ -10,3 +10,4 @@ appdata/
 .cursor/plans/
 *.code-workspace
 webui/run/
+webui/__pycache__/
