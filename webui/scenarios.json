@@ -1,0 +1,1397 @@
+{
+  "groups": [
+    {
+      "name": "Red Dragon map pack",
+      "modList": "3811913066/27",
+      "modTags": "Maps-Scenarios",
+      "scenarios": [
+        {
+          "name": "Hell in a Very Small Place",
+          "id": "RDPort_HellInAVerySmallPlace_1v1_CONQ",
+          "size": "1v1",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Mud Fight",
+          "id": "RDPort_MudFight_1v1_CONQ",
+          "size": "1v1",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Paddy Field",
+          "id": "RDPort_PaddyField_1v1_CONQ",
+          "size": "1v1",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Strait to the Point (file name `StraitSmall`)",
+          "id": "RDPort_StraitSmall_1v1_CONQ",
+          "size": "1v1",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Tropic Thunder",
+          "id": "RDPort_TropicThunder_1v1_CONQ",
+          "size": "1v1",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Wonsan Harbour Land & Sea (file name `WonsanLandSea`)",
+          "id": "RDPort_WonsanLandSea_1v1_CONQ",
+          "size": "1v1",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Another D-Day",
+          "id": "RDPort_AnotherDDay_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Apocalypse Imminent",
+          "id": "RDPort_ApocalypseImminent_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Chosin Reservoir",
+          "id": "RDPort_ChosinReservoir_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Gunboat Diplomacy",
+          "id": "RDPort_GunboatDiplomacy_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Hop and Glory",
+          "id": "RDPort_HopAndGlory_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Jungle Law",
+          "id": "RDPort_JungleLaw_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Operation Chromite",
+          "id": "RDPort_OperationChromite_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Paddy Field",
+          "id": "RDPort_PaddyField_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Strait to the Point Land & Sea (file name `StraitSmallLandSea`)",
+          "id": "RDPort_StraitSmallLandSea_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Wonsan Harbour (file name `WonsanNative`)",
+          "id": "RDPort_WonsanNative_2v2_CONQ",
+          "size": "2v2",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "38th Perpendicular",
+          "id": "RDPort_38thPerpendicular_3v3_CONQ",
+          "size": "3v3",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Another D-Day in Paradise Land & Sea",
+          "id": "RDPort_AnotherDDayLandSea_3v3_CONQ",
+          "size": "3v3",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Back to Inchon",
+          "id": "RDPort_BackToInchon_3v3_CONQ",
+          "size": "3v3",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Gunboat Diplomacy Land & Sea",
+          "id": "RDPort_GunboatLandSea_3v3_CONQ",
+          "size": "3v3",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Strait to the Point",
+          "id": "RDPort_StraitToThePoint_3v3_CONQ",
+          "size": "3v3",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "38th Parallel",
+          "id": "RDPort_38thParallel_4v4_CONQ",
+          "size": "4v4",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Battle of Yuchalnok Pass",
+          "id": "RDPort_BattleOfYuchalnokPass_4v4_CONQ",
+          "size": "4v4",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Final Meltdown",
+          "id": "RDPort_FinalMeltdown_4v4_CONQ",
+          "size": "4v4",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Floods",
+          "id": "RDPort_Floods_4v4_CONQ",
+          "size": "4v4",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Strait to the Point Land & Sea (file name `StraitLandSea`)",
+          "id": "RDPort_StraitLandSea_4v4_CONQ",
+          "size": "4v4",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Sun of Juche",
+          "id": "RDPort_SunOfJuche_4v4_CONQ",
+          "size": "4v4",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Asgard",
+          "id": "RDPort_Asgard_10v10_CONQ",
+          "size": "10v10",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        }
+      ]
+    },
+    {
+      "name": "WEST FULDA 1.0",
+      "modList": "3363584349/1023",
+      "modTags": "Maps-Scenarios",
+      "scenarios": [
+        {
+          "name": "West Fulda",
+          "id": "_3x3_WFulda_4v4_CONQ",
+          "size": "4v4 Conquest",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "West Fulda",
+          "id": "_3x3_WFulda_4v4_DEST",
+          "size": "4v4 Destruction",
+          "players": 8,
+          "team": 4,
+          "rule": 1
+        },
+        {
+          "name": "West Fulda",
+          "id": "_3x3_WFulda_10v10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "West Fulda",
+          "id": "_3x3_WFulda_10v10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Bimbach",
+          "id": "_3x3_WFuldaBimbach_2v2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Bimbach",
+          "id": "_3x3_WFuldaBimbach_2v2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Grossenluder",
+          "id": "_3x3_WFuldaGrossen_1v1_CONQ",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Grossenluder",
+          "id": "_3x3_WFuldaGrossen_2v2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Kammerzell",
+          "id": "_3x3_WFuldaKammerzell_1v1_CONQ",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Kammerzell",
+          "id": "_3x3_WFuldaKammerzell_2v2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Kammerzell",
+          "id": "_3x3_WFuldaKammerzell_2v2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Malkes",
+          "id": "_3x3_WFuldaMalkes_3v3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Malkes",
+          "id": "_3x3_WFuldaMalkes_3v3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Neuenberg",
+          "id": "_3x3_WFuldaNeuen_1v1_CONQ",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Neuenberg",
+          "id": "_3x3_WFuldaNeuen_2v2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Neuenberg",
+          "id": "_3x3_WFuldaNeuen_2v2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        }
+      ]
+    },
+    {
+      "name": "Highway to Oslo",
+      "modList": "3474588989/14",
+      "modTags": "Maps-Scenarios",
+      "scenarios": [
+        {
+          "name": "Highway to Oslo",
+          "id": "_2x2_Oslo_Conquest",
+          "size": "Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Highway to Oslo",
+          "id": "_2x2_Oslo_Destruction",
+          "size": "Destruction",
+          "players": 2,
+          "team": 1,
+          "rule": 1
+        },
+        {
+          "name": "Highway to Oslo",
+          "id": "_2x2_Oslo_ConquestNS",
+          "size": "Conquest, file suffix `NS`",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Highway to Oslo",
+          "id": "_2x2_Oslo_DestructionNS",
+          "size": "Destruction, file suffix `NS`",
+          "players": 2,
+          "team": 1,
+          "rule": 1
+        }
+      ]
+    },
+    {
+      "name": "Ramstein Air Base",
+      "modList": "3705706772/9",
+      "modTags": "Maps-Scenarios",
+      "scenarios": [
+        {
+          "name": "Ramstein Air Base",
+          "id": "_2x2_Ramstein_Conquest",
+          "size": "Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Ramstein Air Base",
+          "id": "_2x2_Ramstein_Destruction",
+          "size": "Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        }
+      ]
+    },
+    {
+      "name": "Arsenal",
+      "modList": "3415339374/20",
+      "modTags": "Maps-Scenarios",
+      "scenarios": [
+        {
+          "name": "Two Hills",
+          "id": "_2x3_TwoHills_Conquest",
+          "size": "Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Two Hills",
+          "id": "_2x3_TwoHills_Destruction",
+          "size": "Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Two Hills",
+          "id": "_2x3_TwoHills_Conquest_6P",
+          "size": "Conquest, file suffix `_6P`",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Two Hills",
+          "id": "_2x3_TwoHills_Destruction_6P",
+          "size": "Destruction, file suffix `_6P`",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        }
+      ]
+    },
+    {
+      "name": "Helbe",
+      "modList": "3762638679/36",
+      "modTags": "Maps-Scenarios",
+      "scenarios": [
+        {
+          "name": "Helbe",
+          "id": "_5x3_Helbe_4v4_CONQ",
+          "size": "4v4 Conquest",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Helbe",
+          "id": "_5x3_Helbe_10v10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Hochland",
+          "id": "_5x3_HelbeHochland_2v2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Norden",
+          "id": "_5x3_HelbeNorden_2v2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Stream",
+          "id": "_5x3_HelbeStream_2v2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Stream",
+          "id": "_5x3_HelbeStream_3v3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Stream",
+          "id": "_5x3_HelbeStream_10v10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Suden",
+          "id": "_5x3_HelbeSuden_1v1_CONQ_DUEL",
+          "size": "1v1 Conquest duel",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Wide",
+          "id": "_5x3_HelbeWide_4v4_CONQ",
+          "size": "4v4 Conquest",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Wide",
+          "id": "_5x3_HelbeWide_10v10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Zentrum",
+          "id": "_5x3_HelbeZentrum_3v3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Zentrum",
+          "id": "_5x3_HelbeZentrum_10v10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        }
+      ]
+    },
+    {
+      "name": "Base game",
+      "modList": "",
+      "modTags": "",
+      "scenarios": [
+        {
+          "name": "Airport (duel)",
+          "id": "_3x3_Airport_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Black Forest Storm (duel)",
+          "id": "_2x3_BlackForestStorm_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Chemical (duel)",
+          "id": "_4x2_Chemical_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Death Row (training)",
+          "id": "_2x3_Death_Row_1vs1_CONQ_TRAINING",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Geisa (training)",
+          "id": "_4x3_geisa_1vs1_CONQ_TRAINING",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Hesse (duel)",
+          "id": "_2x2_Hesse_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Kreide (duel)",
+          "id": "_3x3_Kreide_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Mount River (duel)",
+          "id": "_3x3_MountRiver_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Mount River (training)",
+          "id": "_3x3_MountRiver_1vs1_CONQ_TRAINING",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Ohmen (duel)",
+          "id": "_2x3_Ohmen_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Two Lakes (duel)",
+          "id": "_2x3_Two_lakes_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Urban Frontlines (duel)",
+          "id": "_3x3_UrbanFrontlines_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Vertigo (duel)",
+          "id": "_2x3_Vertigo_1vs1_CONQ_DUEL",
+          "size": "1v1 Conquest",
+          "players": 2,
+          "team": 1,
+          "rule": 2
+        },
+        {
+          "name": "Albion Military Base",
+          "id": "_2x3_Albion_Military_Base_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Black Forest Storm",
+          "id": "_2x3_BlackForestStorm_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Chemical (training)",
+          "id": "_4x2_Chemical_2vs2_CONQ_TRAINING",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Death Row",
+          "id": "_2x3_Death_Row_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Hesse",
+          "id": "_2x2_Hesse_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Loop",
+          "id": "_5x2_Loop_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Mount River (assault)",
+          "id": "_3x3_MountRiver_2vs2_CONQ_ASSAULT",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Ripple",
+          "id": "_2x3_Ripple_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Tension",
+          "id": "_2x2_Tension_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Teufelsmoor",
+          "id": "_2x2_Teufelsmoor_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Two Lakes",
+          "id": "_2x3_Two_lakes_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Two Ways",
+          "id": "_2x3_TwoWays_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Urban Frontlines",
+          "id": "_3x3_UrbanFrontlines_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Vertigo",
+          "id": "_2x3_Vertigo_2vs2_CONQ",
+          "size": "2v2 Conquest",
+          "players": 4,
+          "team": 2,
+          "rule": 2
+        },
+        {
+          "name": "Death Row",
+          "id": "_2x3_Death_Row_2vs2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Ripple",
+          "id": "_2x3_Ripple_2vs2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Two Lakes",
+          "id": "_2x3_Two_lakes_2vs2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Two Ways",
+          "id": "_2x3_TwoWays_2vs2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Vertigo",
+          "id": "_2x3_Vertigo_2vs2_DEST",
+          "size": "2v2 Destruction",
+          "players": 4,
+          "team": 2,
+          "rule": 1
+        },
+        {
+          "name": "Airport",
+          "id": "_3x3_Airport_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Cliff",
+          "id": "_4x3_Cliff_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Cyrus",
+          "id": "_3x3_Cyrus_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Danger Hills",
+          "id": "_3x3_DangerHills_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Eiche",
+          "id": "_3x3_Eiche_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Factory",
+          "id": "_3x3_Factory_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Kreide",
+          "id": "_3x3_Kreide_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Mount River",
+          "id": "_3x3_MountRiver_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Railway",
+          "id": "_3x3_Railway_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Rift",
+          "id": "_3x3_Rift_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Rocks",
+          "id": "_3x3_Rocks_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Rocks (assault)",
+          "id": "_3x3_Rocks_3vs3_CONQ_ASSAULT",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Stoneware",
+          "id": "_3x3_Stoneware_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Surrounded",
+          "id": "_3x3_Surrounded_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Triple Strike",
+          "id": "_3x3_TripleStrike_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Twin Cities",
+          "id": "_3x3_TwinCities_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Two Ways",
+          "id": "_2x3_TwoWays_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Urban Frontlines",
+          "id": "_3x3_UrbanFrontlines_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Valley",
+          "id": "_3x3_Valley_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Volcano",
+          "id": "_3x3_Volcano_3vs3_CONQ",
+          "size": "3v3 Conquest",
+          "players": 6,
+          "team": 3,
+          "rule": 2
+        },
+        {
+          "name": "Airport",
+          "id": "_3x3_Airport_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Cyrus",
+          "id": "_3x3_Cyrus_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Danger Hills",
+          "id": "_3x3_DangerHills_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Eiche",
+          "id": "_3x3_Eiche_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Factory",
+          "id": "_3x3_Factory_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Kreide",
+          "id": "_3x3_Kreide_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Mount River",
+          "id": "_3x3_MountRiver_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Railway",
+          "id": "_3x3_Railway_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Rift",
+          "id": "_3x3_Rift_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Rocks",
+          "id": "_3x3_Rocks_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Stoneware",
+          "id": "_3x3_Stoneware_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Surrounded",
+          "id": "_3x3_Surrounded_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Triple Strike",
+          "id": "_3x3_TripleStrike_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Twin Cities",
+          "id": "_3x3_TwinCities_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Urban Frontlines",
+          "id": "_3x3_UrbanFrontlines_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Valley",
+          "id": "_3x3_Valley_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Volcano",
+          "id": "_3x3_Volcano_3vs3_DEST",
+          "size": "3v3 Destruction",
+          "players": 6,
+          "team": 3,
+          "rule": 1
+        },
+        {
+          "name": "Chemical",
+          "id": "_4x2_Chemical_4vs4_CONQ",
+          "size": "4v4 Conquest",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Dark Stream",
+          "id": "_4x2_DarkStream_4vs4_CONQ",
+          "size": "4v4 Conquest",
+          "players": 8,
+          "team": 4,
+          "rule": 2
+        },
+        {
+          "name": "Chemical",
+          "id": "_4x2_Chemical_4vs4_DEST",
+          "size": "4v4 Destruction",
+          "players": 8,
+          "team": 4,
+          "rule": 1
+        },
+        {
+          "name": "Airport",
+          "id": "_3x3_Airport_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Crown",
+          "id": "_5x2_crown_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Cyrus",
+          "id": "_3x3_Cyrus_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Danger Hills",
+          "id": "_3x3_DangerHills_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Dark Stream",
+          "id": "_4x2_DarkStream_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Factory",
+          "id": "_3x3_Factory_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Geisa",
+          "id": "_4x3_geisa_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Iron Waters",
+          "id": "_3x3_IronWaters_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Kreide",
+          "id": "_3x3_Kreide_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Loop",
+          "id": "_5x2_Loop_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Railway",
+          "id": "_3x3_Railway_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Rift",
+          "id": "_3x3_Rift_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Rocks",
+          "id": "_3x3_Rocks_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Stoneware",
+          "id": "_3x3_Stoneware_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Surrounded",
+          "id": "_3x3_Surrounded_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Triple Strike",
+          "id": "_3x3_TripleStrike_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Twin Cities",
+          "id": "_3x3_TwinCities_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Urban Frontlines",
+          "id": "_3x3_UrbanFrontlines_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Valley",
+          "id": "_3x3_Valley_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Volcano",
+          "id": "_3x3_Volcano_10vs10_CONQ",
+          "size": "10v10 Conquest",
+          "players": 20,
+          "team": 10,
+          "rule": 2
+        },
+        {
+          "name": "Airport",
+          "id": "_3x3_Airport_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Crown",
+          "id": "_5x2_crown_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Cyrus",
+          "id": "_3x3_Cyrus_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Danger Hills",
+          "id": "_3x3_DangerHills_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Geisa",
+          "id": "_4x3_geisa_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Iron Waters",
+          "id": "_3x3_IronWaters_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Kreide",
+          "id": "_3x3_Kreide_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Loop",
+          "id": "_5x2_Loop_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Rocks",
+          "id": "_3x3_Rocks_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        },
+        {
+          "name": "Volcano",
+          "id": "_3x3_Volcano_10vs10_DEST",
+          "size": "10v10 Destruction",
+          "players": 20,
+          "team": 10,
+          "rule": 1
+        }
+      ]
+    }
+  ]
+}

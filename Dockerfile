@@ -20,7 +20,9 @@ RUN wget -q -O /tmp/depotdownloader.zip "https://github.com/SteamRE/DepotDownloa
  && rm /tmp/depotdownloader.zip
 
 COPY entrypoint-unraid.sh /server/entrypoint-unraid.sh
-RUN chmod 755 /server/entrypoint-unraid.sh
+COPY webui /server/webui
+RUN chmod 755 /server/entrypoint-unraid.sh /server/webui/launch.sh \
+ && useradd --system --user-group --no-create-home --shell /usr/sbin/nologin warhost-web
 
 WORKDIR /server
 ENTRYPOINT ["/server/entrypoint-unraid.sh"]

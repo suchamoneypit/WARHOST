@@ -93,7 +93,11 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Write Config From Form (Show more settings)</td>
-<td><code>true</code>. Rewrites the three settings files from this form on every start. <code>false</code> leaves those files and sets <code>login.ini</code> to mode 600.</td>
+<td><code>true</code>. Rewrites the settings files from this form on every start. With Lobby Page <code>true</code>, an existing <code>variables.ini</code> stays. <code>false</code> leaves those files and sets <code>login.ini</code> to mode 600.</td>
+</tr>
+<tr>
+<td nowrap>Lobby Page (Show more settings)</td>
+<td><code>false</code>. While Lobby Page is false, the WebUI button still opens that port and the browser connection is refused. The log says nothing is listening. <code>true</code> serves a lobby page on this Unraid host at the game port plus 1000, so <code>10400</code> uses <code>http://&lt;unraid&gt;:11400/</code>. Do not forward that port. The log says <code>Lobby page listening on port 11400.</code> Saving writes <code>variables.ini</code>; restart the container to load it. The Docker WebUI button opens 11400, which is the first server only.</td>
 </tr>
 <tr>
 <td nowrap>Workshop Mod Tags (Show more settings)</td>
@@ -102,7 +106,7 @@ Fill in:
 </tbody>
 </table>
 
-Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below.
+Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, Lobby Page, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below.
 
 Unraid refills a cleared field from the template default ([Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php)). A container added from an earlier version of this template still holds the old Red Dragon defaults, so type `none` in both workshop fields there.
 
@@ -431,7 +435,17 @@ The wrapper writes those files in a private `.warhost-stage.*` folder first, the
 
 The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same size (`DeltaMaxTeamSize = 0`). AI decks are empty. RCON is not configured.
 
-Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start overwrites hand edits. While it is `false`, the three files stay as edited, `login.ini` is set to mode `600`, and no Workshop id is looked up on Steam. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
+Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true` and **Lobby Page** is `false`, the next start overwrites hand edits. While Lobby Page is `true` and `variables.ini` already exists, the next start leaves that file and still rewrites `login.ini` and `params_for_ai.json`. Set Lobby Page back to `false` to make the form the source of `variables.ini` again. While Write Config From Form is `false`, the three files stay as edited, `login.ini` is set to mode `600`, and no Workshop id is looked up on Steam. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
+
+## Lobby page
+
+**Lobby Page** defaults to `false`. The dedicated server starts the same way with it off, and no extra process listens. The log says `Lobby page is off. Nothing is listening on port 11400.` If that port is already taken, the log says `Lobby page is off. Port 11400 is already in use.` The WebUI button still opens that port, so the browser reports that the address refused to connect until Lobby Page is `true`.
+
+Set it to `true` and the container also serves a page at the game port plus 1000. Game port `10400` is `http://<unraid>:11400/`. The next server, on `10401`, is `http://<unraid>:11401/`. Do not forward the page port. The game port stays the one you forward as TCP and UDP. The Docker WebUI button uses `http://[IP]:[PORT:11400]/`. On host networking that button opens 11400, so it matches the first server only. When the page is accepting connections, the log says `Lobby page listening on port 11400.` before the game server output.
+
+The page lists the scenarios from this README and the match dropdowns (command and control, combat rules, opposition, starting resources, income, score limit, and time limit). Save replaces `variables.ini`, keeps the previous copy as `variables.ini.bak`, and leaves the running match as it is. Restart that container in Unraid to load the save. Reset from Unraid form writes the form's current map, name, slots, combat rule, and mods, including the seeded match values (`InitMoney` 750 and a 20 minute limit), and also waits for that restart.
+
+If the page fails to start, or its port is already taken, the log warns and the game server still starts. A privilege drop that fails leaves the page running and the container log warns that it stayed root. The page does not show the Eugen login or dedicated key. `ghcr.io/suchamoneypit/warhost:latest` has no lobby page until the webui branch is on main and the image rebuild finishes; until then the WebUI button still opens port 11400 and the browser connection is refused.
 
 ## Keys
 
@@ -464,7 +478,7 @@ Community Apps reads the default branch, `main`. A first submission needs that b
 
 ## License
 
-Templates, metadata, documentation, and `entrypoint-unraid.sh` are under the MIT license in [`LICENSE`](LICENSE). Copyright 2026 suchamoneypit. GitHub detects that file as MIT, an OSI-approved license. Community Apps asks for that license on the repository contents: the templates, metadata, and docs. The template `<License>` tag is `https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE`. The template `<ReadMe>` tag is `https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md`.
+Templates, metadata, documentation, `entrypoint-unraid.sh`, and `webui/` are under the MIT license in [`LICENSE`](LICENSE). Copyright 2026 suchamoneypit. GitHub detects that file as MIT, an OSI-approved license. Community Apps asks for that license on the repository contents: the templates, metadata, and docs. The template `<License>` tag is `https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE`. The template `<ReadMe>` tag is `https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md`.
 
 The image is built `FROM eugensystems/warno`. The [Docker Hub page](https://hub.docker.com/r/eugensystems/warno), read on 2026-10-09, states no license for that image. Community Apps treats the container image license as separate from this repository's `LICENSE`. The Dockerfile leaves the image license unlabeled.
 
