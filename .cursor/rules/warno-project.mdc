@@ -11,7 +11,7 @@ Durable knowledge lives in `@docs/ARCHITECTURE.md` (what exists and what was ver
 
 ## Do not change unless the task asks for it
 
-Server settings and the fixed `variables.ini` values, launch arguments, template defaults (`EXPOSEDPORT` `10400`, Map `_2x2_Hesse_2vs2_CONQ`, empty Workshop Mod List and Workshop Mod Tags, and the Red Dragon example `RDPort_JungleLaw_2v2_CONQ` with `3811913066/27` in the field descriptions), host networking, the settings path `/server/settings`, the host folder `/mnt/user/appdata/warno/10400/settings`, image build logic, and the image name `ghcr.io/suchamoneypit/warhost:latest`.
+Server settings and the fixed `variables.ini` values, launch arguments, template defaults (`EXPOSEDPORT` `10400`, Map `_2x2_Hesse_2vs2_CONQ`, empty Workshop Mod List and Workshop Mod Tags, and the Red Dragon example `RDPort_JungleLaw_2v2_CONQ` with `3811913066` in the field descriptions), host networking, the settings path `/server/settings`, the host folder `/mnt/user/appdata/warno/10400/settings`, image build logic, and the image name `ghcr.io/suchamoneypit/warhost:latest`.
 
 ## Evidence
 

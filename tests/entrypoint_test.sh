@@ -500,6 +500,8 @@ grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt" || fail 
 
 # Fake Steam: wget answers the details call from details/<id>.json and
 # DepotDownloader copies items/<id>.ini to Config.ini. Both log every call.
+# As DepotDownloader 3.4.0 does, an item with no manifest exits 0 with no
+# Config.ini, and no connection to Steam (the offline marker) exits 1.
 FAKE_STEAM="${WORKDIR}/fake-steam"
 mkdir -p "${FAKE_STEAM}/bin"
 cat > "${FAKE_STEAM}/bin/wget" << 'EOF'
@@ -534,13 +536,17 @@ while [ "$#" -gt 0 ]; do
 done
 printf '%s\n' "$id" >> "${root}/downloader.calls"
 cp "$list" "${root}/filelist.last"
-printf 'home=%s\ntmp=%s\ncwd=%s\ndir=%s\n' "${HOME:-}" "${TMPDIR:-}" "$(pwd)" "$dir" > "${root}/downloader.env"
+printf 'home=%s\ntmp=%s\ncwd=%s\ndir=%s\nlogin=%s\nkey=%s\n' "${HOME:-}" "${TMPDIR:-}" "$(pwd)" "$dir" "${EUGEN_LOGIN:-}" "${EUGEN_DEDICATED_KEY:-}" > "${root}/downloader.env"
 settings=$(dirname "$(dirname "$dir")")
 for other in "$settings"/.warhost-stage.*/item/Config.ini; do
   if [ -e "$other" ]; then
     printf '%s saw %s\n' "$id" "$other" >> "${root}/leftovers"
   fi
 done
+if [ -e "${root}/offline" ]; then
+  printf 'Connection to Steam failed. Trying again (#10)...\nCould not connect to Steam after 10 tries\nUnable to get steam3 credentials.\nError: InitializeSteam failed\n'
+  exit 1
+fi
 if [ -f "${root}/items/${id}.ini" ]; then
   mkdir -p "${dir}/.DepotDownloader"
   printf 'manifest\n' > "${dir}/.DepotDownloader/${id}.manifest"
@@ -548,15 +554,15 @@ if [ -f "${root}/items/${id}.ini" ]; then
   printf 'Total downloaded: 416 bytes (551 bytes uncompressed) from 1 depots\n'
   exit 0
 fi
-printf 'Unable to locate manifest ID for published file %s\n' "$id"
-exit 1
+printf 'Unable to locate manifest ID for published file %s\nDisconnected from Steam\n' "$id"
+exit 0
 EOF
 chmod 755 "${FAKE_STEAM}/bin/wget" "${FAKE_STEAM}/bin/DepotDownloader"
 
 reset_fake_steam() {
   rm -rf "${FAKE_STEAM}/details" "${FAKE_STEAM}/items"
   mkdir -p "${FAKE_STEAM}/details" "${FAKE_STEAM}/items"
-  rm -f "${FAKE_STEAM}/leftovers" "${FAKE_STEAM}/filelist.last" "${FAKE_STEAM}/downloader.env"
+  rm -f "${FAKE_STEAM}/leftovers" "${FAKE_STEAM}/filelist.last" "${FAKE_STEAM}/downloader.env" "${FAKE_STEAM}/offline"
   : > "${FAKE_STEAM}/wget.calls"
   : > "${FAKE_STEAM}/downloader.calls"
 }
@@ -594,7 +600,7 @@ expect_ok "reads Version from Config.ini for a bare workshop id" \
   MOD_LIST=3811913066 \
   MOD_TAG_LIST=Maps-Scenarios
 grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "bare id was not written as id/version"
-grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini. Only that file was downloaded, and it has been deleted.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
+grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini. The rest of the item was not downloaded, and Config.ini has been deleted.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
 grep -qx 'Wrote WARNO settings for WARHOST - Hesse 2v2 on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
 [ "$(call_count downloader.calls)" = 1 ] || fail "bare id did not download exactly once"
 printf 'Config.ini\n' | cmp -s - "${FAKE_STEAM}/filelist.last" || fail "the download asked for more than Config.ini"
@@ -602,6 +608,8 @@ grep -qx '3811913066 1791628993 27' "${server}/settings/warhost-workshop-version
 for key in home tmp cwd; do
   grep -q "^${key}=${server}/settings/.warhost-stage\." "${FAKE_STEAM}/downloader.env" || fail "DepotDownloader ${key} was not the private download directory"
 done
+grep -qx 'login=' "${FAKE_STEAM}/downloader.env" || fail "DepotDownloader received the Eugen login"
+grep -qx 'key=' "${FAKE_STEAM}/downloader.env" || fail "DepotDownloader received the Eugen dedicated key"
 assert_no_stage_dirs "${server}/settings"
 if grep -qE '^(warning|note):' "${WORKDIR}/stdout.txt"; then
   fail "a resolved Red Dragon id printed a warning or a note"
@@ -666,7 +674,7 @@ expect_ok "keeps the cached Version when Config.ini cannot be read after an upda
   MAP=RDPort_JungleLaw_2v2_CONQ \
   MOD_LIST=3811913066
 [ "$(call_count downloader.calls)" = 3 ] || fail "a new update time did not try the download"
-grep -qx 'warning: Could not read Config.ini for Workshop item 3811913066. DepotDownloader exited with status 1. Version 28 from the last check is used, and the next start tries again.' "${WORKDIR}/stdout.txt" || fail "failed download did not warn"
+grep -qx 'warning: Could not read Config.ini for Workshop item 3811913066. Steam sent no Config.ini for it. Version 28 from the last check is used, and the next start tries again.' "${WORKDIR}/stdout.txt" || fail "failed download did not warn"
 grep -qx 'DepotDownloader: Unable to locate manifest ID for published file 3811913066' "${WORKDIR}/stderr.txt" || fail "failed download did not print the DepotDownloader log"
 grep -qx '3811913066 1791700000 28' "${server}/settings/warhost-workshop-versions.txt" || fail "failed download recorded the new update time"
 assert_no_stage_dirs "${server}/settings"
@@ -674,8 +682,9 @@ grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed download wit
 
 reset_fake_steam
 steam_details 3474588989 1787211611
+: > "${FAKE_STEAM}/offline"
 make_server
-expect_fail "refuses to start when a bare id has no cache and Config.ini cannot be read" \
+expect_fail "refuses to start when a bare id has no cache and Steam cannot be reached" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
@@ -684,12 +693,53 @@ expect_fail "refuses to start when a bare id has no cache and Config.ini cannot 
   EXPOSEDPORT=10400 \
   MAP=_2x2_Oslo_Conquest \
   MOD_LIST=3474588989
-grep -q 'Could not read Version for Workshop item 3474588989. DepotDownloader exited with status 1.' "${WORKDIR}/stderr.txt" || fail "failed first download did not say why"
+grep -q 'Could not read Version for Workshop item 3474588989. DepotDownloader exited with status 1. No earlier Version is saved for it, so the server does not start.' "${WORKDIR}/stderr.txt" || fail "failed first download did not say why"
+grep -qx 'DepotDownloader: Could not connect to Steam after 10 tries' "${WORKDIR}/stderr.txt" || fail "failed first download did not print the DepotDownloader log"
 grep -q 'pin the number as 3474588989/' "${WORKDIR}/stderr.txt" || fail "failed first download did not offer a pin"
 if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
   fail "a bare id with no Version started the server"
 fi
 [ ! -e "${server}/settings/variables.ini" ] || fail "a bare id with no Version wrote variables.ini"
+assert_no_stage_dirs "${server}/settings"
+
+reset_fake_steam
+make_server
+expect_fail "refuses to start when Steam sends no Config.ini for a bare id" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ \
+  MOD_LIST=3999999999
+grep -q 'Could not read Version for Workshop item 3999999999. Steam sent no Config.ini for it. No earlier Version is saved for it' "${WORKDIR}/stderr.txt" || fail "an item with no Config.ini did not say why"
+grep -q 'Check the id and the connection to Steam' "${WORKDIR}/stderr.txt" || fail "an item with no Config.ini did not ask to check the id"
+[ ! -e "${server}/settings/variables.ini" ] || fail "an item with no Config.ini wrote variables.ini"
+assert_no_stage_dirs "${server}/settings"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+mkdir -p "${WORKDIR}/fake-timeout"
+cat > "${WORKDIR}/fake-timeout/timeout" << 'EOF'
+#!/bin/sh
+printf '%s\n' "$*" > "$(dirname "$0")/timeout.args"
+exit 124
+EOF
+chmod 755 "${WORKDIR}/fake-timeout/timeout"
+make_server
+expect_fail "refuses to start when DepotDownloader runs past its time limit" \
+  PATH="${WORKDIR}/fake-timeout:${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+grep -q '^300 DepotDownloader -app 1611600 -pubfile 3811913066 ' "${WORKDIR}/fake-timeout/timeout.args" || fail "DepotDownloader did not run under a 300 second limit"
+grep -q 'Could not read Version for Workshop item 3811913066. DepotDownloader did not finish within 300 seconds.' "${WORKDIR}/stderr.txt" || fail "a timed-out download did not say why"
 assert_no_stage_dirs "${server}/settings"
 
 reset_fake_steam
@@ -712,6 +762,44 @@ printf '3811913066\n3474588989\n' | cmp -s - "${FAKE_STEAM}/downloader.calls" ||
 [ ! -e "${FAKE_STEAM}/leftovers" ] || fail "a Config.ini was still present when the next item was fetched: $(cat "${FAKE_STEAM}/leftovers")"
 grep -qx '3811913066 1791628993 27' "${server}/settings/warhost-workshop-versions.txt" || fail "cache lost the first id"
 grep -qx '3474588989 1787211611 14' "${server}/settings/warhost-workshop-versions.txt" || fail "cache lost the second id"
+assert_no_stage_dirs "${server}/settings"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+make_server
+expect_ok "resolves a repeated bare id once" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066-3811913066
+grep -qx 'ModList = 3811913066/27-3811913066/27' "${server}/settings/variables.ini" || fail "a repeated bare id was not resolved"
+[ "$(call_count downloader.calls)" = 1 ] || fail "a repeated bare id was downloaded twice"
+[ "$(call_count wget.calls)" = 1 ] || fail "a repeated bare id was checked on Steam twice"
+[ "$(grep -c '^3811913066 ' "${server}/settings/warhost-workshop-versions.txt")" = 1 ] || fail "a repeated bare id was cached twice"
+
+reset_fake_steam
+steam_details 3811913066 1791628993
+steam_item 3811913066 27
+make_server
+mkdir -p "${server}/settings/warhost-workshop-versions.txt"
+expect_ok "starts without saving Versions when a directory holds the cache name" \
+  PATH="${FAKE_STEAM}/bin:${PATH}" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=RDPort_JungleLaw_2v2_CONQ \
+  MOD_LIST=3811913066
+grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "a directory at the cache name blocked the resolved mod list"
+grep -q '^warning: .*/warhost-workshop-versions.txt is a directory, so Workshop Versions were not saved\.' "${WORKDIR}/stdout.txt" || fail "a directory at the cache name did not warn"
+[ -d "${server}/settings/warhost-workshop-versions.txt" ] || fail "the directory at the cache name was replaced"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "a directory at the cache name stopped the server"
 assert_no_stage_dirs "${server}/settings"
 
 reset_fake_steam

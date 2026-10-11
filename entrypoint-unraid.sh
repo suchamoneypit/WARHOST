@@ -444,19 +444,23 @@ fetch_workshop_version() {
     set -- timeout 300 "$@"
   fi
   fetch_status=0
+  # env -i keeps the Eugen login and key out of DepotDownloader's environment.
   (
     cd "$stage_dir" || exit 1
-    HOME=$stage_dir TMPDIR=$stage_dir DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_EnableDiagnostics=0 "$@"
+    exec env -i PATH="$PATH" HOME="$stage_dir" TMPDIR="$stage_dir" \
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_EnableDiagnostics=0 "$@"
   ) > "${stage_dir}/depotdownloader.log" 2>&1 || fetch_status=$?
   config="${stage_dir}/item/Config.ini"
   if [ "$fetch_status" -eq 0 ] && [ -f "$config" ] && [ ! -L "$config" ]; then
     workshop_version=$(sed -n 's/^[[:space:]]*Version[[:space:]]*=[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$config" | head -n 1)
   fi
   if [ -z "$workshop_version" ]; then
-    if [ "$fetch_status" -ne 0 ]; then
+    if [ "$fetch_status" -eq 124 ]; then
+      workshop_fetch_error="DepotDownloader did not finish within 300 seconds."
+    elif [ "$fetch_status" -ne 0 ]; then
       workshop_fetch_error="DepotDownloader exited with status ${fetch_status}."
     elif [ ! -f "$config" ]; then
-      workshop_fetch_error="Steam sent no Config.ini for this item."
+      workshop_fetch_error="Steam sent no Config.ini for it."
     else
       workshop_fetch_error="Its Config.ini has no Version line."
     fi
@@ -485,6 +489,16 @@ remember_workshop_version() {
 resolve_workshop_id() {
   ws_id=$1
   workshop_version=
+  while read -r c_id c_time c_version c_extra; do
+    if [ "$c_id" = "$ws_id" ]; then
+      workshop_version=$c_version
+    fi
+  done << EOF
+$workshop_cache_lines
+EOF
+  if [ -n "$workshop_version" ]; then
+    return 0
+  fi
   cached_time=
   cached_version=
   cache="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
@@ -510,7 +524,7 @@ resolve_workshop_id() {
     return 0
   fi
   if fetch_workshop_version "$ws_id"; then
-    printf '%s\n' "Workshop item ${ws_id} is Version ${workshop_version}, read from its Config.ini. Only that file was downloaded, and it has been deleted."
+    printf '%s\n' "Workshop item ${ws_id} is Version ${workshop_version}, read from its Config.ini. The rest of the item was not downloaded, and Config.ini has been deleted."
     remember_workshop_version "$ws_id" "${steam_time:-0}" "$workshop_version"
     return 0
   fi
@@ -521,7 +535,7 @@ resolve_workshop_id() {
     remember_workshop_version "$ws_id" "$cached_time" "$workshop_version"
     return 0
   fi
-  die "Could not read Version for Workshop item ${ws_id}. ${workshop_fetch_error} Start the container again when Steam is reachable, or pin the number as ${ws_id}/<Version from that mod's Config.ini>."
+  die "Could not read Version for Workshop item ${ws_id}. ${workshop_fetch_error} No earlier Version is saved for it, so the server does not start. Check the id and the connection to Steam, then start the container again, or pin the number as ${ws_id}/<Version from that mod's Config.ini>."
 }
 
 # Rewrites MOD_LIST with every bare id as id/version. Pins stay as typed.
@@ -669,11 +683,11 @@ if [ "$write_config" = "true" ]; then
   esac
 
   prepare_server_runtime
+  umask 077
   form_mod_list=$MOD_LIST
   if [ -n "$MOD_LIST" ]; then
     resolve_workshop_list "$MOD_LIST"
   fi
-  umask 077
   stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
   trap 'on_stage_exit' EXIT
   trap 'on_stage_signal' HUP INT TERM
@@ -739,7 +753,12 @@ if [ "$write_config" = "true" ]; then
   publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
   chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
   if [ -n "$workshop_cache_lines" ]; then
-    publish_staged_file "${stage_dir}/${WORKSHOP_CACHE_FILE}" "${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
+    cache_dest="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
+    if [ -d "$cache_dest" ] && [ ! -L "$cache_dest" ]; then
+      printf '%s\n' "warning: ${cache_dest} is a directory, so Workshop Versions were not saved. The next start reads each Config.ini again."
+    else
+      publish_staged_file "${stage_dir}/${WORKSHOP_CACHE_FILE}" "$cache_dest"
+    fi
   fi
   discard_stage_dir
   trap - EXIT
