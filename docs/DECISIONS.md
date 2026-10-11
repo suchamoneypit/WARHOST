@@ -46,7 +46,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Handoff length
 
-**Decision:** `/handoff` prints under 400 words. Words past a short status go to leftover intent, a do-not-redo list with a command, URL, or `file:line`, and git state (branch, commit, pushed or not). The paste points at `docs/` instead of restating them.
+**Decision:** `/handoff` prints under 400 words. Words past a short status go to leftover intent, a do-not-redo list with a command, URL, or `file:line`, and git state (branch, commit, pushed or not). The paste points at `docs/` instead of restating them. The 2026-10-11 entry removes the command.
 
 **Rationale:** A 250-word cap fit a long template session. A multi-thousand-word paste would reload that session into the next chat. The extra room is for intent and checks that the docs do not store.
 
@@ -213,3 +213,9 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 **Decision:** A `VERSION` file below the latest git tag is ignored. The release workflow increments the latest tag, the same as when the file is absent or equal to that tag. A file higher than the latest tag is still the tag for that publish. The workflow still does not push a commit, and it still does not create a tag that already exists.
 
 **Rationale:** The workflow reads `VERSION` and does not write it back. After a publish where the file matches the latest tag, the next tag is one minor higher and the file is unchanged. The following push to `main` then finds the file below the latest tag. On 2026-10-10 that stopped [Actions run 38097617043](https://github.com/suchamoneypit/WARHOST/actions/runs/38097617043): `VERSION` was `1.02` and the latest tag was `v1.03`, so `scripts/next_version.py` exited 1. Several agents publish without naming a new number, so the file stays behind whenever one of those pushes increments the tag. A lower file cannot rewind the number either way. Ignoring it keeps the next minor and lets that push finish.
+
+## 2026-10-11 — No session handoff paste
+
+**Decision:** `/handoff` is removed. A new chat starts with the task. Continuity is the always-on rules, `docs/`, and `git status`. An unfinished goal is written to `docs/ROADMAP.md` during the work. `@Chats` or fork-chat is for when the thread itself has to carry over.
+
+**Rationale:** The command spent a closing turn on a paste that was then loaded into the next chat. Git state, recorded fetches, and checks already live in the repo, and a pasted check result from the previous session is stale. The 2026-10-09 length cap does not apply anymore.

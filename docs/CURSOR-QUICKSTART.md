@@ -61,10 +61,10 @@ From `.cursor/rules/agent-workflow.mdc`:
 
 ## Starting a fresh chat without losing knowledge
 
-Long chats slow down and cost more context. The project is designed so that a new chat starts informed:
+Long chats slow down and cost more context. A new chat starts with the task.
 
 - The two always-on rules load automatically. The template rule loads when you open a template or wrapper file.
-- Durable facts are in `docs/`, not in chat history. Before closing a chat, run `/handoff`. It updates those docs and prints a paste of under 400 words: what changed, what was checked, what is still open, the next step, leftover intent, sources the next chat must not fetch again, and git state. It points at `docs/` instead of restating them.
+- Durable facts are in `docs/`. The agent reads them when the task touches behavior, decisions, or installation, and it runs `git status` itself. An unfinished goal goes in `docs/ROADMAP.md` in the same change as the work.
 - To carry a specific thread over, mention the old chat with `@Chats` in the new one, or use Cursor's fork-chat action to continue from a chosen message. In the CLI, `/summarize` compacts the current chat in place. Cursor also compacts old turns automatically.
 - Memories and Notepads are not in Cursor's current docs; do not rely on them.
 
@@ -82,7 +82,6 @@ Project commands in `.cursor/commands/` (name = file name):
 | `/credential-review` | You want an adversarial review of the Eugen login and dedicated key. Clear text on the Unraid form is accepted. |
 | `/slop-review` | You want an adversarial read of what ships (the app card, the form, the README, the install guide, the wrapper, and the icon) the way a moderator, a first-time installer, and a skeptical homelabber would read it. Start a new Agent chat and pick your strongest model first. It reports only; reply `apply` with finding IDs to fix those. |
 | `/workshop-mods` | You want the local WARNO workshop mods compared with the README: versions, tags, and scenario IDs. It reports only, unless you also ask it to apply the report. |
-| `/handoff` | You are about to close a chat or hand the work to someone else. |
 
 Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `/plan` to switch to Plan mode, `/create-rule`, `/create-subagent`, `/create-skill`, `/review` for a diff review, `/summarize` (CLI) to compact context. Cursor's docs now treat skills (`.cursor/skills/<name>/SKILL.md`) as the successor to commands and offer `/migrate-to-skills`; the commands above are small enough that migrating them is optional.
 
