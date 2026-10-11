@@ -628,7 +628,7 @@ if [ "$write_config" = "true" ]; then
   key_tail=$(printf '%s' "$EUGEN_DEDICATED_KEY" | tail -c 4)
 
   if [ -z "${SERVER_NAME:-}" ]; then
-    SERVER_NAME="WARHOST - Hesse 2v2"
+    SERVER_NAME="WARHOST - default server name"
   fi
   require_single_line "Server name" "$SERVER_NAME"
   case "$SERVER_NAME" in

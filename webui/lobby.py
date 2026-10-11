@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 MENU_UPKEEP = (0, 5, 7)
-MENU_MONEY = (500, 1000, 1500, 2000, 2500, 3000)
+MENU_MONEY = (500, 750, 1000, 1500, 2000, 2500, 3000)
 MENU_TIME = (1200, 1800, 2400, 3600, 0)
 MENU_SCORE = (1000, 2000, 4000)
 MENU_INCOME = (0, 1, 2, 3, 4, 5)
@@ -261,7 +261,7 @@ def _pin_mods(mod_list, catalog):
 
 
 def reset_from_form(env, catalog):
-    name = _require_text(env.get("SERVER_NAME") or "WARHOST - Hesse 2v2", "Server name", 64)
+    name = _require_text(env.get("SERVER_NAME") or "WARHOST - default server name", "Server name", 64)
     scenario_id = _require_text(env.get("MAP") or "_2x2_Hesse_2vs2_CONQ", "Map", 80)
     if " " in scenario_id or '"' in scenario_id:
         raise LobbyError("Map cannot contain spaces or quotes.")

@@ -44,6 +44,10 @@ Fill in:
 </thead>
 <tbody>
 <tr>
+<td nowrap>Settings Folder</td>
+<td><code>/mnt/user/appdata/warno/10400/settings</code> for the first server. The next container uses this path with the port number plus 1, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only.</td>
+</tr>
+<tr>
 <td nowrap>Eugen Login</td>
 <td>The login from Eugen's reply, exactly as written, not your Steam name. This login and the key are a matching pair good for five containers.</td>
 </tr>
@@ -56,8 +60,8 @@ Fill in:
 <td>The address Eugen's lobby should advertise to players. Look it up at <a href="https://www.whatismyip.com/">https://www.whatismyip.com/</a> from a device on that network if you do not know it.</td>
 </tr>
 <tr>
-<td nowrap>Settings Folder</td>
-<td><code>/mnt/user/appdata/warno/10400/settings</code> for the first server. The next container uses this path with the port number plus 1, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only.</td>
+<td nowrap>WebUI</td>
+<td><code>true</code>. Serves the WebUI on this Unraid host at the game port plus 1000, so <code>10400</code> uses <code>http://&lt;unraid&gt;:11400/</code>. Do not forward that port. The log says <code>WebUI listening on port 11400.</code> <code>false</code> leaves the Docker WebUI button with nothing listening. The log says <code>WebUI is off. Nothing is listening on port 11400.</code> If that port is already taken, it says <code>WebUI is off. Port 11400 is already in use.</code> Saving writes <code>variables.ini</code>; restart the container to load it. The Docker WebUI button opens 11400, which is the first server only.</td>
 </tr>
 <tr>
 <td nowrap>Game Port</td>
@@ -65,7 +69,7 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Server Name</td>
-<td><code>WARHOST - Hesse 2v2</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
+<td><code>WARHOST - default server name</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
 </tr>
 <tr>
 <td nowrap>Map</td>
@@ -96,17 +100,13 @@ Fill in:
 <td><code>true</code>. Rewrites the settings files from this form on every start. With WebUI <code>true</code>, an existing <code>variables.ini</code> stays. <code>false</code> leaves those files and sets <code>login.ini</code> to mode 600.</td>
 </tr>
 <tr>
-<td nowrap>WebUI (Show more settings)</td>
-<td><code>false</code>. While WebUI is false, the Docker WebUI button still opens that port and the browser connection is refused. The log says <code>WebUI is off. Nothing is listening on port 11400.</code> If that port is already taken, it says <code>WebUI is off. Port 11400 is already in use.</code> <code>true</code> serves the WebUI on this Unraid host at the game port plus 1000, so <code>10400</code> uses <code>http://&lt;unraid&gt;:11400/</code>. Do not forward that port. The log says <code>WebUI listening on port 11400.</code> Saving writes <code>variables.ini</code>; restart the container to load it. The Docker WebUI button opens 11400, which is the first server only.</td>
-</tr>
-<tr>
 <td nowrap>Workshop Mod Tags (Show more settings)</td>
 <td>Empty for a base-game map. <code>Maps-Scenarios</code> for a map pack such as Red Dragon. Browser icons only. These tags do not download mods. <code>none</code> also means empty.</td>
 </tr>
 </tbody>
 </table>
 
-Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, WebUI, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below.
+Map is on the main form, under Server Name and before Max Players. On the form, WebUI follows Public WAN IP and Game Port follows WebUI. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below.
 
 Unraid refills a cleared field from the template default ([Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php)). A container added from an earlier version of this template still holds the old Red Dragon defaults, so type `none` in both workshop fields there.
 
@@ -413,7 +413,7 @@ The container name, Game Port, Settings Folder, and Server Name are unique. The 
 | Name | `WARHOST` | `WARHOST2` |
 | Game Port | `10400` | `10401` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
-| Server Name | `WARHOST - Hesse 2v2` | a different name |
+| Server Name | `WARHOST - default server name` | a different name |
 
 Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon map pack while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
@@ -439,11 +439,11 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 ## WebUI
 
-**WebUI** defaults to `false`. The dedicated server starts the same way with it off, and no extra process listens. The log says `WebUI is off. Nothing is listening on port 11400.` If that port is already taken, the log says `WebUI is off. Port 11400 is already in use.` The Docker WebUI button still opens that port, so the browser reports that the address refused to connect until WebUI is `true`.
+**WebUI** defaults to `true` and sits on the main form after Public WAN IP, before Show more settings. The container serves the WebUI at the game port plus 1000. That is the page the Docker WebUI button opens. Game port `10400` is `http://<unraid>:11400/`. The next server, on `10401`, is `http://<unraid>:11401/`. Do not forward the page port. The game port stays the one you forward as TCP and UDP. The Docker WebUI button uses `http://[IP]:[PORT:11400]/`. On host networking that button opens 11400, so it matches the first server only. When the page is accepting connections, the log says `WebUI listening on port 11400.` before the game server output.
 
-Set it to `true` and the container serves the WebUI at the game port plus 1000. That is the page the Docker WebUI button opens. Game port `10400` is `http://<unraid>:11400/`. The next server, on `10401`, is `http://<unraid>:11401/`. Do not forward the page port. The game port stays the one you forward as TCP and UDP. The Docker WebUI button uses `http://[IP]:[PORT:11400]/`. On host networking that button opens 11400, so it matches the first server only. When the page is accepting connections, the log says `WebUI listening on port 11400.` before the game server output.
+Set it to `false` and no extra process listens. The dedicated server starts the same way. The log says `WebUI is off. Nothing is listening on port 11400.` If that port is already taken, the log says `WebUI is off. Port 11400 is already in use.` The Docker WebUI button still opens that port, so the browser reports that the address refused to connect.
 
-The map list (scenario ID list) shows the base-game maps. When `ModList` already contains a workshop id from the named map packs, that pack's maps appear below in their own section. Two or more of those packs use a dropdown to switch packs. A workshop id with no maps in the list, such as Galactic Divide or A World in Flames, is named and does not add rows. Workshop mod tags do not add maps. Filters cover the map name, the size, and Conquest or Destruction. The match dropdowns are command and control, combat rules, opposition, starting resources, income, score limit, and time limit. Save writes the selected map and those dropdowns into `variables.ini`. Save keeps the existing ModList and ModTagList and does not add a workshop id; a modded map whose pack is absent is rejected. It keeps the previous copy as `variables.ini.bak` and does not signal the game. Restart that container in Unraid to load the save. Reset from Unraid form writes the form's current map, name, slots, combat rule, and mods, including the seeded match values (`InitMoney` 750 and a 20 minute limit), and also waits for that restart.
+The map list (scenario ID list) shows the base-game maps. When `ModList` already contains a workshop id from the named map packs, that pack's maps appear below in their own section. Two or more of those packs use a dropdown to switch packs. A workshop id with no maps in the list, such as Galactic Divide or A World in Flames, is named and does not add rows. Workshop mod tags do not add maps. Search matches the map name and scenario ID. Size and combat rule stay separate dropdowns. The match dropdowns are command and control, combat rules, opposition, starting resources, income, score limit, and time limit. Save writes the selected map and those dropdowns into `variables.ini`. Save keeps the existing ModList and ModTagList and does not add a workshop id; a modded map whose pack is absent is rejected. It keeps the previous copy as `variables.ini.bak` and does not signal the game. Restart that container in Unraid to load the save. Reset from Unraid form writes the form's current map, name, slots, combat rule, and mods, including the seeded match values (`InitMoney` 750 and a 20 minute limit), and also waits for that restart.
 
 If the page fails to start, or its port is already taken, the log warns and the game server still starts. A privilege drop that fails leaves the page running and the container log warns that it stayed root. The page does not show the Eugen login or dedicated key. `ghcr.io/suchamoneypit/warhost:latest` has no WebUI until this work is published to `main` and the image rebuild finishes; until then the Docker WebUI button still opens port 11400 and the browser connection is refused.
 
