@@ -214,19 +214,32 @@ class Handler(BaseHTTPRequestHandler):
         self._json(200, public_state(existing))
 
 
+def write_pid(settings):
+    fd = os.open(settings / ".warhost-webui.pid", os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o644)
+    os.write(fd, f"{os.getpid()}\n".encode())
+    os.close(fd)
+
+
 def run_http(drop=False):
     port = web_port()
     settings = settings_dir()
     Handler.settings = settings
+    write_pid(settings)
     try:
         httpd = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     except OSError:
         print(f"warning: lobby page port {port} is already in use. The game server will still start.", file=sys.stderr)
         raise SystemExit(1)
-    ready = settings / ".warhost-webui.ready"
-    ready.write_text(str(port) + "\n")
+    # Open the ready file before the privilege drop. The dropped user cannot create it.
+    ready_fd = os.open(settings / ".warhost-webui.ready", os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o644)
     if drop:
-        drop_to_web_user()
+        try:
+            drop_to_web_user()
+        except OSError as exc:
+            print(f"warning: lobby page could not drop privileges and stayed root ({exc}).", file=sys.stderr)
+            sys.stderr.flush()
+    os.write(ready_fd, f"{port}\n".encode())
+    os.close(ready_fd)
     httpd.serve_forever()
 
 
@@ -268,6 +281,8 @@ def run_helper():
 
 
 def drop_to_web_user():
+    if os.environ.get("WARHOST_WEBUI_DROP_FAIL"):
+        raise OSError("privilege drop failed")
     user = pwd.getpwnam("warhost-web")
     os.setgroups([])
     os.setgid(user.pw_gid)

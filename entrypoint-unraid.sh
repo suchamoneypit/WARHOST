@@ -819,6 +819,15 @@ if [ "$web_ui" = true ]; then
   else
     printf '%s\n' "warning: web UI launcher was not found. The game server will still start."
   fi
+else
+  web_port=$((EXPOSEDPORT + 1000))
+  if [ "$web_port" -le 65535 ]; then
+    if local_port_taken "$web_port"; then
+      printf 'Lobby page is off. Port %s is already in use.\n' "$web_port"
+    else
+      printf 'Lobby page is off. Nothing is listening on port %s.\n' "$web_port"
+    fi
+  fi
 fi
 
 cd "$server_root"

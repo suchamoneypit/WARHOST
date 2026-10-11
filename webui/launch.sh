@@ -50,17 +50,43 @@ fi
 log="${SETTINGS_DIR}/.warhost-webui.log"
 pidfile="${SETTINGS_DIR}/.warhost-webui.pid"
 ready="${SETTINGS_DIR}/.warhost-webui.ready"
-rm -f "$ready"
+rm -f "$ready" "$pidfile"
 
-setsid python3 "$here/server.py" --serve >>"$log" 2>&1 9>&- &
-printf '%s\n' "$!" > "$pidfile"
+# setsid may fork when it is already a process group leader. The server writes its own pid.
+setsid env PYTHONUNBUFFERED=1 python3 "$here/server.py" --serve >>"$log" 2>&1 9>&- &
+
+page_up() {
+  python3 - >/dev/null 2>&1 << 'PY'
+import os, pathlib, socket
+port = int(os.environ["WARHOST_WEB_PORT"])
+needle = ":%04X" % port
+found = False
+tcp = pathlib.Path("/proc/net/tcp")
+if tcp.is_file():
+    for line in tcp.read_text(errors="replace").splitlines()[1:]:
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+        local = parts[1].upper()
+        if local.endswith(needle) and parts[3].upper() == "0A" and local.startswith("00000000:"):
+            found = True
+            break
+if not found:
+    raise SystemExit(1)
+socket.create_connection(("127.0.0.1", port), 2).close()
+PY
+}
 
 i=0
 while [ "$i" -lt 50 ]; do
-  if [ -f "$ready" ]; then
+  if [ -f "$ready" ] && grep -qx "$web_port" "$ready" && page_up; then
+    if grep -q 'stayed root' "$log"; then
+      warn "warning: lobby page could not drop privileges and stayed root."
+    fi
+    printf 'Lobby page listening on port %s.\n' "$web_port"
     exit 0
   fi
-  if ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then
+  if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then
     warn "warning: web UI did not start."
     exit 1
   fi
