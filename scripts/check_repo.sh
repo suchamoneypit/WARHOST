@@ -222,10 +222,8 @@ expect_version 1.00 --tags v0.94 --set 1.0
 expect_version 1.01 --tags v1.00 --set 1.00
 expect_version 0.90 --points-at v0.90 --tags v0.90
 expect_version 0.90 --points-at v0.90 v0.91 --tags v0.91
-if python3 scripts/next_version.py --tags v0.94 --set 0.90 >/dev/null 2>&1; then
-  echo "next_version.py accepted a downgrade" >&2
-  exit 1
-fi
+expect_version 0.95 --tags v0.94 --set 0.90
+expect_version 1.04 --tags v1.03 --set 1.02
 echo "version numbering ok"
 
 python3 scripts/list_workshop_mods.py --self-test

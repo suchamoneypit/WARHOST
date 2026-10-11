@@ -7,7 +7,8 @@ optional VERSION file. Tests pass `--tags` so they do not use either.
 The first number, when no version tag exists and VERSION is absent, is 0.90.
 Otherwise the minor part gains one: 0.90 then 0.91, 0.99 then 1.00.
 A VERSION value higher than the latest tag is used as written (1.0 is 1.00).
-The same value as the latest tag increments. A lower value exits 1.
+The same value increments. A lower value is stale, from a publish that
+already moved the tag, so it is ignored and the latest tag increments.
 `--points-at` keeps the lowest version tag already on this commit.
 """
 
@@ -62,19 +63,16 @@ def highest(tags):
 
 def decide(tags, override):
     current = highest(tags)
-    if override is None:
-        if current is None:
+    if current is None:
+        if override is None:
             return format_version(FIRST)
-        return format_version(bump(current))
-    if current is not None and override < current:
-        raise ValueError(
-            "{0} is not newer than {1}".format(
-                format_version(override), format_version(current)
-            )
-        )
-    if current is not None and override == current:
-        return format_version(bump(current))
-    return format_version(override)
+        return format_version(override)
+    # A lower VERSION is the previous publish's pin. The tag already moved,
+    # and this script does not write the file back, so another push would
+    # fail if a lower value stopped the release.
+    if override is not None and override > current:
+        return format_version(override)
+    return format_version(bump(current))
 
 
 def read_git_tags():
