@@ -96,7 +96,7 @@ Usual Max Players and Team Size for each size are in the README. Eugen does not 
 
 Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so there is no place to paste a template URL in Unraid 7. Until this template is in Community Applications, copy it onto the flash drive.
 
-`sh scripts/print_template_fetch.sh`, run in a checkout of this repository, prints the command below. `/unraid-template-installscript` prints the same thing. In the Unraid web UI, open the terminal (the `>_` icon top right) and paste it:
+`sh scripts/print_template_fetch.sh`, run in a checkout of this repository, prints the command below. In the Unraid web UI, open the terminal (the `>_` icon top right) and paste it. `/unraid-script` prints this command, a separate command for `dev` under `my-<Name>-dev.xml`, a separate command for `webui` under `my-<Name>-webui.xml`, and a clean-slate command. Paste only the branch you are about to add. On Apply, Unraid writes `my-<Name>.xml` from the Name field, which is `WARHOST` on each of these branches, so applying a branch template replaces `my-WARHOST.xml` and leaves the suffixed file in the dropdown. The clean-slate command removes the `WARHOST`, `WARHOST-dev`, and `WARHOST-webui` containers and those template files. It also drops those names from `/var/lib/docker/unraid-autostart` and deletes the three private files under `/boot/config/plugins/community.applications/private/suchamoneypit/`. It removes the template image only when no container is still using it. It also removes `/mnt/user/appdata/warno/<port>/settings` for those containers, which holds the login and key. A folder still mounted by another container is left in place.
 
 ```sh
 mkdir -p /boot/config/plugins/dockerMan/templates-user

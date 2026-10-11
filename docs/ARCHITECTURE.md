@@ -18,14 +18,14 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 | `scripts/upstream_digest.py` | Prints the Eugen image manifest digest |
 | `scripts/check_repo.sh` | Local XML and repository checks |
 | `scripts/next_version.py` | Prints the next `MAJOR.MINOR` release number |
-| `scripts/print_template_fetch.sh` | Prints the Unraid terminal command that downloads the template as `my-<Name>.xml` before it is in Community Applications |
+| `scripts/print_template_fetch.sh` | Prints one Unraid terminal command per branch, saving `my-<Name>.xml` or `my-<Name>-NAME.xml`. `--clean` removes those containers, their `/mnt/user/appdata/warno/<port>/settings` folders when no other container still mounts them, and the image only when unused |
 | `.github/workflows/rebuild-image.yml` | Rebuilds the GHCR image when Eugen's digest changes |
 | `.github/workflows/release.yml` | Tags each `main` push and opens a GitHub Release |
 | `.github/workflows/check-repo.yml` | Runs `scripts/check_repo.sh` |
 | `docs/INSTALL-UNRAID.md` | First-install walkthrough for Unraid 7 with verification and troubleshooting |
 | `docs/UNRAID-TEMPLATE-GUIDE.md` | Generic Unraid template guidance, reusable for other game servers |
 | `docs/CURSOR-QUICKSTART.md` | How the Cursor rules, subagents, and commands in `.cursor/` are meant to be used |
-| `.cursor/rules/`, `.cursor/agents/`, `.cursor/commands/` | Agent rules (generic workflow, generic Unraid conventions, WARNO project), six subagents, nine slash commands |
+| `.cursor/rules/`, `.cursor/agents/`, `.cursor/commands/` | Agent rules (generic workflow, generic Unraid conventions, WARNO project), six subagents, eight slash commands |
 
 `.dockerignore` keeps templates, tests, samples, Markdown, and `.github` out of the image build context. The Dockerfile copies only `entrypoint-unraid.sh`.
 

@@ -186,6 +186,98 @@ if command_block(private_fetch) not in command_block(install_doc):
 if "scripts/print_template_fetch.sh" not in readme:
     fail("README.md does not name scripts/print_template_fetch.sh")
 
+main_branch = run_fetch(["--branch", "main"])
+if command_block(main_branch) != command_block(fetch):
+    fail("scripts/print_template_fetch.sh --branch main does not match the default command")
+
+name_match = re.search(r"/my-([A-Za-z0-9][A-Za-z0-9_.-]*)\.xml", fetch)
+if not name_match:
+    fail("scripts/print_template_fetch.sh did not save my-<Name>.xml")
+else:
+    container = name_match.group(1)
+    for branch in ("dev", "webui"):
+        branched = run_fetch(["--branch", branch])
+        if f"/{branch}/templates/" not in branched:
+            fail(f"scripts/print_template_fetch.sh --branch {branch} did not rewrite the ref")
+        if f"my-{container}-{branch}.xml" not in branched:
+            fail(f"scripts/print_template_fetch.sh --branch {branch} did not suffix the filename")
+        if f"/main/templates/" in branched:
+            fail(f"scripts/print_template_fetch.sh --branch {branch} still points at main")
+    all_branches = run_fetch(["--branch", "main", "--branch", "dev", "--branch", "webui"])
+    for needle in (
+        f"/main/templates/",
+        f"/dev/templates/",
+        f"/webui/templates/",
+        f"my-{container}.xml",
+        f"my-{container}-dev.xml",
+        f"my-{container}-webui.xml",
+    ):
+        if needle not in all_branches:
+            fail(f"branch download is missing {needle}")
+    if f"my-{container}-main.xml" in all_branches:
+        fail("the TemplateURL ref was saved under a branch suffix")
+    blocks = [block for block in all_branches.split("\n\n") if block.strip()]
+    if len(blocks) != 3:
+        fail("main, dev, and webui downloads were not three separate scripts")
+    for block, branch in zip(blocks, ("main", "dev", "webui")):
+        if block.count("curl ") != 1 or f"/{branch}/templates/" not in block:
+            fail(f"the {branch} download is not its own script")
+
+private_main = run_fetch(["--private", "--branch", "main"])
+if command_block(private_main) != command_block(private_fetch):
+    fail("scripts/print_template_fetch.sh --private --branch main does not match --private")
+
+clean = run_fetch(["--clean", "--branch", "main", "--branch", "dev", "--branch", "webui"])
+if template is None:
+    fail("clean script was not checked because the template did not parse")
+elif not name_match:
+    fail("clean script was not checked because the default download had no my-<Name>.xml")
+else:
+    repository = (template.findtext("Repository") or "").strip()
+    template_url = (template.findtext("TemplateURL") or "").strip()
+    private_name = template_url.rstrip("/").rsplit("/", 1)[-1]
+    for needle in (
+        f"'{container}'",
+        f"'{container}-dev'",
+        f"'{container}-webui'",
+        f"my-{container}.xml",
+        f"my-{container}-dev.xml",
+        f"my-{container}-webui.xml",
+        private_name,
+        f"{private_name[:-4]}-dev.xml",
+        f"{private_name[:-4]}-webui.xml",
+        repository,
+        "/var/lib/docker/unraid-autostart",
+        "docker stop",
+        "docker rm -f",
+        'docker rmi "$image"',
+        "ancestor=$image",
+        'rm -rf "$path"',
+        "/mnt/user/appdata/warno/*/settings",
+    ):
+        if needle not in clean:
+            fail(f"clean script is missing {needle}")
+    settings_path = ""
+    for config in template.findall("Config"):
+        if (config.attrib.get("Target") or "") == "/server/settings":
+            settings_path = (config.text or "").strip()
+    if not settings_path or settings_path not in clean:
+        fail("clean script does not name the template Settings Folder path")
+    rm_rf = [line.strip() for line in clean.splitlines() if "rm -rf" in line]
+    if rm_rf != ['if rm -rf "$path"; then']:
+        fail(f"clean script rm -rf is not limited to the settings path: {rm_rf}")
+    if any(token in clean for token in ("system prune", "rmi -f", "curl ")):
+        fail("clean script deletes more than the named containers, image, template files, and settings folders")
+
+unsafe = subprocess.run(
+    ["sh", "scripts/print_template_fetch.sh", "--branch", "dev/evil"],
+    cwd=root,
+    text=True,
+    capture_output=True,
+)
+if unsafe.returncode == 0:
+    fail("scripts/print_template_fetch.sh accepted a branch name with a slash")
+
 if errors:
     print("repository check failed:", file=sys.stderr)
     for message in errors:
