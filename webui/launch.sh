@@ -1,5 +1,5 @@
 #!/bin/sh
-# Start the lobby page and return. A failure here must not stop the game server.
+# Start the WebUI and return. A failure here must not stop the game server.
 # The entrypoint ignores this script's exit status.
 set -u
 
@@ -43,7 +43,7 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 if ! python3 "$here/server.py" --check; then
-  warn "warning: lobby page port ${web_port} is already in use. The game server will still start."
+  warn "warning: WebUI port ${web_port} is already in use. The game server will still start."
   exit 0
 fi
 
@@ -81,9 +81,9 @@ i=0
 while [ "$i" -lt 50 ]; do
   if [ -f "$ready" ] && grep -qx "$web_port" "$ready" && page_up; then
     if grep -q 'stayed root' "$log"; then
-      warn "warning: lobby page could not drop privileges and stayed root."
+      warn "warning: WebUI could not drop privileges and stayed root."
     fi
-    printf 'Lobby page listening on port %s.\n' "$web_port"
+    printf 'WebUI listening on port %s.\n' "$web_port"
     exit 0
   fi
   if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then

@@ -34,7 +34,7 @@ Ask for exactly this shape and hold the result to it: findings as short bullets;
 
 ## Branches
 
-Day-to-day commits go on `dev`. Feature work, including the lobby page, commits on `dev`. There is no long-lived feature branch. When the user asks to commit, commit on `dev` and push `origin/dev`. If the checkout is `main`, switch to `dev` before committing. Asking to commit is not permission to update `main`.
+Day-to-day commits go on `dev`. Feature work, including the WebUI, commits on `dev`. There is no long-lived feature branch. When the user asks to commit, commit on `dev` and push `origin/dev`. If the checkout is `main`, switch to `dev` before committing. Asking to commit is not permission to update `main`.
 
 `main` is the published snapshot. Update it only when the user explicitly asks to publish the accumulated work to `main`. That means merge `dev` into `main` and push `origin/main`. Do not force-push, deploy, or publish images unless that same request authorizes it.
 

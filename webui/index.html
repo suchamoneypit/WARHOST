@@ -3,55 +3,130 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WARHOST lobby</title>
+<title>WARHOST WebUI</title>
 <style>
-  :root { color-scheme: light; }
-  body { margin: 0; font: 16px/1.4 sans-serif; background: #e7e1d4; color: #1c1c1c; }
+  :root {
+    color-scheme: dark;
+    --bg: #140e0e;
+    --header: #241214;
+    --text: #f3e6e4;
+    --muted: #c4a8a6;
+    --panel: #1c1214;
+    --line: #4a2a2e;
+    --input: #120c0d;
+    --accent: #8e242c;
+    --accent-strong: #c4454c;
+    --selected: #4a1c22;
+    --focus: #e07a76;
+  }
+  body { margin: 0; font: 16px/1.4 sans-serif; background: var(--bg); color: var(--text); }
   header, main { padding: 16px; }
-  header { background: #2c3330; color: #f4f1ea; }
+  header { background: var(--header); color: var(--text); border-bottom: 3px solid var(--accent-strong); }
   h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  .note, .hint, #detail-meta, #detail-id { color: var(--muted); }
   .note { margin: 0; max-width: 70rem; }
   .layout { display: grid; grid-template-columns: minmax(16rem, 1.4fr) minmax(16rem, 1fr); gap: 16px; }
-  section { background: #f7f4ee; border: 1px solid #b7b1a4; padding: 12px; }
+  section { background: var(--panel); border: 1px solid var(--line); padding: 12px; }
   h2 { font-size: 1rem; margin: 0 0 8px; }
+  #modded h2 { margin-top: 16px; }
   label { display: block; margin: 10px 0 4px; }
-  input, select, button { font: inherit; }
-  input[type="text"], select { width: 100%; box-sizing: border-box; }
+  .filters { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px; }
+  .filters label { margin-top: 0; }
+  input, select, button { font: inherit; color: var(--text); }
+  input[type="text"], select {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--input);
+    border: 1px solid var(--line);
+    padding: 6px 8px;
+  }
+  input:focus, select:focus, button:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #ddd6c8; }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
   tbody tr { cursor: pointer; }
-  tbody tr[aria-selected="true"] { background: #f3e27a; }
-  .list { max-height: 28rem; overflow: auto; }
+  tbody tr.plain { cursor: default; }
+  tbody tr[aria-selected="true"] { background: var(--selected); }
+  .list { max-height: 22rem; overflow: auto; margin-top: 8px; }
   .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-  .shot { min-height: 8rem; border: 1px dashed #8d887c; display: grid; place-items: center; color: #5c584e; background: #fff; }
+  .shot {
+    min-height: 8rem;
+    border: 1px dashed var(--line);
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    background: #100a0b;
+  }
   .actions { display: flex; gap: 8px; margin-top: 16px; }
-  button { padding: 8px 12px; }
+  button {
+    padding: 8px 12px;
+    background: var(--accent);
+    border: 1px solid var(--accent-strong);
+    cursor: pointer;
+  }
   #status { min-height: 1.4em; margin: 8px 0 0; }
-  @media (max-width: 800px) { .layout, .shots { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) { .layout, .shots, .filters { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>WARHOST lobby</h1>
+  <h1>WARHOST WebUI</h1>
   <p class="note">Save writes this server's variables.ini. Restart that container in Unraid to load it. This page does not stop the current match.</p>
 </header>
 <main>
   <p id="status" role="status"></p>
   <div class="layout">
     <section>
-      <h2>Scenario list</h2>
-      <label for="filter">Filter</label>
-      <input id="filter" type="text" autocomplete="off">
+      <h2>Map list (scenario ID list)</h2>
+      <div class="filters">
+        <div>
+          <label for="filter">Filter</label>
+          <input id="filter" type="text" autocomplete="off">
+        </div>
+        <div>
+          <label for="size">Size</label>
+          <select id="size">
+            <option value="">Any</option>
+            <option value="2">1v1</option>
+            <option value="4">2v2</option>
+            <option value="6">3v3</option>
+            <option value="8">4v4</option>
+            <option value="20">10v10</option>
+          </select>
+        </div>
+        <div>
+          <label for="mode">Combat rule</label>
+          <select id="mode">
+            <option value="">Any</option>
+            <option value="2">Conquest</option>
+            <option value="1">Destruction</option>
+          </select>
+        </div>
+      </div>
       <div class="list">
         <table>
-          <thead><tr><th>Map</th><th>Rule</th><th>Players</th></tr></thead>
-          <tbody id="rows"></tbody>
+          <thead><tr><th>Map</th><th>Size</th><th>Rule</th></tr></thead>
+          <tbody id="base-rows"></tbody>
         </table>
+      </div>
+      <div id="mod-notes"></div>
+      <div id="modded" hidden>
+        <h2 id="modded-title">Modded maps</h2>
+        <div id="pack-wrap">
+          <label for="pack">Workshop mod</label>
+          <select id="pack"></select>
+        </div>
+        <div class="list">
+          <table>
+            <thead><tr><th>Map</th><th>Size</th><th>Rule</th></tr></thead>
+            <tbody id="mod-rows"></tbody>
+          </table>
+        </div>
       </div>
     </section>
     <section>
       <h2 id="detail-name">Game parameters</h2>
       <p id="detail-meta"></p>
+      <p id="detail-id"></p>
       <div class="shots">
         <div class="shot">Scenic view</div>
         <div class="shot">Tactical zones</div>
@@ -72,7 +147,7 @@
       <select id="scoreLimit"></select>
       <label for="timeLimit">Time limit</label>
       <select id="timeLimit"></select>
-      <p>The lobby is not locked to the size in the scenario ID. Usual slots for the selected row are shown above.</p>
+      <p class="hint">Player slots are not locked to the size in the scenario ID. Usual slots for the selected row are shown above.</p>
       <div class="actions">
         <button id="save" type="button">Save</button>
         <button id="reset" type="button">Reset from Unraid form</button>
@@ -91,10 +166,44 @@ const MENUS = {
   timeLimit: [[1200, "20 min"], [1800, "30 min"], [2400, "40 min"], [3600, "60 min"], [0, "No time limit"]]
 };
 const EXTRA = { gameType: "PACT vs NATO", initMoney: " PTS", timeLimit: " sec", upkeep: " %", scoreLimit: " PTS", incomeRate: "" };
+const SIZES = { 2: "1v1", 4: "2v2", 6: "3v3", 8: "4v4", 20: "10v10" };
 let catalog = [];
 let selected = "";
+let modList = "";
+let modTags = "";
+let packChoice = "";
 
 function ruleName(rule) { return Number(rule) === 1 ? "Destruction" : "Conquest"; }
+
+function sizeLabel(players) { return SIZES[players] || (players + " players"); }
+
+function layoutNote(size) {
+  const text = String(size || "").toLowerCase();
+  const notes = [];
+  if (text.includes("no sidespawn")) notes.push("no sidespawn");
+  if (text.includes("duel")) notes.push("duel");
+  if (text.includes("training")) notes.push("training");
+  if (text.includes("assault")) notes.push("assault");
+  if (text.includes("6p")) notes.push("6P");
+  if (text.includes("land & sea") || text.includes("land and sea")) notes.push("land & sea");
+  return notes.join(", ");
+}
+
+function sizeText(scenario) {
+  const note = layoutNote(scenario.size);
+  const label = sizeLabel(scenario.players);
+  return note ? label + " · " + note : label;
+}
+
+function packId(group) {
+  if (!group.modList) return "";
+  return group.modList.split("/")[0];
+}
+
+function enabledIds() {
+  if (!modList) return [];
+  return modList.split("-").map((part) => part.split("/")[0]).filter((id) => /^[0-9]+$/.test(id));
+}
 
 function fillSelect(id, current) {
   const select = document.getElementById(id);
@@ -125,37 +234,27 @@ function findScenario(id) {
   return null;
 }
 
-function showDetail(id) {
-  selected = id;
-  const found = findScenario(id);
-  document.getElementById("detail-name").textContent = found ? found.scenario.name : (id || "Game parameters");
-  document.getElementById("detail-meta").textContent = found
-    ? ruleName(found.scenario.rule) + " · " + found.scenario.players + " players · " + found.group.name
-    : "This saved map is not in the scenario list.";
-  document.querySelectorAll("#rows tr").forEach((row) => {
-    row.setAttribute("aria-selected", row.dataset.id === id ? "true" : "false");
-  });
+function matches(scenario, group) {
+  const needle = document.getElementById("filter").value.trim().toLowerCase();
+  const size = document.getElementById("size").value;
+  const mode = document.getElementById("mode").value;
+  if (size && String(scenario.players) !== size) return false;
+  if (mode && String(scenario.rule) !== mode) return false;
+  if (!needle) return true;
+  const hay = [scenario.name, scenario.id, scenario.size, group.name, ruleName(scenario.rule), sizeText(scenario)].join(" ").toLowerCase();
+  return hay.includes(needle);
 }
 
-function renderRows(filter) {
-  const body = document.getElementById("rows");
+function fillTable(body, groups) {
   body.replaceChildren();
-  const needle = filter.trim().toLowerCase();
-  catalog.forEach((group) => {
-    const matches = group.scenarios.filter((scenario) => {
-      const hay = (scenario.name + " " + scenario.id + " " + group.name).toLowerCase();
-      return !needle || hay.includes(needle);
-    });
-    if (!matches.length) return;
-    const head = document.createElement("tr");
-    head.innerHTML = "<th colspan='3'></th>";
-    head.querySelector("th").textContent = group.name;
-    body.appendChild(head);
-    matches.forEach((scenario) => {
+  let count = 0;
+  groups.forEach((group) => {
+    group.scenarios.filter((scenario) => matches(scenario, group)).forEach((scenario) => {
+      count += 1;
       const row = document.createElement("tr");
       row.dataset.id = scenario.id;
       row.setAttribute("aria-selected", scenario.id === selected ? "true" : "false");
-      [scenario.name, ruleName(scenario.rule), String(scenario.players)].forEach((text) => {
+      [scenario.name, sizeText(scenario), ruleName(scenario.rule)].forEach((text) => {
         const cell = document.createElement("td");
         cell.textContent = text;
         row.appendChild(cell);
@@ -167,14 +266,118 @@ function renderRows(filter) {
       body.appendChild(row);
     });
   });
+  if (!count) {
+    const row = document.createElement("tr");
+    row.className = "plain";
+    const cell = document.createElement("td");
+    cell.colSpan = 3;
+    cell.textContent = "No maps match.";
+    row.appendChild(cell);
+    body.appendChild(row);
+  }
+}
+
+function markSelected() {
+  document.querySelectorAll("#base-rows tr, #mod-rows tr").forEach((row) => {
+    if (!row.dataset.id) return;
+    row.setAttribute("aria-selected", row.dataset.id === selected ? "true" : "false");
+  });
+}
+
+function showDetail(id) {
+  selected = id;
+  const found = findScenario(id);
+  const name = document.getElementById("detail-name");
+  const meta = document.getElementById("detail-meta");
+  const scenarioLine = document.getElementById("detail-id");
+  if (!found) {
+    name.textContent = id || "Game parameters";
+    meta.textContent = id ? "This saved map is not in the map list." : "";
+    scenarioLine.textContent = id ? "Scenario ID: " + id : "";
+  } else {
+    name.textContent = found.scenario.name;
+    meta.textContent = ruleName(found.scenario.rule) + " · " + sizeText(found.scenario) + " · " + found.scenario.players + " players · " + found.group.name;
+    scenarioLine.textContent = "Scenario ID: " + found.scenario.id;
+  }
+  markSelected();
+}
+
+function enabledPacks() {
+  const ids = new Set(enabledIds());
+  return catalog.filter((group) => {
+    const id = packId(group);
+    return id && ids.has(id);
+  });
+}
+
+function renderNotes() {
+  const notes = document.getElementById("mod-notes");
+  notes.replaceChildren();
+  const known = new Set(catalog.map(packId).filter(Boolean));
+  enabledIds().filter((id) => !known.has(id)).forEach((id) => {
+    const line = document.createElement("p");
+    line.className = "hint";
+    line.textContent = "Workshop id " + id + " has no maps in this list.";
+    notes.appendChild(line);
+  });
+  if (!enabledIds().length && modTags) {
+    const line = document.createElement("p");
+    line.className = "hint";
+    line.textContent = "Workshop mod tags are browser icons and do not add maps.";
+    notes.appendChild(line);
+  }
+}
+
+function renderModded(packs) {
+  const section = document.getElementById("modded");
+  if (!packs.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  const title = document.getElementById("modded-title");
+  const packWrap = document.getElementById("pack-wrap");
+  const packSelect = document.getElementById("pack");
+  if (!packs.some((group) => packId(group) === packChoice)) {
+    const found = findScenario(selected);
+    packChoice = found && packs.some((group) => group === found.group) ? packId(found.group) : packId(packs[0]);
+  }
+  if (packs.length === 1) {
+    title.textContent = packs[0].name;
+    packWrap.hidden = true;
+  } else {
+    title.textContent = "Modded maps";
+    packWrap.hidden = false;
+    packSelect.replaceChildren();
+    packs.forEach((group) => {
+      const option = document.createElement("option");
+      option.value = packId(group);
+      option.textContent = group.name;
+      packSelect.appendChild(option);
+    });
+    packSelect.value = packChoice;
+  }
+  const group = packs.find((item) => packId(item) === packChoice);
+  fillTable(document.getElementById("mod-rows"), group ? [group] : []);
+}
+
+function render() {
+  const base = catalog.find((group) => !group.modList);
+  fillTable(document.getElementById("base-rows"), base ? [base] : []);
+  renderNotes();
+  renderModded(enabledPacks());
+  markSelected();
 }
 
 function applyState(state) {
+  modList = state.modList || "";
+  modTags = state.modTags || "";
   document.getElementById("serverName").value = state.serverName || "";
   ["upkeep", "combatRule", "gameType", "initMoney", "incomeRate", "scoreLimit", "timeLimit"].forEach((id) => {
     fillSelect(id, state[id]);
   });
   showDetail(state.map || "");
+  render();
 }
 
 async function request(payload) {
@@ -203,7 +406,13 @@ function payload() {
   };
 }
 
-document.getElementById("filter").addEventListener("input", (event) => renderRows(event.target.value));
+document.getElementById("filter").addEventListener("input", () => render());
+document.getElementById("size").addEventListener("change", () => render());
+document.getElementById("mode").addEventListener("change", () => render());
+document.getElementById("pack").addEventListener("change", (event) => {
+  packChoice = event.target.value;
+  render();
+});
 document.getElementById("save").addEventListener("click", async () => {
   const status = document.getElementById("status");
   try {
@@ -227,10 +436,9 @@ Promise.all([fetch("/scenarios.json").then((response) => response.json()), fetch
   .then(([data, state]) => {
     catalog = data.groups;
     applyState(state);
-    renderRows("");
   })
   .catch(() => {
-    document.getElementById("status").textContent = "The lobby page could not read this server.";
+    document.getElementById("status").textContent = "The WebUI could not read this server.";
   });
 </script>
 </body>

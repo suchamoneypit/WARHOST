@@ -1297,7 +1297,7 @@ expect_ok "lobby page off rewrites variables.ini" \
   EXPOSEDPORT=21400 \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${server}/settings/variables.ini" || fail "lobby page off did not write the map"
-grep -qx 'Lobby page is off. Nothing is listening on port 22400.' "${WORKDIR}/stdout.txt" || fail "lobby page off did not name the closed port"
+grep -qx 'WebUI is off. Nothing is listening on port 22400.' "${WORKDIR}/stdout.txt" || fail "lobby page off did not name the closed port"
 if [ -f "${server}/settings/.warhost-webui.pid" ]; then
   fail "lobby page off started a listener"
 fi
@@ -1318,7 +1318,7 @@ expect_ok "lobby page off names a taken page port" \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=21400 \
   MAP=_2x2_Hesse_2vs2_CONQ
-grep -qx 'Lobby page is off. Port 22400 is already in use.' "${WORKDIR}/stdout.txt" || fail "lobby page off did not name the taken page port"
+grep -qx 'WebUI is off. Port 22400 is already in use.' "${WORKDIR}/stdout.txt" || fail "lobby page off did not name the taken page port"
 
 make_server
 expect_ok "lobby page seeds variables.ini and starts beside the server" \
@@ -1331,7 +1331,7 @@ expect_ok "lobby page seeds variables.ini and starts beside the server" \
   SERVER_NAME="WARHOST - Hesse 2v2" \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "lobby page seed did not reach the upstream entrypoint"
-grep -qx 'Lobby page listening on port 22400.' "${WORKDIR}/stdout.txt" || fail "lobby page did not say it was listening"
+grep -qx 'WebUI listening on port 22400.' "${WORKDIR}/stdout.txt" || fail "lobby page did not say it was listening"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${server}/settings/variables.ini" || fail "lobby page seed did not write the map"
 [ -f "${server}/settings/.warhost-webui.ready" ] || fail "lobby page did not become ready"
 python3 - << 'PY' || fail "lobby page was not accepting on 0.0.0.0:22400"
@@ -1371,9 +1371,9 @@ expect_ok "lobby page keeps variables.ini and still refreshes login.ini" \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'ServerName = from-the-page' "${server}/settings/variables.ini" || fail "second start rewrote the lobby page file"
 grep -qx 'login="host-login"' "${server}/settings/login.ini" || fail "lobby page start did not refresh login.ini"
-grep -q 'Kept variables.ini from the lobby page' "${WORKDIR}/stdout.txt" || fail "second start did not say it kept variables.ini"
-grep -q 'lobby page port 22400 is already in use' "${WORKDIR}/stdout.txt" "${WORKDIR}/stderr.txt" || fail "taken lobby port did not warn"
-if grep -q 'Lobby page listening' "${WORKDIR}/stdout.txt"; then
+grep -q 'Kept variables.ini from the WebUI' "${WORKDIR}/stdout.txt" || fail "second start did not say it kept variables.ini"
+grep -q 'WebUI port 22400 is already in use' "${WORKDIR}/stdout.txt" "${WORKDIR}/stderr.txt" || fail "taken lobby port did not warn"
+if grep -q 'WebUI listening' "${WORKDIR}/stdout.txt"; then
   fail "taken lobby port still said it was listening"
 fi
 stop_webui

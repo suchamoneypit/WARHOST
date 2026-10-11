@@ -1,4 +1,4 @@
-"""Validate a lobby page save and replace variables.ini. Never reads login.ini."""
+"""Validate a WebUI save and replace variables.ini. Never reads login.ini."""
 
 import os
 import re
@@ -108,6 +108,19 @@ def _scenario_index(catalog):
     return index
 
 
+def _pack_id(group):
+    mod_list = group.get("modList") or ""
+    if not mod_list:
+        return ""
+    return mod_list.split("/", 1)[0]
+
+
+def _listed_ids(mod_list):
+    if not mod_list:
+        return set()
+    return {entry.split("/", 1)[0] for entry in mod_list.split("-")}
+
+
 def _current_int(values, key):
     text = values.get(key)
     if text is None or not str(text).isdigit():
@@ -120,7 +133,7 @@ def _current_int(values, key):
 
 def validate_save(payload, existing, catalog):
     if not isinstance(payload, dict):
-        raise LobbyError("The lobby page sent an unreadable save.")
+        raise LobbyError("The WebUI sent an unreadable save.")
     values = existing.get("values", {})
     scenario_id = _require_text(payload.get("map"), "Map", 80)
     if " " in scenario_id or '"' in scenario_id:
@@ -143,19 +156,20 @@ def validate_save(payload, existing, catalog):
     income = _keep_current(payload.get("incomeRate"), _current_int(values, "IncomeRate"), MENU_INCOME)
     upkeep = _keep_current(payload.get("upkeep"), _current_int(values, "Upkeep"), MENU_UPKEEP)
 
+    mod_list = values.get("ModList", "")
+    mod_tags = values.get("ModTagList", "")
     if known is None:
         players = _canonical_number(values.get("NbMaxPlayer", "4"), 1, 20)
         team = _canonical_number(values.get("MaxTeamSize", "2"), 1, players)
         minimum = _canonical_number(values.get("NbMinPlayer", "2"), 1, players)
-        mod_list = values.get("ModList", "")
-        mod_tags = values.get("ModTagList", "")
     else:
         group, scenario = known
         players = int(scenario["players"])
         team = int(scenario["team"])
         minimum = 2 if players >= 2 else players
-        mod_list = group["modList"]
-        mod_tags = group["modTags"]
+        pack = _pack_id(group)
+        if pack and pack not in _listed_ids(mod_list):
+            raise LobbyError("That map needs its workshop mod in Workshop Mod List.")
     if mod_list and not MOD_LIST.match(mod_list):
         raise LobbyError("Workshop mod list is not an id/version list.")
     if mod_tags and not MOD_TAGS.match(mod_tags):

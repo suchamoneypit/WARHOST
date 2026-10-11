@@ -130,11 +130,31 @@ code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5}' \
   "${base}/api/lobby")
+[ "$code" = "400" ] || fail "modded map without a workshop id returned ${code}"
+[ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "rejected modded map changed variables.ini"
+grep -q 'That map needs its workshop mod in Workshop Mod List.' "${WORKDIR}/body.txt" || fail "rejected modded map did not name the workshop list"
+
+python3 - << PY
+from pathlib import Path
+path = Path("${settings}/variables.ini")
+text = path.read_text()
+needle = "Map = _2x2_Hesse_2vs2_CONQ\n"
+insert = needle + "ModList = 3811913066/27-3474588989/14\nModTagList = Maps-Scenarios\n"
+if needle not in text:
+    raise SystemExit("map line missing before mod insert")
+path.write_text(text.replace(needle, insert, 1))
+PY
+
+code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5}' \
+  "${base}/api/lobby")
 [ "$code" = "200" ] || fail "save returned ${code}"
 grep -qx 'ServerName = Saved Lobby' "${settings}/variables.ini" || fail "save did not write the server name"
 grep -qx 'Map = RDPort_JungleLaw_2v2_CONQ' "${settings}/variables.ini" || fail "save did not write the map"
-grep -qx 'ModList = 3811913066/27' "${settings}/variables.ini" || fail "save did not write the Red Dragon mod"
-grep -qx 'ModTagList = Maps-Scenarios' "${settings}/variables.ini" || fail "save did not write the mod tags"
+grep -qx 'ModList = 3811913066/27-3474588989/14' "${settings}/variables.ini" || fail "save did not keep the workshop mod list"
+grep -qx 'ModTagList = Maps-Scenarios' "${settings}/variables.ini" || fail "save did not keep the mod tags"
 grep -qx 'GameType = 1' "${settings}/variables.ini" || fail "save did not write opposition"
 grep -qx 'InitMoney = 1500' "${settings}/variables.ini" || fail "save did not write starting resources"
 grep -qx 'TimeLimit = 2400' "${settings}/variables.ini" || fail "save did not write the time limit"
@@ -152,7 +172,17 @@ if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WO
 fi
 grep -q 'Scenic view' "${WORKDIR}/page.html" || fail "page is missing the scenic slot"
 grep -q 'Tactical zones' "${WORKDIR}/page.html" || fail "page is missing the tactical slot"
-python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["map"]=="RDPort_JungleLaw_2v2_CONQ"' "${WORKDIR}/state.json" || fail "state did not return the saved map"
+grep -q 'Map list (scenario ID list)' "${WORKDIR}/page.html" || fail "page is missing the map list heading"
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["map"]=="RDPort_JungleLaw_2v2_CONQ"; assert d["modList"]=="3811913066/27-3474588989/14"; assert d["modTags"]=="Maps-Scenarios"' "${WORKDIR}/state.json" || fail "state did not return the saved map"
+
+code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0}' \
+  "${base}/api/lobby")
+[ "$code" = "200" ] || fail "base-game save returned ${code}"
+grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "base-game save did not write the map"
+grep -qx 'ModList = 3811913066/27-3474588989/14' "${settings}/variables.ini" || fail "base-game save dropped the workshop mod list"
 
 code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
   -H 'X-WARHOST-Request: 1' \
@@ -247,7 +277,7 @@ if sudo -n true 2>/dev/null; then
   printf 'ServerName = WARHOST - Hesse 2v2\n' > "${launch_settings}/variables.ini"
   sudo -n env SETTINGS_DIR="$launch_settings" EXPOSEDPORT=38524 WARHOST_WEBUI_DROP_FAIL=1 \
     sh "${ROOT}/webui/launch.sh" >"${WORKDIR}/launch-out.txt" 2>"${WORKDIR}/launch-err.txt"
-  grep -qx 'Lobby page listening on port 39524.' "${WORKDIR}/launch-out.txt" || fail "launch did not say it was listening"
+  grep -qx 'WebUI listening on port 39524.' "${WORKDIR}/launch-out.txt" || fail "launch did not say it was listening"
   grep -q 'stayed root' "${WORKDIR}/launch-err.txt" || fail "launch did not warn on the container log"
   ROOT_PAGE_PID=$(sudo cat "${launch_settings}/.warhost-webui.pid")
   sudo kill -- "-$ROOT_PAGE_PID" 2>/dev/null || sudo kill "$ROOT_PAGE_PID" 2>/dev/null || true

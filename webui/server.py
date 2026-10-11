@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lobby page. It replaces variables.ini and does not signal the game server."""
+"""WebUI. It replaces variables.ini and does not signal the game server."""
 
 import json
 import os
@@ -29,10 +29,10 @@ def settings_dir():
 def web_port():
     text = os.environ.get("WARHOST_WEB_PORT", "")
     if not text.isdigit() or str(int(text)) != text:
-        raise SystemExit("lobby page port is missing")
+        raise SystemExit("WebUI port is missing")
     port = int(text)
     if port < 1 or port > 65535:
-        raise SystemExit("lobby page port is missing")
+        raise SystemExit("WebUI port is missing")
     return port
 
 
@@ -87,6 +87,8 @@ def public_state(existing):
         "team": num("MaxTeamSize", "2"),
         "minPlayers": num("NbMinPlayer", "2"),
         "gamePort": os.environ.get("EXPOSEDPORT", ""),
+        "modList": values.get("ModList", ""),
+        "modTags": values.get("ModTagList", ""),
     }
 
 
@@ -172,21 +174,21 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {"error": "Not found."})
             return
         if not same_origin(self.headers):
-            self._json(403, {"error": "Open the lobby page and save from there."})
+            self._json(403, {"error": "Open the WebUI and save from there."})
             return
         try:
             length = int(self.headers.get("Content-Length", "0") or "0")
         except ValueError:
-            self._json(400, {"error": "The lobby page sent an unreadable save."})
+            self._json(400, {"error": "The WebUI sent an unreadable save."})
             return
         if length < 0 or length > LIMIT:
-            self._json(400, {"error": "The lobby page sent too much."})
+            self._json(400, {"error": "The WebUI sent too much."})
             return
         raw = self.rfile.read(length)
         try:
             payload = json.loads(raw.decode()) if raw else {}
         except (UnicodeError, json.JSONDecodeError):
-            self._json(400, {"error": "The lobby page sent an unreadable save."})
+            self._json(400, {"error": "The WebUI sent an unreadable save."})
             return
         dest = self.settings / "variables.ini"
         before = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
@@ -201,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
                 managed, seeded, extras = lobby.validate_save(payload, existing, CATALOG)
                 text = lobby.render(managed, seeded, extras)
             else:
-                raise lobby.LobbyError("The lobby page sent an unreadable save.")
+                raise lobby.LobbyError("The WebUI sent an unreadable save.")
             apply_text(text, self.settings)
         except lobby.LobbyError as exc:
             after = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
@@ -228,7 +230,7 @@ def run_http(drop=False):
     try:
         httpd = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     except OSError:
-        print(f"warning: lobby page port {port} is already in use. The game server will still start.", file=sys.stderr)
+        print(f"warning: WebUI port {port} is already in use. The game server will still start.", file=sys.stderr)
         raise SystemExit(1)
     # Open the ready file before the privilege drop. The dropped user cannot create it.
     ready_fd = os.open(settings / ".warhost-webui.ready", os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o644)
@@ -236,7 +238,7 @@ def run_http(drop=False):
         try:
             drop_to_web_user()
         except OSError as exc:
-            print(f"warning: lobby page could not drop privileges and stayed root ({exc}).", file=sys.stderr)
+            print(f"warning: WebUI could not drop privileges and stayed root ({exc}).", file=sys.stderr)
             sys.stderr.flush()
     os.write(ready_fd, f"{port}\n".encode())
     os.close(ready_fd)

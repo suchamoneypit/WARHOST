@@ -593,12 +593,12 @@ case "$write_config" in
   *) die "Write Config From Form must be true or false." ;;
 esac
 
-# WEB UI HOOK — delete this block to remove the lobby page.
+# WEB UI HOOK — delete this block to remove the WebUI.
 web_ui=$(printf '%s' "${WEB_UI:-false}" | tr '[:upper:]' '[:lower:]')
 case "$web_ui" in
   true|yes|1) web_ui=true ;;
   false|no|0|'') web_ui=false ;;
-  *) die "Lobby Page must be true or false." ;;
+  *) die "WebUI must be true or false." ;;
 esac
 keep_page_variables=0
 if [ "$web_ui" = true ] && [ -f "${SETTINGS_DIR}/variables.ini" ] && [ ! -L "${SETTINGS_DIR}/variables.ini" ]; then
@@ -784,7 +784,7 @@ if [ "$write_config" = "true" ]; then
   umask 022
 
   if [ "$keep_page_variables" -eq 1 ]; then
-    printf 'Kept variables.ini from the lobby page for %s on port %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$key_tail"
+    printf 'Kept variables.ini from the WebUI for %s on port %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$key_tail"
   elif [ -n "$MOD_LIST" ]; then
     printf 'Wrote WARNO settings for %s on port %s. Map %s. ModList %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$MOD_LIST" "$key_tail"
   else
@@ -806,7 +806,7 @@ fi
 
 note_next_container
 
-# WEB UI HOOK — delete this block to remove the lobby page.
+# WEB UI HOOK — delete this block to remove the WebUI.
 if [ "$web_ui" = true ]; then
   entry_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
   webui_launch="${entry_dir}/webui/launch.sh"
@@ -823,9 +823,9 @@ else
   web_port=$((EXPOSEDPORT + 1000))
   if [ "$web_port" -le 65535 ]; then
     if local_port_taken "$web_port"; then
-      printf 'Lobby page is off. Port %s is already in use.\n' "$web_port"
+      printf 'WebUI is off. Port %s is already in use.\n' "$web_port"
     else
-      printf 'Lobby page is off. Nothing is listening on port %s.\n' "$web_port"
+      printf 'WebUI is off. Nothing is listening on port %s.\n' "$web_port"
     fi
   fi
 fi
