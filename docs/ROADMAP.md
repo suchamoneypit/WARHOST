@@ -9,6 +9,7 @@ Confirmed from `README.md` and the repository state on 2026-10-09. No other goal
 
 ## Known issues
 
+- The lobby page is only on branch `webui` (`cc569d1`, pushed). A download of `main/templates/warhost.xml` has no Lobby Page field, and `ghcr.io/suchamoneypit/warhost:latest` has no page until that branch is merged to `main` and the image rebuild finishes. No container has started the page. See `docs/ARCHITECTURE.md`.
 - The repository has no record of a completed Unraid install test. The README defers the Community Apps listing until that test exists. `docs/INSTALL-UNRAID.md` is the walkthrough for that test.
 - Whether the dedicated server downloads workshop item `3811913066` by itself has not been observed. Eugen's docs only describe the client download prompt: https://hub.docker.com/r/eugensystems/warno. The template has no shared game-data volume until that path is recorded.
 - Two containers on one Unraid host showed online on 2026-10-09, on Game Ports `10400` and `10401`, with settings folders `/mnt/user/appdata/warno/10400/settings` and `/mnt/user/appdata/warno/10401/settings`. RAM per `warno-server` is not documented. See `docs/INSTALL-UNRAID.md`, section 8.

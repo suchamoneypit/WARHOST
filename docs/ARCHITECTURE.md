@@ -148,6 +148,7 @@ Eugen's `variables.ini` reference gives `GameType` `0` as NATO vs PACT. A later 
 
 ## Unverified
 
+- The lobby page on branch `webui` (commit `cc569d1`) has not run inside a container. `sh scripts/check_repo.sh` passed on 2026-10-10, and a local browser save then reset of the page was checked the same day. `ghcr.io/suchamoneypit/warhost:latest` is still built from `main` and does not contain `webui/`. The `warhost-web` privilege drop in `webui/server.py` was not executed. Whether `warno-server` keeps the match it already loaded after `variables.ini` is replaced, and whether `Upkeep` 5 and 7 and `IncomeRate` 0 through 5 match the dropdown labels, was not observed.
 - No completed Unraid install is recorded here. On 2026-10-09 the operator added a container from `my-WARHOST.xml` on Unraid 7.3.3. A fresh install while the 20:23 image was still published stopped on the old Key last 4 check. After the 21:48 image, the operator reported that stop was gone. This document did not see the healthy `warno-server` log, the settings files, or a Jungle Law lobby. Community Apps acceptance is untested.
 - Whether the official server creates `admins.ini` and `banned_clients.ini` was not observed.
 - The exact client error for a sixth server was not observed. The documented limit is five.
