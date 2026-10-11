@@ -126,7 +126,7 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 
 ## 2026-10-09 — Do not claim a 2v2 map accepts eight players
 
-**Decision:** Max Players says the lobby is not locked to the map and that 8 slots on a 2v2 map is untested. Team Size stays the per-side count. The README gives the usual lobby for each size once, and says the same untested sentence once. The wrapper still accepts any Max Players from 1 to 20.
+**Decision:** Max Players says the lobby is not locked to the map and that 8 slots on a 2v2 map is untested. Team Size stays the per-side count. The README gives the usual lobby for each size once and does not claim that eight slots work on a 2v2 map. The wrapper still accepts any Max Players from 1 to 20.
 
 **Rationale:** Eugen's Docker Hub text, fetched 2026-10-09, defines `NbMaxPlayer` as how many players can join (maximum 20) and `MaxTeamSize` as the maximum on one side. It never says those must match the size in the scenario ID. Whether `RDPort_JungleLaw_2v2_CONQ` with 8 and 4 opens a 4v4 lobby has not been run.
 

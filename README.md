@@ -85,11 +85,11 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Combat Rule</td>
-<td><code>2</code> when the scenario ID contains <code>CONQ</code> or <code>Conquest</code>, <code>1</code> when it contains <code>DEST</code> or <code>Destruction</code></td>
+<td><code>2</code> for Conquest, <code>1</code> for Destruction. The scenario lists below give the mode of each map.</td>
 </tr>
 <tr>
 <td nowrap>Workshop Mod List (Show more settings)</td>
-<td>Empty for a base-game map, which is the preset. For the Red Dragon pack, <code>3811913066</code>. Each start checks the mod on Steam, downloads only its <code>Config.ini</code> when the mod is new to this server or has changed, reads <code>Version</code>, and writes the pair, for example <code>3811913066/27</code>. Typing <code>3811913066/27</code> pins that number. <code>none</code> also means empty. Named mods are in the tables below.</td>
+<td>Empty for a base-game map, which is the preset. For the Red Dragon pack, <code>3811913066</code>. Each start reads the mod's current <code>Version</code> from Steam and writes the pair, for example <code>3811913066/27</code>. Typing <code>3811913066/27</code> pins that number. <code>none</code> also means empty. Named mods are in the tables below.</td>
 </tr>
 <tr>
 <td nowrap>Write Config From Form (Show more settings)</td>
@@ -102,15 +102,15 @@ Fill in:
 </tbody>
 </table>
 
-Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below. On a Red Dragon map, a Workshop Mod List of `3811913066/0` or `3811913066/15` is still written and prints a warning; set it to `3811913066`.
+Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below.
 
-Unraid fills a cleared field with the template's default when the container is created and when the form is opened again ([Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php) `xmlToVar` and `xmlToCommand`, read 2026-10-10). The workshop fields have no default, so a cleared field stays empty. A container added from an earlier version of this template saved the Red Dragon defaults and refills cleared fields with them; type `none` in both fields there.
+Unraid refills a cleared field from the template default ([Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php)). A container added from an earlier version of this template still holds the old Red Dragon defaults, so type `none` in both workshop fields there.
 
 ### Map
 
-**Map** is a scenario ID. Base-game IDs are Eugen's Map Base Id column, read from the Docker Hub map table on 2026-10-09. They start with `_`. Leave **Workshop Mod List** and **Workshop Mod Tags** empty for them. The server image does not contain a Steam library, and Workshop mods download on each player's PC. A workshop map uses the scenario ID stored in the mod, not the name on the workshop page. The preset sets **Map** to `_2x2_Hesse_2vs2_CONQ` with no workshop mod. When Map is not a Red Dragon scenario and Workshop Mod List still contains `3811913066`, the log warns that players without that mod cannot join, and the value is still written. When Workshop Mod List is empty and Map is not one of the base-game scenario IDs below, including a workshop ID that starts with `_`, the log warns and the server still starts. When Workshop Mod Tags is set and Workshop Mod List is empty, the log notes that the tags are written and do not select a mod. `Jungle Law` and `YOUR_*` placeholders are rejected.
+**Map** takes a scenario ID from the [lists below](#scenario-ids). Base-game maps need no mod, so leave **Workshop Mod List** and **Workshop Mod Tags** empty for them. A workshop map also needs its mod in those two fields, from the [workshop mods](#workshop-mods) table. When the startup log warns about the map or the mod list, the [troubleshooting table](docs/INSTALL-UNRAID.md#troubleshooting) in the install guide says what to change.
 
-The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. A 1v1 ID usually uses Max Players 2 and Team Size 1, a 2v2 uses 4 and 2, a 3v3 uses 6 and 3, a 4v4 uses 8 and 4, and a 10v10 uses 20 and 10. Setting Max Players to 8 on a 2v2 map has not been tested. Combat Rule is `2` when the ID contains `CONQ` or `Conquest`, and `1` when it contains `DEST` or `Destruction`.
+The size in the ID is the usual lobby. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. The usual settings are Max Players 2 and Team Size 1 for 1v1, 4 and 2 for 2v2, 6 and 3 for 3v3, 8 and 4 for 4v4, and 20 and 10 for 10v10.
 
 #### Workshop mods
 
@@ -127,22 +127,20 @@ The size in the scenario ID is the usual lobby, not a lock. Eugen's [variables.i
 | [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) | `3595948209` | `3595948209/16` | `Gameplay-Interface-Sound-Scenarios-Maps` |
 | [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) | `3388575848` | `3388575848/7` | `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` with a map pack |
 
-The pin column is each id with `Version` from that mod's `Config.ini`, read from `steamapps/workshop/content/1611600/<id>/Config.ini`: Red Dragon on 2026-10-10, the others on 2026-10-09. The Workshop page does not publish that number. A pin stays at its number, so players are refused once the author increments `Version`. Enter the bare id unless you need to hold a number.
+The pin column is each mod's `Version` from its `Config.ini`, read on 2026-10-09 (Red Dragon on 2026-10-10). A pin holds that number, so players are refused once the author increments `Version`. Enter the bare id unless you need to hold a number.
 
-Galactic Divide and A World in Flames are a total conversion and a modern-day overhaul. Their `Scenarios/` folders are empty. **Map** stays a scenario ID from the base game or from a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209-3811913066`.
+Galactic Divide is a total conversion and A World in Flames is a modern-day overhaul. Neither has scenario IDs of its own, so **Map** comes from the base game or a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209-3811913066`.
 
-Joining players subscribe to each Workshop item in the list and enable it in WARNO's Mod Center. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says `ModList` makes a joining player who is missing the mod get prompted to download and enable it. For each bare id, this container downloads only that mod's `Config.ini` with [DepotDownloader](https://github.com/SteamRE/DepotDownloader), signed in to Steam anonymously, reads `Version`, and deletes the file before the next id. On 2026-10-10 that was 416 bytes of Red Dragon's 9.06 GB, plus a 420 KB file list. The container then writes `Map` and `ModList` and starts Eugen's entrypoint. That entrypoint only launches `warno-server`. Whether the server binary then downloads workshop item `3811913066` has not been confirmed on a running server.
-
-`warhost-workshop-versions.txt` in the settings folder keeps each bare id's Steam update time and `Version` from the last start. A restart downloads nothing while Steam reports the same update time. When Steam gives no update time, or `Config.ini` cannot be fetched, the saved `Version` is written and the log warns. An id with no saved `Version` and no `Config.ini` stops the start, and the log says why.
+Joining players subscribe to each Workshop item in the list and enable it in WARNO's Mod Center. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says a joining player who is missing a `ModList` mod is prompted to download and enable it. To read `Version`, the container downloads just the mod's `Config.ini` from Steam with [DepotDownloader](https://github.com/SteamRE/DepotDownloader), on the first start and after each update the author publishes.
 
 #### Scenario IDs
 
-The map-pack lists follow the workshop table, and the base-game list is last. A workshop ID is the file name in that mod's `Scenarios/` folder, before `_Definition.dat`, read on 2026-10-09 except Red Dragon, which was re-read on 2026-10-10. Where the Workshop page uses a different size or place name, the file name is the value for **Map**. Files whose names start with `SM_` are Army General file names in the same list. This repository has not seen them used as a lobby **Map**. The procedure is in the install guide, step 4. Base-game IDs are Eugen's Map Base Id column and need no workshop mod.
+Map packs come first and the base game is last. Copy the value from the **Scenario ID** column into **Map**. The `SM_` names under some packs are Army General files; pick **Map** from the tables. For a mod not listed here, [step 4 of the install guide](docs/INSTALL-UNRAID.md#4-decide-the-map-and-find-a-scenario-id) shows how to find its IDs.
 
 <details>
 <summary>Red Dragon map pack (28 scenario IDs)</summary>
 
-Workshop Mod List `3811913066`, `Version` 27 on 2026-10-10. Every ID is Conquest, so leave **Combat Rule** at `2`. The Workshop page still lists 18 maps; the [change note](https://steamcommunity.com/sharedfiles/filedetails/changelog/3811913066) for Mod Version 27 names the 10 added layouts. Wonsan Harbour's file name is `WonsanNative`. The two Strait to the Point Land & Sea rows take their size from the `2v2` and `4v4` tokens in the file names.
+Workshop Mod List `3811913066`. Every map is Conquest, so **Combat Rule** stays `2`.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -180,7 +178,7 @@ Workshop Mod List `3811913066`, `Version` 27 on 2026-10-10. Every ID is Conquest
 <details>
 <summary>WEST FULDA 1.0 (16 scenario IDs)</summary>
 
-Workshop Mod List `3363584349`, `Version` 1023 on 2026-10-09. Grossenluder is `_3x3_WFuldaGrossen_1v1_CONQ` and `_3x3_WFuldaGrossen_2v2_DEST`. Neuenberg also has `_3x3_WFuldaNeuen_1v1_CONQ`.
+Workshop Mod List `3363584349`.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -218,21 +216,21 @@ Army General file names:
 <details>
 <summary>Highway to Oslo (4 scenario IDs)</summary>
 
-Workshop Mod List `3474588989`, `Version` 14 on 2026-10-09. The Workshop page calls these 1v1, and calls the `NS` pair no sidespawn. The file name has no `1v1` token.
+Workshop Mod List `3474588989`. The Workshop page lists these as 1v1.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
 | Highway to Oslo | `_2x2_Oslo_Conquest` | Conquest |
 | Highway to Oslo | `_2x2_Oslo_Destruction` | Destruction |
-| Highway to Oslo | `_2x2_Oslo_ConquestNS` | Conquest, file suffix `NS` |
-| Highway to Oslo | `_2x2_Oslo_DestructionNS` | Destruction, file suffix `NS` |
+| Highway to Oslo | `_2x2_Oslo_ConquestNS` | Conquest, no sidespawn |
+| Highway to Oslo | `_2x2_Oslo_DestructionNS` | Destruction, no sidespawn |
 
 </details>
 
 <details>
 <summary>Ramstein Air Base (2 scenario IDs)</summary>
 
-Workshop Mod List `3705706772`, `Version` 9 on 2026-10-09. The Workshop page calls these 3v3. The file name has no `3v3` token.
+Workshop Mod List `3705706772`. The Workshop page lists these as 3v3.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -244,7 +242,7 @@ Workshop Mod List `3705706772`, `Version` 9 on 2026-10-09. The Workshop page cal
 <details>
 <summary>Arsenal (4 scenario IDs)</summary>
 
-Workshop Mod List `3415339374`, `Version` 20 on 2026-10-09. The Workshop page lists 2v2 and 3v3, each in Conquest and Destruction. The files are the four names below. Two of them end in `_6P`.
+Workshop Mod List `3415339374`. The Workshop page lists 2v2 and 3v3 layouts, each in Conquest and Destruction.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -258,7 +256,7 @@ Workshop Mod List `3415339374`, `Version` 20 on 2026-10-09. The Workshop page li
 <details>
 <summary>Helbe (12 scenario IDs)</summary>
 
-Workshop Mod List `3762638679`, `Version` 36 on 2026-10-09. Norden is `_5x3_HelbeNorden_2v2_CONQ`. The Workshop page says NORDEN 3v3.
+Workshop Mod List `3762638679`.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -291,7 +289,7 @@ Army General file names:
 <details>
 <summary>Base game (102 scenario IDs)</summary>
 
-Leave **Workshop Mod List** and **Workshop Mod Tags** empty. These IDs are Eugen's Map Base Id column.
+Leave **Workshop Mod List** and **Workshop Mod Tags** empty. These are the Map Base Id values from Eugen's [Docker Hub page](https://hub.docker.com/r/eugensystems/warno).
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -415,7 +413,7 @@ The container name, Game Port, Settings Folder, and Server Name are unique. The 
 
 Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon map pack while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
-Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. If the image has no `flock` command, the start warns and continues. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
+Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 
 ## Settings files
 
@@ -427,7 +425,7 @@ On each start, **Write Config From Form** (`true`) rewrites these files in the s
 
 When Workshop Mod List holds a bare Workshop id, the start also writes `warhost-workshop-versions.txt`: one line per id with Steam's update time and the `Version` written. Delete it to make the next start read each `Config.ini` again.
 
-The wrapper writes those files in a private `.warhost-stage.*` directory in that folder and renames them into place. That directory is removed when the start finishes or is stopped. A crash or power loss can leave one; the next start that locks the settings folder removes it. Do not keep other files under that name.
+The wrapper writes those files in a private `.warhost-stage.*` folder first, then moves them into place. The next start that locks the settings folder removes one left by a crash or power loss, so do not keep anything under that name.
 
 `samples/` shows the shape of those files with placeholders only. Do not replace the placeholders in this repository.
 
@@ -439,7 +437,7 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
-The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. The form shows the key in clear text so servers can be told apart. The startup log names only the last 4 characters. A key shorter than 4 characters stops the start with `Eugen dedicated key must be at least 4 characters.` The key does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
+The dedicated key belongs in the Unraid form, which stores it for that container and writes `login.ini` on the server. The form shows the key in clear text so servers can be told apart. The startup log names only the last 4 characters. The key does not belong in this git repository, in an example file, or in a GitHub issue. If a key is ever committed, treat it as compromised even after a later delete, because git history keeps it. `.gitignore` ignores `login.ini` and a local `settings/` directory.
 
 ## Updates
 
