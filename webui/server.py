@@ -4,6 +4,7 @@
 import json
 import os
 import pwd
+import signal
 import socket
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -329,6 +330,8 @@ def main():
         run_helper()
         return
     if mode == "--serve":
+        # The starter exits after the page is up. A hangup must not stop it.
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
         if os.geteuid() == 0:
             try:
                 pwd.getpwnam("warhost-web")

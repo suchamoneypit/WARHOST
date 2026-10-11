@@ -39,6 +39,12 @@ fail() {
   exit 1
 }
 
+capture_code() {
+  _body=$1
+  shift
+  code=$(curl -sS -o "$_body" -w '%{http_code}' "$@") || fail "lobby page request failed"
+}
+
 python3 "${ROOT}/webui/make_catalog.py" --check
 printf 'ok scenario catalog matches the README\n'
 
@@ -107,29 +113,29 @@ done
 [ -f "${settings}/.warhost-webui.ready" ] || fail "lobby page did not become ready"
 
 base="http://127.0.0.1:${PORT}"
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'Origin: http://evil.example' \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"x","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "403" ] || fail "cross-site save returned ${code}"
 [ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "cross-site save changed variables.ini"
 
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"x","map":"not-a-map","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "400" ] || fail "rejected save returned ${code}"
 [ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "rejected save changed variables.ini"
 grep -qx 'InitMoney = 750' "${settings}/variables.ini" || fail "rejected save changed starting resources"
 
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "400" ] || fail "modded map without a workshop id returned ${code}"
 [ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "rejected modded map changed variables.ini"
 grep -q 'That map needs its workshop mod in Workshop Mod List.' "${WORKDIR}/body.txt" || fail "rejected modded map did not name the workshop list"
@@ -145,11 +151,11 @@ if needle not in text:
 path.write_text(text.replace(needle, insert, 1))
 PY
 
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "200" ] || fail "save returned ${code}"
 grep -qx 'ServerName = Saved Lobby' "${settings}/variables.ini" || fail "save did not write the server name"
 grep -qx 'Map = RDPort_JungleLaw_2v2_CONQ' "${settings}/variables.ini" || fail "save did not write the map"
@@ -165,8 +171,8 @@ grep -qx 'AllowObservers = 1' "${settings}/variables.ini" || fail "save dropped 
 grep -qx 'ServerName = WARHOST - Hesse 2v2' "${settings}/variables.ini.bak" || fail "save did not keep a backup"
 grep -qx 'dedicated_key="host-key-value"' "${settings}/login.ini" || fail "save changed login.ini"
 
-curl -fsS "${base}/" > "${WORKDIR}/page.html"
-curl -fsS "${base}/api/lobby" > "${WORKDIR}/state.json"
+curl -fsS "${base}/" > "${WORKDIR}/page.html" || fail "lobby page did not load"
+curl -fsS "${base}/api/lobby" > "${WORKDIR}/state.json" || fail "lobby state did not load"
 if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WORKDIR}/page.log" >/dev/null; then
   fail "lobby page exposed the dedicated key"
 fi
@@ -174,21 +180,23 @@ grep -q 'Scenic view' "${WORKDIR}/page.html" || fail "page is missing the scenic
 grep -q 'Tactical zones' "${WORKDIR}/page.html" || fail "page is missing the tactical slot"
 grep -q 'Map list (scenario ID list)' "${WORKDIR}/page.html" || fail "page is missing the map list heading"
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["map"]=="RDPort_JungleLaw_2v2_CONQ"; assert d["modList"]=="3811913066/27-3474588989/14"; assert d["modTags"]=="Maps-Scenarios"' "${WORKDIR}/state.json" || fail "state did not return the saved map"
+kill -HUP "$PAGE_PID" || fail "could not signal the lobby page"
+curl -fsS -o /dev/null "${base}/" || fail "lobby page exited on hangup"
 
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "200" ] || fail "base-game save returned ${code}"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "base-game save did not write the map"
 grep -qx 'ModList = 3811913066/27-3474588989/14' "${settings}/variables.ini" || fail "base-game save dropped the workshop mod list"
 
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"reset"}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "200" ] || fail "reset returned ${code}"
 grep -qx 'ServerName = WARHOST - Hesse 2v2' "${settings}/variables.ini" || fail "reset did not restore the form name"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "reset did not restore the form map"
@@ -200,11 +208,11 @@ fi
 outside="${WORKDIR}/outside.ini"
 printf 'secret-target\n' > "$outside"
 ln -sf "$outside" "${settings}/variables.ini"
-code=$(curl -s -o "${WORKDIR}/body.txt" -w '%{http_code}' \
+capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":500,"timeLimit":1200,"scoreLimit":1000,"incomeRate":0,"upkeep":0}' \
-  "${base}/api/lobby")
+  "${base}/api/lobby"
 [ "$code" = "200" ] || fail "symlink save returned ${code}"
 [ ! -L "${settings}/variables.ini" ] || fail "save followed a symlink"
 grep -qx 'secret-target' "$outside" || fail "save wrote through a symlink"
@@ -220,28 +228,39 @@ if sudo -n true 2>/dev/null; then
   printf 'ServerName = WARHOST - Hesse 2v2\nMap = _2x2_Hesse_2vs2_CONQ\n' > "${root_settings}/variables.ini"
   ROOT_RUN="${ROOT}/webui/run"
 
-  wait_ready() {
-    ready_port=$1
-    i=0
-    while [ "$i" -lt 50 ]; do
-      if sudo grep -qx "$ready_port" "${root_settings}/.warhost-webui.ready" 2>/dev/null; then
-        return 0
-      fi
-      i=$((i + 1))
-      sleep 0.05
-    done
-    return 1
+  # sudo stays in the foreground until the page answers. setsid puts the
+  # server in its own session, so sudo's exit does not hang the page up.
+  start_root_server() {
+    _log=$1
+    _port=$2
+    shift 2
+    : > "$_log"
+    sudo -n "$@" sh -c '
+      setsid python3 "$1" --serve >"$2" 2>&1 </dev/null &
+      ready=$3
+      port=$4
+      i=0
+      while [ "$i" -lt 50 ]; do
+        if [ -f "$ready" ] && grep -qx "$port" "$ready"; then
+          curl -fsS -o /dev/null "http://127.0.0.1:${port}/" && exit 0
+        fi
+        i=$((i + 1))
+        sleep 0.05
+      done
+      exit 1
+    ' sh "${ROOT}/webui/server.py" "$_log" "${root_settings}/.warhost-webui.ready" "$_port" \
+      || return $?
   }
 
-  sudo -n setsid env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
+  start_root_server "${WORKDIR}/root-drop.log" 39522 \
+    env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
     SETTINGS_DIR="$root_settings" \
     WARHOST_WEB_PORT=39522 \
     WARHOST_WEBUI_DROP_FAIL=1 \
     EXPOSEDPORT=38522 \
-    python3 "${ROOT}/webui/server.py" --serve >"${WORKDIR}/root-drop.log" 2>&1 &
-  wait_ready 39522 || fail "root lobby page did not become ready after a failed privilege drop"
-  ROOT_PAGE_PID=$(sudo cat "${root_settings}/.warhost-webui.pid")
-  code=$(curl -s -o "${WORKDIR}/root-body.txt" -w '%{http_code}' "http://127.0.0.1:39522/")
+    || fail "root lobby page did not become ready after a failed privilege drop"
+  ROOT_PAGE_PID=$(sudo cat "${root_settings}/.warhost-webui.pid") || fail "lobby page did not write its pid"
+  capture_code "${WORKDIR}/root-body.txt" "http://127.0.0.1:39522/"
   [ "$code" = "200" ] || fail "failed privilege drop returned ${code}"
   grep -q 'stayed root' "${WORKDIR}/root-drop.log" || fail "failed privilege drop did not warn"
   uid=$(ps -o uid= -p "$ROOT_PAGE_PID" | tr -d ' ')
@@ -255,14 +274,14 @@ if sudo -n true 2>/dev/null; then
   ROOT_PAGE_PID=
   sudo rm -f "${root_settings}/.warhost-webui.ready" "${root_settings}/.warhost-webui.pid" "${root_settings}/.warhost-webui.log"
 
-  sudo -n setsid env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
+  start_root_server "${WORKDIR}/root-user.log" 39523 \
+    env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
     SETTINGS_DIR="$root_settings" \
     WARHOST_WEB_PORT=39523 \
     EXPOSEDPORT=38523 \
-    python3 "${ROOT}/webui/server.py" --serve >"${WORKDIR}/root-user.log" 2>&1 &
-  wait_ready 39523 || fail "root lobby page did not become ready"
-  ROOT_PAGE_PID=$(sudo cat "${root_settings}/.warhost-webui.pid")
-  code=$(curl -s -o "${WORKDIR}/root-body.txt" -w '%{http_code}' "http://127.0.0.1:39523/")
+    || fail "root lobby page did not become ready"
+  ROOT_PAGE_PID=$(sudo cat "${root_settings}/.warhost-webui.pid") || fail "lobby page did not write its pid"
+  capture_code "${WORKDIR}/root-body.txt" "http://127.0.0.1:39523/"
   [ "$code" = "200" ] || fail "dropped lobby page returned ${code}"
   web_uid=$(id -u warhost-web)
   uid=$(ps -o uid= -p "$ROOT_PAGE_PID" | tr -d ' ')
