@@ -27,7 +27,7 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
-  <Requires>An Eugen Systems WARNO dedicated-server login and key for the person hosting. Joining players need the game, plus each Steam Workshop mod in Workshop Mod List, for example item 3811913066 for the Red Dragon map pack. With a Workshop id in that list, the server also reaches Steam at each start to read the mod's Version.</Requires>
+  <Requires>A Eugen Systems WARNO dedicated-server login and key. Email eugsupport@eugensystems.com, or reuse a dedicated key from another Eugen game.</Requires>
   <Description>
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server and writes login.ini, variables.ini, and params_for_ai.json from this form.
