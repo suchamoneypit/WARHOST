@@ -195,7 +195,7 @@ if not name_match:
     fail("scripts/print_template_fetch.sh did not save my-<Name>.xml")
 else:
     container = name_match.group(1)
-    for branch in ("dev", "webui"):
+    for branch in ("dev",):
         branched = run_fetch(["--branch", branch])
         if f"/{branch}/templates/" not in branched:
             fail(f"scripts/print_template_fetch.sh --branch {branch} did not rewrite the ref")
@@ -203,23 +203,21 @@ else:
             fail(f"scripts/print_template_fetch.sh --branch {branch} did not suffix the filename")
         if f"/main/templates/" in branched:
             fail(f"scripts/print_template_fetch.sh --branch {branch} still points at main")
-    all_branches = run_fetch(["--branch", "main", "--branch", "dev", "--branch", "webui"])
+    all_branches = run_fetch(["--branch", "main", "--branch", "dev"])
     for needle in (
         f"/main/templates/",
         f"/dev/templates/",
-        f"/webui/templates/",
         f"my-{container}.xml",
         f"my-{container}-dev.xml",
-        f"my-{container}-webui.xml",
     ):
         if needle not in all_branches:
             fail(f"branch download is missing {needle}")
     if f"my-{container}-main.xml" in all_branches:
         fail("the TemplateURL ref was saved under a branch suffix")
     blocks = [block for block in all_branches.split("\n\n") if block.strip()]
-    if len(blocks) != 3:
-        fail("main, dev, and webui downloads were not three separate scripts")
-    for block, branch in zip(blocks, ("main", "dev", "webui")):
+    if len(blocks) != 2:
+        fail("main and dev downloads were not two separate scripts")
+    for block, branch in zip(blocks, ("main", "dev")):
         if block.count("curl ") != 1 or f"/{branch}/templates/" not in block:
             fail(f"the {branch} download is not its own script")
 
@@ -227,7 +225,7 @@ private_main = run_fetch(["--private", "--branch", "main"])
 if command_block(private_main) != command_block(private_fetch):
     fail("scripts/print_template_fetch.sh --private --branch main does not match --private")
 
-clean = run_fetch(["--clean", "--branch", "main", "--branch", "dev", "--branch", "webui"])
+clean = run_fetch(["--clean", "--branch", "main", "--branch", "dev"])
 if template is None:
     fail("clean script was not checked because the template did not parse")
 elif not name_match:
@@ -239,13 +237,10 @@ else:
     for needle in (
         f"'{container}'",
         f"'{container}-dev'",
-        f"'{container}-webui'",
         f"my-{container}.xml",
         f"my-{container}-dev.xml",
-        f"my-{container}-webui.xml",
         private_name,
         f"{private_name[:-4]}-dev.xml",
-        f"{private_name[:-4]}-webui.xml",
         repository,
         "/var/lib/docker/unraid-autostart",
         "docker stop",

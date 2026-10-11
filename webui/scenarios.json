@@ -390,7 +390,7 @@
         {
           "name": "Highway to Oslo",
           "id": "_2x2_Oslo_ConquestNS",
-          "size": "Conquest, file suffix `NS`",
+          "size": "Conquest, no sidespawn",
           "players": 2,
           "team": 1,
           "rule": 2
@@ -398,7 +398,7 @@
         {
           "name": "Highway to Oslo",
           "id": "_2x2_Oslo_DestructionNS",
-          "size": "Destruction, file suffix `NS`",
+          "size": "Destruction, no sidespawn",
           "players": 2,
           "team": 1,
           "rule": 1
