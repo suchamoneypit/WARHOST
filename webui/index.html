@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WARHOST lobby</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 16px/1.4 sans-serif; background: #e7e1d4; color: #1c1c1c; }
+  header, main { padding: 16px; }
+  header { background: #2c3330; color: #f4f1ea; }
+  h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  .note { margin: 0; max-width: 70rem; }
+  .layout { display: grid; grid-template-columns: minmax(16rem, 1.4fr) minmax(16rem, 1fr); gap: 16px; }
+  section { background: #f7f4ee; border: 1px solid #b7b1a4; padding: 12px; }
+  h2 { font-size: 1rem; margin: 0 0 8px; }
+  label { display: block; margin: 10px 0 4px; }
+  input, select, button { font: inherit; }
+  input[type="text"], select { width: 100%; box-sizing: border-box; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #ddd6c8; }
+  tbody tr { cursor: pointer; }
+  tbody tr[aria-selected="true"] { background: #f3e27a; }
+  .list { max-height: 28rem; overflow: auto; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .shot { min-height: 8rem; border: 1px dashed #8d887c; display: grid; place-items: center; color: #5c584e; background: #fff; }
+  .actions { display: flex; gap: 8px; margin-top: 16px; }
+  button { padding: 8px 12px; }
+  #status { min-height: 1.4em; margin: 8px 0 0; }
+  @media (max-width: 800px) { .layout, .shots { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>WARHOST lobby</h1>
+  <p class="note">Save writes this server's variables.ini. Restart that container in Unraid to load it. This page does not stop the current match.</p>
+</header>
+<main>
+  <p id="status" role="status"></p>
+  <div class="layout">
+    <section>
+      <h2>Scenario list</h2>
+      <label for="filter">Filter</label>
+      <input id="filter" type="text" autocomplete="off">
+      <div class="list">
+        <table>
+          <thead><tr><th>Map</th><th>Rule</th><th>Players</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <h2 id="detail-name">Game parameters</h2>
+      <p id="detail-meta"></p>
+      <div class="shots">
+        <div class="shot">Scenic view</div>
+        <div class="shot">Tactical zones</div>
+      </div>
+      <label for="serverName">Server name</label>
+      <input id="serverName" type="text" maxlength="64">
+      <label for="upkeep">Command and control</label>
+      <select id="upkeep"></select>
+      <label for="combatRule">Combat rules</label>
+      <select id="combatRule"></select>
+      <label for="gameType">Opposition</label>
+      <select id="gameType"></select>
+      <label for="initMoney">Starting resources</label>
+      <select id="initMoney"></select>
+      <label for="incomeRate">Income rate factor</label>
+      <select id="incomeRate"></select>
+      <label for="scoreLimit">Score limit</label>
+      <select id="scoreLimit"></select>
+      <label for="timeLimit">Time limit</label>
+      <select id="timeLimit"></select>
+      <p>The lobby is not locked to the size in the scenario ID. Usual slots for the selected row are shown above.</p>
+      <div class="actions">
+        <button id="save" type="button">Save</button>
+        <button id="reset" type="button">Reset from Unraid form</button>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+const MENUS = {
+  upkeep: [[0, "0 %"], [5, "5 %"], [7, "7 %"]],
+  combatRule: [[2, "Conquest"], [1, "Destruction"]],
+  gameType: [[0, "NATO vs PACT"], [1, "NATO vs NATO"], [2, "PACT vs PACT"]],
+  initMoney: [500, 1000, 1500, 2000, 2500, 3000].map((n) => [n, n + " PTS"]),
+  incomeRate: [[0, "None"], [1, "x0,5"], [2, "x0,75"], [3, "x1"], [4, "x1,5"], [5, "x2"]],
+  scoreLimit: [1000, 2000, 4000].map((n) => [n, n + " PTS"]),
+  timeLimit: [[1200, "20 min"], [1800, "30 min"], [2400, "40 min"], [3600, "60 min"], [0, "No time limit"]]
+};
+const EXTRA = { gameType: "PACT vs NATO", initMoney: " PTS", timeLimit: " sec", upkeep: " %", scoreLimit: " PTS", incomeRate: "" };
+let catalog = [];
+let selected = "";
+
+function ruleName(rule) { return Number(rule) === 1 ? "Destruction" : "Conquest"; }
+
+function fillSelect(id, current) {
+  const select = document.getElementById(id);
+  select.replaceChildren();
+  let seen = false;
+  MENUS[id].forEach(([value, label]) => {
+    const option = document.createElement("option");
+    option.value = String(value);
+    option.textContent = label;
+    if (Number(value) === Number(current)) seen = true;
+    select.appendChild(option);
+  });
+  if (!seen && current !== undefined && current !== "") {
+    const option = document.createElement("option");
+    option.value = String(current);
+    option.textContent = String(current) + (EXTRA[id] || "");
+    select.appendChild(option);
+  }
+  select.value = String(current);
+}
+
+function findScenario(id) {
+  for (const group of catalog) {
+    for (const scenario of group.scenarios) {
+      if (scenario.id === id) return { group, scenario };
+    }
+  }
+  return null;
+}
+
+function showDetail(id) {
+  selected = id;
+  const found = findScenario(id);
+  document.getElementById("detail-name").textContent = found ? found.scenario.name : (id || "Game parameters");
+  document.getElementById("detail-meta").textContent = found
+    ? ruleName(found.scenario.rule) + " · " + found.scenario.players + " players · " + found.group.name
+    : "This saved map is not in the scenario list.";
+  document.querySelectorAll("#rows tr").forEach((row) => {
+    row.setAttribute("aria-selected", row.dataset.id === id ? "true" : "false");
+  });
+}
+
+function renderRows(filter) {
+  const body = document.getElementById("rows");
+  body.replaceChildren();
+  const needle = filter.trim().toLowerCase();
+  catalog.forEach((group) => {
+    const matches = group.scenarios.filter((scenario) => {
+      const hay = (scenario.name + " " + scenario.id + " " + group.name).toLowerCase();
+      return !needle || hay.includes(needle);
+    });
+    if (!matches.length) return;
+    const head = document.createElement("tr");
+    head.innerHTML = "<th colspan='3'></th>";
+    head.querySelector("th").textContent = group.name;
+    body.appendChild(head);
+    matches.forEach((scenario) => {
+      const row = document.createElement("tr");
+      row.dataset.id = scenario.id;
+      row.setAttribute("aria-selected", scenario.id === selected ? "true" : "false");
+      [scenario.name, ruleName(scenario.rule), String(scenario.players)].forEach((text) => {
+        const cell = document.createElement("td");
+        cell.textContent = text;
+        row.appendChild(cell);
+      });
+      row.addEventListener("click", () => {
+        showDetail(scenario.id);
+        document.getElementById("combatRule").value = String(scenario.rule);
+      });
+      body.appendChild(row);
+    });
+  });
+}
+
+function applyState(state) {
+  document.getElementById("serverName").value = state.serverName || "";
+  ["upkeep", "combatRule", "gameType", "initMoney", "incomeRate", "scoreLimit", "timeLimit"].forEach((id) => {
+    fillSelect(id, state[id]);
+  });
+  showDetail(state.map || "");
+}
+
+async function request(payload) {
+  const response = await fetch("/api/lobby", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-WARHOST-Request": "1" },
+    body: JSON.stringify(payload)
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error || "Save failed.");
+  return body;
+}
+
+function payload() {
+  return {
+    action: "save",
+    serverName: document.getElementById("serverName").value,
+    map: selected,
+    gameType: document.getElementById("gameType").value,
+    combatRule: document.getElementById("combatRule").value,
+    initMoney: document.getElementById("initMoney").value,
+    incomeRate: document.getElementById("incomeRate").value,
+    scoreLimit: document.getElementById("scoreLimit").value,
+    timeLimit: document.getElementById("timeLimit").value,
+    upkeep: document.getElementById("upkeep").value
+  };
+}
+
+document.getElementById("filter").addEventListener("input", (event) => renderRows(event.target.value));
+document.getElementById("save").addEventListener("click", async () => {
+  const status = document.getElementById("status");
+  try {
+    applyState(await request(payload()));
+    status.textContent = "Saved. Restart this container in Unraid to load it. The current match keeps running.";
+  } catch (error) {
+    status.textContent = error.message;
+  }
+});
+document.getElementById("reset").addEventListener("click", async () => {
+  const status = document.getElementById("status");
+  try {
+    applyState(await request({ action: "reset" }));
+    status.textContent = "Reset from the Unraid form and saved. Restart this container to load it.";
+  } catch (error) {
+    status.textContent = error.message;
+  }
+});
+
+Promise.all([fetch("/scenarios.json").then((response) => response.json()), fetch("/api/lobby").then((response) => response.json())])
+  .then(([data, state]) => {
+    catalog = data.groups;
+    applyState(state);
+    renderRows("");
+  })
+  .catch(() => {
+    document.getElementById("status").textContent = "The lobby page could not read this server.";
+  });
+</script>
+</body>
+</html>

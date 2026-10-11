@@ -200,9 +200,14 @@ sh -n entrypoint-unraid.sh
 sh -n tests/entrypoint_test.sh
 sh -n scripts/check_repo.sh
 sh -n scripts/print_template_fetch.sh
+sh -n webui/launch.sh
+sh -n webui/test_page.sh
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").read_text(), "scripts/upstream_digest.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/next_version.py").read_text(), "scripts/next_version.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/list_workshop_mods.py").read_text(), "scripts/list_workshop_mods.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("webui/lobby.py").read_text(), "webui/lobby.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("webui/server.py").read_text(), "webui/server.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("webui/make_catalog.py").read_text(), "webui/make_catalog.py", "exec")'
 echo "syntax ok"
 
 expect_version() {
@@ -231,3 +236,4 @@ echo "version numbering ok"
 python3 scripts/list_workshop_mods.py --self-test
 
 sh tests/entrypoint_test.sh
+sh webui/test_page.sh

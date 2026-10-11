@@ -129,7 +129,7 @@ It then appears in the **Apps** tab under **Private**. The user-template downloa
 
 Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
-Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README, not on the form.
+Map is on the main form, under Server Name and before Max Players. **Show more settings** holds Workshop Mod List, Write Config From Form, Lobby Page, and Workshop Mod Tags, in that order. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README, not on the form.
 
 | Field | Default | Enter |
 | --- | --- | --- |
@@ -147,7 +147,8 @@ Map is on the main form, under Server Name and before Max Players. **Show more s
 | Team Size | `2` | Slots on one side. Usually half of Max Players. |
 | Combat Rule | `2` | `2` when the ID contains `CONQ` or `Conquest`, `1` when it contains `DEST` or `Destruction`. |
 | Workshop Mod List (Show more) | empty | Leave empty for a base-game map. For the Red Dragon pack, enter `3811913066`; each start reads the mod's current `Version` from Steam. `3811913066/27` pins that number. `none` also means empty. Named mods are in the README. |
-| Write Config From Form (Show more) | `true` | Keep. |
+| Write Config From Form (Show more) | `true` | Keep. With Lobby Page `true`, an existing `variables.ini` stays. |
+| Lobby Page (Show more) | `false` | Keep off until you want the page. `true` serves it on this Unraid host at the game port plus 1000, so `10400` is `http://<this-unraid-host>:11400/`. Do not forward that port. Save writes `variables.ini`; restart the container to load it. The Docker WebUI button opens 11400, the first server only. |
 | Workshop Mod Tags (Show more) | empty | Browser icons only. It does not download mods. Leave empty for a base-game map, and enter `Maps-Scenarios` for the Red Dragon pack. A conversion uses the tag string in step 4. `none` also means empty. |
 
 Click **Apply**. Unraid pulls the image and starts the container. A pull error here means Unraid could not fetch the image; the first troubleshooting row and step 2 cover the usual causes.
@@ -241,7 +242,8 @@ On start, the log names the next port and its settings folder. If the settings f
 | Log contains `warning: Workshop Mod List is empty and Map ... is not a base-game scenario` | Map is not one of the base-game scenario IDs in the README, and Workshop Mod List is empty. The server still starts | Set **Workshop Mod List** to the pack that contains that map, and **Workshop Mod Tags** to that pack's tags. Or set **Map** to a base-game ID from the README. |
 | Log contains `note: Workshop Mod Tags is ... and Workshop Mod List is empty` | The tags are written and label the server in the browser; they do not select modded content. | Clear **Workshop Mod Tags**, or type `none`, if the server should not show mod icons. Leave them if you meant to label a base-game server. |
 | Players are told a mod is missing or incompatible, and that warning is absent | They have not subscribed to and enabled the mod, a typed `id/version` pin is behind `Config.ini`, or the author published after this container started | Players: subscribe in Steam and enable the mod in WARNO's Mod Center. Host: remove any `/version` pin, or restart the container so it reads the new `Version`. The client message does not appear in this log. |
-| Hand edits to `variables.ini` disappear after a restart | Write Config From Form is `true` | Set it to `false`. All three files must then exist. That start leaves their contents and sets `login.ini` to mode `600`. |
+| Hand edits to `variables.ini` disappear after a restart | Write Config From Form is `true` and Lobby Page is `false` | Set Write Config From Form to `false`, or set Lobby Page to `true` after the file exists. `false` leaves all three files and sets `login.ini` to mode `600`. Lobby Page `true` leaves an existing `variables.ini` and still rewrites `login.ini`. |
+| A lobby page save does not change the running match | The page only writes `variables.ini` | Restart that container. The match already running keeps the settings it loaded. |
 | Log ends with `This settings folder is already used by a running container` | Two containers share one settings folder | The log names this Game Port's folder. If that folder is the one in use, it also names the folder for the port plus 1. Use the path that is not already taken. Do not copy WARNO or a Workshop folder into it. |
 | A sixth container on the same login and key fails to come online | Eugen documents a limit of five servers per login and key pair; the exact error has not been observed. This wrapper does not count running servers | Stop one, or request another login and key pair. |
 | Players on a new WARNO patch cannot join | The image is older than the game | The rebuild runs daily. On Unraid, check for updates on the Docker tab and update the container. |

@@ -19,7 +19,7 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
-  <WebUI/>
+  <WebUI>http://[IP]:[PORT:11400]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/icon.png</Icon>
   <ReadMe>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md</ReadMe>
@@ -49,6 +49,7 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
   <Config Name="Team Size" Target="MAX_TEAM_SIZE" Default="2" Mode="" Description="Slots on one side. Preset 2, usually half of Max Players." Type="Variable" Display="always" Required="true" Mask="false">2</Config>
   <Config Name="Combat Rule" Target="COMBAT_RULE" Default="2" Mode="" Description="1 is Destruction and 2 is Conquest. Use 2 when the scenario ID contains CONQ or Conquest, and 1 when it contains DEST or Destruction." Type="Variable" Display="always" Required="true" Mask="false">2</Config>
   <Config Name="Workshop Mod List" Target="MOD_LIST" Default="" Mode="" Description="Empty for a base-game map. Red Dragon map pack example: 3811913066. Each start reads that mod's current Version from Steam; id/version pins a number. Join mods with a hyphen. none also means empty. Named mods are in the project README." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
-  <Config Name="Write Config From Form" Target="WRITE_CONFIG" Default="true" Mode="" Description="true rewrites the three settings files from this form on every start. false leaves those files and sets login.ini to mode 600." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Write Config From Form" Target="WRITE_CONFIG" Default="true" Mode="" Description="true rewrites the settings files from this form on every start. With Lobby Page true, an existing variables.ini stays. false leaves the files and sets login.ini to mode 600." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Lobby Page" Target="WEB_UI" Default="false" Mode="" Description="false starts no lobby page. true serves it at the game port plus 1000, so 10400 uses 11400. Do not forward that port. Saving writes variables.ini; restart the container to load it." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   <Config Name="Workshop Mod Tags" Target="MOD_TAG_LIST" Default="" Mode="" Description="Empty for a base-game map. Map pack example: Maps-Scenarios. Browser icons only; words are Gameplay, Interface, Maps, Scenarios, Music, and Sound, joined with hyphens. none also means empty." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
 </Container>

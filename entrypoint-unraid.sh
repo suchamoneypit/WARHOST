@@ -593,6 +593,18 @@ case "$write_config" in
   *) die "Write Config From Form must be true or false." ;;
 esac
 
+# WEB UI HOOK — delete this block to remove the lobby page.
+web_ui=$(printf '%s' "${WEB_UI:-false}" | tr '[:upper:]' '[:lower:]')
+case "$web_ui" in
+  true|yes|1) web_ui=true ;;
+  false|no|0|'') web_ui=false ;;
+  *) die "Lobby Page must be true or false." ;;
+esac
+keep_page_variables=0
+if [ "$web_ui" = true ] && [ -f "${SETTINGS_DIR}/variables.ini" ] && [ ! -L "${SETTINGS_DIR}/variables.ini" ]; then
+  keep_page_variables=1
+fi
+
 if [ "$write_config" = "true" ]; then
   : "${EUGEN_LOGIN:?Set your Eugen login.}"
   : "${EUGEN_DEDICATED_KEY:?Set your Eugen dedicated key.}"
@@ -685,7 +697,7 @@ if [ "$write_config" = "true" ]; then
   prepare_server_runtime
   umask 077
   form_mod_list=$MOD_LIST
-  if [ -n "$MOD_LIST" ]; then
+  if [ "$keep_page_variables" -eq 0 ] && [ -n "$MOD_LIST" ]; then
     resolve_workshop_list "$MOD_LIST"
   fi
   stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
@@ -749,9 +761,15 @@ if [ "$write_config" = "true" ]; then
   fi
 
   publish_staged_file "$tmp_login" "${SETTINGS_DIR}/login.ini"
-  publish_staged_file "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
+  if [ "$keep_page_variables" -eq 0 ]; then
+    publish_staged_file "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
+  fi
   publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
-  chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
+  if [ "$keep_page_variables" -eq 0 ]; then
+    chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
+  else
+    chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/params_for_ai.json"
+  fi
   if [ -n "$workshop_cache_lines" ]; then
     cache_dest="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
     if [ -d "$cache_dest" ] && [ ! -L "$cache_dest" ]; then
@@ -765,12 +783,16 @@ if [ "$write_config" = "true" ]; then
   trap - HUP INT TERM
   umask 022
 
-  if [ -n "$MOD_LIST" ]; then
+  if [ "$keep_page_variables" -eq 1 ]; then
+    printf 'Kept variables.ini from the lobby page for %s on port %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$key_tail"
+  elif [ -n "$MOD_LIST" ]; then
     printf 'Wrote WARNO settings for %s on port %s. Map %s. ModList %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$MOD_LIST" "$key_tail"
   else
     printf 'Wrote WARNO settings for %s on port %s. Map %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$key_tail"
   fi
-  note_workshop_mod_list "$form_mod_list" "$MAP" "$MOD_TAG_LIST"
+  if [ "$keep_page_variables" -eq 0 ]; then
+    note_workshop_mod_list "$form_mod_list" "$MAP" "$MOD_TAG_LIST"
+  fi
 else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then
     die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."
@@ -783,6 +805,21 @@ else
 fi
 
 note_next_container
+
+# WEB UI HOOK — delete this block to remove the lobby page.
+if [ "$web_ui" = true ]; then
+  entry_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+  webui_launch="${entry_dir}/webui/launch.sh"
+  if [ -x "$webui_launch" ]; then
+    export SETTINGS_DIR
+    # fd 9 is the settings lock. The page must not inherit it.
+    if ! "$webui_launch" 9>&-; then
+      printf '%s\n' "warning: web UI did not start. The game server will still start."
+    fi
+  else
+    printf '%s\n' "warning: web UI launcher was not found. The game server will still start."
+  fi
+fi
 
 cd "$server_root"
 exec "$UPSTREAM_ENTRYPOINT" "$@"

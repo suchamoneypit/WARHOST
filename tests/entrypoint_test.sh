@@ -9,7 +9,16 @@ EMPTY_PORT_TABLE="${WORKDIR}/empty-ports"
 mkdir -p "$EMPTY_PORT_TABLE"
 holder=
 stage_pid=
-trap 'if [ -n "${stage_pid:-}" ]; then kill "$stage_pid" 2>/dev/null || true; wait "$stage_pid" 2>/dev/null || true; fi; if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
+stop_webui() {
+  find "$WORKDIR" -name '.warhost-webui.pid' -type f 2>/dev/null |
+    while IFS= read -r pidfile; do
+      pid=$(cat "$pidfile" 2>/dev/null || true)
+      if [ -n "${pid:-}" ]; then
+        kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+      fi
+    done
+}
+trap 'stop_webui; if [ -n "${stage_pid:-}" ]; then kill "$stage_pid" 2>/dev/null || true; wait "$stage_pid" 2>/dev/null || true; fi; if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
 
 SERVER_COUNT=0
 
@@ -1277,6 +1286,87 @@ release_held "$hold"
 grep -qx 'dedicated_key="host-key-value"' "${server}/settings/login.ini" || fail "mkdir fallback did not publish login.ini"
 assert_no_stage_dirs "${server}/settings"
 printf 'ok stages with mkdir when mktemp fails\n'
+
+make_server
+expect_ok "lobby page off rewrites variables.ini" \
+  WEB_UI=false \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21400 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${server}/settings/variables.ini" || fail "lobby page off did not write the map"
+if [ -f "${server}/settings/.warhost-webui.pid" ]; then
+  fail "lobby page off started a listener"
+fi
+
+make_server
+expect_ok "lobby page seeds variables.ini and starts beside the server" \
+  WEB_UI=true \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21400 \
+  SERVER_NAME="WARHOST - Hesse 2v2" \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "lobby page seed did not reach the upstream entrypoint"
+grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${server}/settings/variables.ini" || fail "lobby page seed did not write the map"
+[ -f "${server}/settings/.warhost-webui.ready" ] || fail "lobby page did not become ready"
+page_pid=$(cat "${server}/settings/.warhost-webui.pid")
+kill -0 "$page_pid" || fail "lobby page process was not running after the game entrypoint returned"
+page_sid=$(ps -o sid= -p "$page_pid" | tr -d ' ')
+test_sid=$(ps -o sid= -p $$ | tr -d ' ')
+[ "$page_sid" != "$test_sid" ] || fail "lobby page stayed in the server session"
+if grep -F 'host-key-value' "${server}/settings/.warhost-webui.log" >/dev/null; then
+  fail "lobby page log contains the dedicated key"
+fi
+printf 'ServerName = from-the-page\nMap = _2x2_Hesse_2vs2_CONQ\n' > "${server}/settings/variables.ini"
+printf 'login="stale"\n' > "${server}/settings/login.ini"
+expect_ok "lobby page keeps variables.ini and still refreshes login.ini" \
+  WEB_UI=true \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21400 \
+  SERVER_NAME="WARHOST - Hesse 2v2" \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'ServerName = from-the-page' "${server}/settings/variables.ini" || fail "second start rewrote the lobby page file"
+grep -qx 'login="host-login"' "${server}/settings/login.ini" || fail "lobby page start did not refresh login.ini"
+grep -q 'Kept variables.ini from the lobby page' "${WORKDIR}/stdout.txt" || fail "second start did not say it kept variables.ini"
+grep -q 'lobby page port 22400 is already in use' "${WORKDIR}/stdout.txt" "${WORKDIR}/stderr.txt" || fail "taken lobby port did not warn"
+stop_webui
+
+make_server
+expect_ok "a failed lobby page still starts the server" \
+  WEB_UI=true \
+  WARHOST_WEBUI_FAIL=1 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21402 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not reach the upstream entrypoint"
+grep -q 'web UI did not start' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not warn"
+if [ -f "${server}/settings/.warhost-webui.pid" ]; then
+  fail "failed lobby page left a listener"
+fi
+
+make_server
+mkdir -p "${server}/settings"
+printf 'old\n' > "${server}/settings/variables.ini"
+expect_fail "lobby page flag must be true or false" \
+  WEB_UI=maybe \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21403 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'old' "${server}/settings/variables.ini" || fail "bad lobby page flag rewrote variables.ini"
 
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"

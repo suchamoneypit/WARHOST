@@ -9,3 +9,4 @@ appdata/
 # Cursor plans and the editor workspace stay on this machine.
 .cursor/plans/
 *.code-workspace
+webui/run/
