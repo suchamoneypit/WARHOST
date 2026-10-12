@@ -1,5 +1,5 @@
 #!/bin/sh
-# Write WARNO settings from Unraid form variables, then start Eugen's entrypoint.
+# Write login.ini from the Unraid form, seed or refresh variables.ini, then start Eugen's entrypoint.
 # entrypoint2.sh owns the server arguments. This script does not copy them.
 set -eu
 
@@ -43,10 +43,6 @@ require_number_between() {
   if [ "$value" -lt "$low" ] || [ "$value" -gt "$high" ]; then
     die "$label must be from $low to $high."
   fi
-}
-
-is_none() {
-  [ "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" = "none" ]
 }
 
 is_base_game_map() {
@@ -169,7 +165,7 @@ note_workshop_mod_list() {
   tags=$3
   if [ -z "$list" ]; then
     if ! is_base_game_map "$map"; then
-      printf '%s\n' "warning: Workshop Mod List is empty and Map $map is not a base-game scenario. Only a base-game map runs with no workshop mod. Set Workshop Mod List to the pack for this map, or set Map to a base-game ID such as _2x2_Hesse_2vs2_CONQ. warno-server still starts."
+      printf '%s\n' "warning: Workshop Mod List is empty and Map $map is not a base-game scenario. Only a base-game map runs with no workshop mod. Turn that pack on in the WebUI, or set the map to a base-game ID such as _2x2_Hesse_2vs2_CONQ. warno-server still starts."
     fi
     if [ -n "$tags" ]; then
       printf '%s\n' "note: Workshop Mod Tags is $tags and Workshop Mod List is empty. The tags are written. They label the server in the browser and do not select modded content."
@@ -182,7 +178,7 @@ note_workshop_mod_list() {
     *)
       case "-$list-" in
         *-3811913066/*|*-3811913066-*)
-          printf '%s\n' "warning: Map $map is not a Red Dragon scenario, and Workshop Mod List contains the Red Dragon map pack 3811913066. Players without that mod cannot join. Clear Workshop Mod List and Workshop Mod Tags, or type none in both if a field refills after Apply. warno-server still starts with the mod listed."
+          printf '%s\n' "warning: Map $map is not a Red Dragon scenario, and Workshop Mod List contains the Red Dragon map pack 3811913066. Players without that mod cannot join. Turn that mod off in the WebUI. warno-server still starts with the mod listed."
           return 0
           ;;
       esac
@@ -193,7 +189,7 @@ note_workshop_mod_list() {
     pair=${rest%%-*}
     case $pair in
       3811913066/0|3811913066/15)
-        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That value fails for the Red Dragon pack. Config.ini Version was 27 on 2026-10-10. Set Workshop Mod List to 3811913066 so each start reads the current Version, then Apply. warno-server still starts and logs nothing about the rejected join."
+        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That value fails for the Red Dragon pack. Config.ini Version was 27 on 2026-10-10. Save that mod again in the WebUI so the next start reads the current Version. warno-server still starts and logs nothing about the rejected join."
         ;;
     esac
     case $rest in
@@ -386,18 +382,18 @@ prepare_server_runtime() {
   sweep_stale_staging
   if local_port_taken "$EXPOSEDPORT"; then
     if [ -n "$NEXT_PORT" ]; then
-      die "Game port ${EXPOSEDPORT} is already in use. Set this container's Game Port to ${NEXT_PORT}, forward ${NEXT_PORT} as TCP and UDP, and set Settings Folder to /mnt/user/appdata/warno/${NEXT_PORT}/settings. Give it a different Server Name. Players join by Server Name."
+      die "Game port ${EXPOSEDPORT} is already in use. Set this container's Game Port to ${NEXT_PORT}, forward ${NEXT_PORT} as TCP and UDP, and set Settings Folder to /mnt/user/appdata/warno/${NEXT_PORT}/settings. Give it a different Server Name in the WebUI. Players join by Server Name."
     fi
-    die "Game port ${EXPOSEDPORT} is already in use. Pick a free Game Port, forward it as TCP and UDP, and give this container its own settings folder and Server Name. Players join by Server Name."
+    die "Game port ${EXPOSEDPORT} is already in use. Pick a free Game Port, forward it as TCP and UDP, and give this container its own settings folder and a Server Name in the WebUI. Players join by Server Name."
   fi
 }
 
 note_next_container() {
   if [ -n "$NEXT_PORT" ]; then
-    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name."
+    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name."
     return 0
   fi
-  printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different Server Name. One login and key runs five servers. Players join by Server Name."
+  printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name."
 }
 
 WORKSHOP_APP_ID=1611600
@@ -560,6 +556,94 @@ resolve_workshop_list() {
   MOD_LIST=$ws_resolved
 }
 
+# Lobby fields used to live on the Docker form. A saved container can still
+# pass them. They are not applied. The WebUI writes variables.ini.
+note_ignored_lobby_env() {
+  if [ -n "${SERVER_NAME:-}" ] || [ -n "${MAP:-}" ] || [ -n "${NB_MAX_PLAYER:-}" ] || [ -n "${NB_MIN_PLAYER:-}" ] || [ -n "${MAX_TEAM_SIZE:-}" ] || [ -n "${COMBAT_RULE:-}" ] || [ -n "${MOD_LIST:-}" ] || [ -n "${MOD_TAG_LIST:-}" ]; then
+    printf '%s\n' "Lobby settings on the Docker template are ignored. Change the server in the WebUI."
+  fi
+}
+
+# First "Key = value" in a regular file. ini_repeat is 1 when the key occurs again.
+read_ini_key() {
+  ini_file=$1
+  ini_key=$2
+  ini_value=
+  ini_repeat=0
+  ini_found=0
+  ini_cr=$(printf '\r')
+  while IFS= read -r ini_line || [ -n "$ini_line" ]; do
+    ini_line=${ini_line%"$ini_cr"}
+    case "$ini_line" in
+      "${ini_key} = "*)
+        if [ "$ini_found" -eq 1 ]; then
+          ini_repeat=1
+        fi
+        ini_found=1
+        ini_value=${ini_line#"${ini_key} = "}
+        ;;
+    esac
+  done < "$ini_file"
+}
+
+mod_list_ok() {
+  if [ -z "$1" ]; then
+    return 0
+  fi
+  printf '%s\n' "$1" | grep -Eq '^[0-9]+(/[0-9]+)?(-[0-9]+(/[0-9]+)?)*$'
+}
+
+write_seed_variables() {
+  cat > "$1" << 'EOF'
+ServerName = WARHOST - default server name
+NbMaxPlayer = 4
+NbMinPlayer = 2
+MaxTeamSize = 2
+GameType = 0
+CombatRule = 2
+Map = _2x2_Hesse_2vs2_CONQ
+MapRotationType = 0
+InitMoney = 750
+TimeLimit = 1200
+ScoreLimit = 2000
+WarmupCountdown = 60
+LoadingTimeMax = 120
+DeploiementTimeMax = 120
+DebriefingTimeMax = 60
+DeltaMaxTeamSize = 0
+IncomeRate = 3
+Upkeep = 0
+AllowObservers = 1
+ObserverDelay = 120
+EOF
+}
+
+replace_mod_list_line() {
+  src=$1
+  dest=$2
+  new_list=$3
+  replaced=0
+  line_cr=$(printf '\r')
+  while IFS= read -r ini_line || [ -n "$ini_line" ]; do
+    bare_line=${ini_line%"$line_cr"}
+    case "$bare_line" in
+      "ModList = "*)
+        if [ "$replaced" -eq 1 ]; then
+          die "variables.ini repeats ModList."
+        fi
+        printf 'ModList = %s\n' "$new_list"
+        replaced=1
+        ;;
+      *)
+        printf '%s\n' "$ini_line"
+        ;;
+    esac
+  done < "$src" > "$dest"
+  if [ "$replaced" -eq 0 ]; then
+    die "variables.ini lost its ModList line."
+  fi
+}
+
 case "$UPSTREAM_ENTRYPOINT" in
   /*) ;;
   *) die "UPSTREAM_ENTRYPOINT must be an absolute path." ;;
@@ -600,10 +684,8 @@ case "$web_ui" in
   false|no|0|'') web_ui=false ;;
   *) die "WebUI must be true or false." ;;
 esac
-keep_page_variables=0
-if [ "$web_ui" = true ] && [ -f "${SETTINGS_DIR}/variables.ini" ] && [ ! -L "${SETTINGS_DIR}/variables.ini" ]; then
-  keep_page_variables=1
-fi
+note_ignored_lobby_env
+unset SERVER_NAME MAP NB_MAX_PLAYER NB_MIN_PLAYER MAX_TEAM_SIZE COMBAT_RULE MOD_LIST MOD_TAG_LIST
 
 if [ "$write_config" = "true" ]; then
   : "${EUGEN_LOGIN:?Set your Eugen login.}"
@@ -627,79 +709,47 @@ if [ "$write_config" = "true" ]; then
   fi
   key_tail=$(printf '%s' "$EUGEN_DEDICATED_KEY" | tail -c 4)
 
-  if [ -z "${SERVER_NAME:-}" ]; then
-    SERVER_NAME="WARHOST - default server name"
-  fi
-  require_single_line "Server name" "$SERVER_NAME"
-  case "$SERVER_NAME" in
-    *"="*) die "Server name cannot contain =." ;;
-  esac
-
-  if [ -z "${NB_MAX_PLAYER+x}" ] || [ -z "$NB_MAX_PLAYER" ]; then
-    NB_MAX_PLAYER=4
-  fi
-  if [ -z "${NB_MIN_PLAYER+x}" ] || [ -z "$NB_MIN_PLAYER" ]; then
-    NB_MIN_PLAYER=2
-  fi
-  if [ -z "${MAX_TEAM_SIZE+x}" ] || [ -z "$MAX_TEAM_SIZE" ]; then
-    MAX_TEAM_SIZE=2
-  fi
-  if [ -z "${COMBAT_RULE+x}" ] || [ -z "$COMBAT_RULE" ]; then
-    COMBAT_RULE=2
-  fi
-  # Unraid replaces a blank field with its Default, so containers made from an
-  # older template can only opt out of their saved mod defaults with none.
-  MOD_LIST=${MOD_LIST:-}
-  MOD_TAG_LIST=${MOD_TAG_LIST:-}
-  if is_none "$MOD_LIST"; then
-    MOD_LIST=
-  fi
-  if is_none "$MOD_TAG_LIST"; then
-    MOD_TAG_LIST=
-  fi
-
-  require_single_line "Max players" "$NB_MAX_PLAYER"
-  require_single_line "Minimum players" "$NB_MIN_PLAYER"
-  require_single_line "Team size" "$MAX_TEAM_SIZE"
-  require_single_line "Combat rule" "$COMBAT_RULE"
-  require_single_line "Workshop mod list" "$MOD_LIST"
-  require_single_line "Workshop mod tags" "$MOD_TAG_LIST"
-  require_number_between "Max players" "$NB_MAX_PLAYER" 1 20
-  require_number_between "Minimum players" "$NB_MIN_PLAYER" 1 "$NB_MAX_PLAYER"
-  require_number_between "Team size" "$MAX_TEAM_SIZE" 1 "$NB_MAX_PLAYER"
-  case "$COMBAT_RULE" in
-    1|2) ;;
-    *) die "Combat rule must be 1 for Destruction or 2 for Conquest." ;;
-  esac
-
-  if [ -n "$MOD_LIST" ] && ! printf '%s\n' "$MOD_LIST" | grep -Eq '^[0-9]+(/[0-9]+)?(-[0-9]+(/[0-9]+)?)*$'; then
-    die "Workshop mod list must be empty, none, or Workshop ids such as 3811913066. Add /version only to pin a number, such as 3811913066/27. Join mods with a hyphen, such as 3811913066-3474588989."
-  fi
-  if [ -n "$MOD_TAG_LIST" ] && ! printf '%s\n' "$MOD_TAG_LIST" | grep -Eq '^[A-Za-z]+(-[A-Za-z]+)*$'; then
-    die "Workshop mod tags must be empty, none, or look like Maps-Scenarios."
-  fi
-
-  : "${MAP:?Set Map to a scenario ID. A base-game ID looks like _2x2_Hesse_2vs2_CONQ. Jungle Law is RDPort_JungleLaw_2v2_CONQ.}"
-  require_single_line "Map" "$MAP"
-  folded_map=$(printf '%s' "$MAP" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
-  if [ "$folded_map" = "junglelaw" ]; then
-    die "Map must be a scenario ID, not the display name Jungle Law. Jungle Law is RDPort_JungleLaw_2v2_CONQ."
-  fi
-  case "$MAP" in
-    *[[:space:]]*|*"="*|*"\""*) die "Map cannot contain spaces, quotes, or =." ;;
-  esac
-  case "$MAP" in
-    YOUR_*|REPLACE_WITH_*)
-      die "Replace Map with a scenario ID. A base-game ID looks like _2x2_Hesse_2vs2_CONQ. Jungle Law is RDPort_JungleLaw_2v2_CONQ."
-      ;;
-  esac
-
   prepare_server_runtime
   umask 077
-  form_mod_list=$MOD_LIST
-  if [ "$keep_page_variables" -eq 0 ] && [ -n "$MOD_LIST" ]; then
-    resolve_workshop_list "$MOD_LIST"
+  lobby_file="${SETTINGS_DIR}/variables.ini"
+  lobby_kept=0
+  if [ -L "$lobby_file" ] || [ ! -e "$lobby_file" ]; then
+    lobby_kept=0
+  elif [ -d "$lobby_file" ]; then
+    die "${lobby_file} is a directory, so it was not replaced."
+  elif [ -f "$lobby_file" ]; then
+    lobby_kept=1
+  else
+    die "${lobby_file} is not a regular file, so it was not replaced."
   fi
+
+  lobby_name="WARHOST - default server name"
+  lobby_map="_2x2_Hesse_2vs2_CONQ"
+  lobby_mods=
+  lobby_mods_original=
+  lobby_tags=
+  if [ "$lobby_kept" -eq 1 ]; then
+    read_ini_key "$lobby_file" "ServerName"
+    lobby_name=$ini_value
+    read_ini_key "$lobby_file" "Map"
+    lobby_map=$ini_value
+    read_ini_key "$lobby_file" "ModList"
+    if [ "$ini_repeat" -eq 1 ]; then
+      die "variables.ini repeats ModList."
+    fi
+    lobby_mods=$ini_value
+    lobby_mods_original=$ini_value
+    read_ini_key "$lobby_file" "ModTagList"
+    lobby_tags=$ini_value
+    if ! mod_list_ok "$lobby_mods"; then
+      die "Workshop mod list must be empty, none, or Workshop ids such as 3811913066. Add /version only to pin a number, such as 3811913066/27. Join mods with a hyphen, such as 3811913066-3474588989."
+    fi
+    if [ -n "$lobby_mods" ]; then
+      resolve_workshop_list "$lobby_mods"
+      lobby_mods=$MOD_LIST
+    fi
+  fi
+
   stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
   trap 'on_stage_exit' EXIT
   trap 'on_stage_signal' HUP INT TERM
@@ -717,37 +767,14 @@ if [ "$write_config" = "true" ]; then
   tmp_ai="${stage_dir}/params_for_ai.json"
   printf 'login="%s"\n' "$EUGEN_LOGIN" > "$tmp_login"
   printf 'dedicated_key="%s"\n' "$EUGEN_DEDICATED_KEY" >> "$tmp_login"
-
-  {
-    printf 'ServerName = %s\n' "$SERVER_NAME"
-    printf 'NbMaxPlayer = %s\n' "$NB_MAX_PLAYER"
-    printf 'NbMinPlayer = %s\n' "$NB_MIN_PLAYER"
-    printf 'MaxTeamSize = %s\n' "$MAX_TEAM_SIZE"
-    printf 'GameType = 0\n'
-    printf 'CombatRule = %s\n' "$COMBAT_RULE"
-    printf 'Map = %s\n' "$MAP"
-    if [ -n "$MOD_LIST" ]; then
-      printf 'ModList = %s\n' "$MOD_LIST"
-    fi
-    if [ -n "$MOD_TAG_LIST" ]; then
-      printf 'ModTagList = %s\n' "$MOD_TAG_LIST"
-    fi
-    printf 'MapRotationType = 0\n'
-    printf 'InitMoney = 750\n'
-    printf 'TimeLimit = 1200\n'
-    printf 'ScoreLimit = 2000\n'
-    printf 'WarmupCountdown = 60\n'
-    printf 'LoadingTimeMax = 120\n'
-    printf 'DeploiementTimeMax = 120\n'
-    printf 'DebriefingTimeMax = 60\n'
-    printf 'DeltaMaxTeamSize = 0\n'
-    printf 'IncomeRate = 3\n'
-    printf 'Upkeep = 0\n'
-    printf 'AllowObservers = 1\n'
-    printf 'ObserverDelay = 120\n'
-  } > "$tmp_variables"
-
   printf '%s\n' '{' '  "0": [],' '  "1": []' '}' > "$tmp_ai"
+  refresh_mods=0
+  if [ "$lobby_kept" -eq 0 ]; then
+    write_seed_variables "$tmp_variables"
+  elif [ "$lobby_mods" != "$lobby_mods_original" ]; then
+    replace_mod_list_line "$lobby_file" "$tmp_variables" "$lobby_mods"
+    refresh_mods=1
+  fi
   if [ -n "$workshop_cache_lines" ]; then
     printf '%s' "$workshop_cache_lines" > "${stage_dir}/${WORKSHOP_CACHE_FILE}"
   fi
@@ -761,11 +788,11 @@ if [ "$write_config" = "true" ]; then
   fi
 
   publish_staged_file "$tmp_login" "${SETTINGS_DIR}/login.ini"
-  if [ "$keep_page_variables" -eq 0 ]; then
+  if [ "$lobby_kept" -eq 0 ] || [ "$refresh_mods" -eq 1 ]; then
     publish_staged_file "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
   fi
   publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
-  if [ "$keep_page_variables" -eq 0 ]; then
+  if [ "$lobby_kept" -eq 0 ] || [ "$refresh_mods" -eq 1 ]; then
     chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
   else
     chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/params_for_ai.json"
@@ -783,15 +810,15 @@ if [ "$write_config" = "true" ]; then
   trap - HUP INT TERM
   umask 022
 
-  if [ "$keep_page_variables" -eq 1 ]; then
-    printf 'Kept variables.ini from the WebUI for %s on port %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$key_tail"
-  elif [ -n "$MOD_LIST" ]; then
-    printf 'Wrote WARNO settings for %s on port %s. Map %s. ModList %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$MOD_LIST" "$key_tail"
+  if [ "$lobby_kept" -eq 1 ] && [ -n "$lobby_mods" ]; then
+    printf 'Kept variables.ini for %s on port %s. Map %s. ModList %s. Key last 4 %s.\n' "$lobby_name" "$EXPOSEDPORT" "$lobby_map" "$lobby_mods" "$key_tail"
+  elif [ "$lobby_kept" -eq 1 ]; then
+    printf 'Kept variables.ini for %s on port %s. Map %s. Key last 4 %s.\n' "$lobby_name" "$EXPOSEDPORT" "$lobby_map" "$key_tail"
   else
-    printf 'Wrote WARNO settings for %s on port %s. Map %s. Key last 4 %s.\n' "$SERVER_NAME" "$EXPOSEDPORT" "$MAP" "$key_tail"
+    printf 'Wrote WARNO settings for %s on port %s. Map %s. Key last 4 %s.\n' "$lobby_name" "$EXPOSEDPORT" "$lobby_map" "$key_tail"
   fi
-  if [ "$keep_page_variables" -eq 0 ]; then
-    note_workshop_mod_list "$form_mod_list" "$MAP" "$MOD_TAG_LIST"
+  if [ -n "$lobby_map" ] || [ -n "$lobby_mods_original" ] || [ -n "$lobby_tags" ]; then
+    note_workshop_mod_list "$lobby_mods_original" "$lobby_map" "$lobby_tags"
   fi
 else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then

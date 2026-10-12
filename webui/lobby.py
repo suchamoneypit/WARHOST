@@ -115,12 +115,6 @@ def _pack_id(group):
     return mod_list.split("/", 1)[0]
 
 
-def _listed_ids(mod_list):
-    if not mod_list:
-        return set()
-    return {entry.split("/", 1)[0] for entry in mod_list.split("-")}
-
-
 def _current_int(values, key):
     text = values.get(key)
     if text is None or not str(text).isdigit():
@@ -129,6 +123,89 @@ def _current_int(values, key):
     if str(number) != str(text):
         return None
     return number
+
+
+TAG_WORDS = ("Gameplay", "Interface", "Maps", "Scenarios", "Music", "Sound")
+
+
+def catalog_mods(catalog):
+    mods = []
+    for group in catalog["groups"]:
+        mod_list = group.get("modList") or ""
+        if not mod_list:
+            continue
+        mods.append(
+            {
+                "id": mod_list.split("/", 1)[0],
+                "tags": group.get("modTags") or "",
+                "tagsWithMapPack": "",
+                "mapPack": bool(group.get("scenarios")),
+            }
+        )
+    for mod in catalog.get("mods") or []:
+        mods.append(
+            {
+                "id": str(mod.get("id") or ""),
+                "tags": mod.get("modTags") or "",
+                "tagsWithMapPack": mod.get("tagsWithMapPack") or "",
+                "mapPack": False,
+            }
+        )
+    return mods
+
+
+def _merge_mods(posted, existing_list, known_ids):
+    if not isinstance(posted, list):
+        raise LobbyError("The WebUI sent an unreadable save.")
+    existing_entries = [part for part in existing_list.split("-") if part] if existing_list else []
+    existing_ids = [part.split("/", 1)[0] for part in existing_entries]
+    if len(posted) != len(set(posted)):
+        raise LobbyError("Workshop mod list repeats an id.")
+    for item in posted:
+        if not isinstance(item, str) or not item.isdigit():
+            raise LobbyError("Workshop mod list is not an id/version list.")
+        if item not in known_ids and item not in existing_ids:
+            raise LobbyError("That workshop mod is not in the list.")
+    result = []
+    seen = set()
+    for entry in existing_entries:
+        bare = entry.split("/", 1)[0]
+        if bare not in posted or bare in seen:
+            continue
+        seen.add(bare)
+        result.append(bare if bare in known_ids else entry)
+    for bare in posted:
+        if bare in seen:
+            continue
+        result.append(bare)
+        seen.add(bare)
+    return "-".join(result)
+
+
+def _derive_tags(selected_ids, catalog, previous_tags):
+    known = {mod["id"]: mod for mod in catalog_mods(catalog)}
+    chosen = [known[item] for item in selected_ids if item in known]
+    if not chosen:
+        if any(item not in known for item in selected_ids):
+            return previous_tags
+        return ""
+    map_pack = any(mod["mapPack"] for mod in chosen)
+    strings = []
+    for mod in chosen:
+        if map_pack and mod["tagsWithMapPack"]:
+            strings.append(mod["tagsWithMapPack"])
+        elif mod["tags"]:
+            strings.append(mod["tags"])
+    if len(strings) == 1:
+        return strings[0]
+    seen = []
+    for text in strings:
+        for word in text.split("-"):
+            if word and word not in seen:
+                seen.append(word)
+    ranked = [word for word in TAG_WORDS if word in seen]
+    ranked.extend(word for word in seen if word not in ranked)
+    return "-".join(ranked)
 
 
 def validate_save(payload, existing, catalog):
@@ -156,8 +233,10 @@ def validate_save(payload, existing, catalog):
     income = _keep_current(payload.get("incomeRate"), _current_int(values, "IncomeRate"), MENU_INCOME)
     upkeep = _keep_current(payload.get("upkeep"), _current_int(values, "Upkeep"), MENU_UPKEEP)
 
-    mod_list = values.get("ModList", "")
-    mod_tags = values.get("ModTagList", "")
+    known_ids = {mod["id"] for mod in catalog_mods(catalog)}
+    mod_list = _merge_mods(payload.get("mods"), values.get("ModList", ""), known_ids)
+    posted_ids = [part.split("/", 1)[0] for part in mod_list.split("-") if part]
+    mod_tags = _derive_tags(posted_ids, catalog, values.get("ModTagList", ""))
     if known is None:
         players = _canonical_number(values.get("NbMaxPlayer", "4"), 1, 20)
         team = _canonical_number(values.get("MaxTeamSize", "2"), 1, players)
@@ -168,7 +247,7 @@ def validate_save(payload, existing, catalog):
         team = int(scenario["team"])
         minimum = 2 if players >= 2 else players
         pack = _pack_id(group)
-        if pack and pack not in _listed_ids(mod_list):
+        if pack and pack not in set(posted_ids):
             raise LobbyError("That map needs its workshop mod in Workshop Mod List.")
     if mod_list and not MOD_LIST.match(mod_list):
         raise LobbyError("Workshop mod list is not an id/version list.")
@@ -234,73 +313,6 @@ def render(managed, seeded, extras):
         if key not in combined:
             lines.append(f"{key} = {value}")
     return "\n".join(lines) + "\n"
-
-
-def _none(value):
-    return value.strip().lower() == "none"
-
-
-def _pin_mods(mod_list, catalog):
-    if not mod_list or _none(mod_list):
-        return ""
-    pins = {}
-    for group in catalog["groups"]:
-        if not group["modList"]:
-            continue
-        pack_id = group["modList"].split("/", 1)[0]
-        pins[pack_id] = group["modList"]
-    resolved = []
-    for entry in mod_list.split("-"):
-        if "/" in entry:
-            resolved.append(entry)
-        elif entry in pins:
-            resolved.append(pins[entry])
-        else:
-            resolved.append(entry)
-    return "-".join(resolved)
-
-
-def reset_from_form(env, catalog):
-    name = _require_text(env.get("SERVER_NAME") or "WARHOST - default server name", "Server name", 64)
-    scenario_id = _require_text(env.get("MAP") or "_2x2_Hesse_2vs2_CONQ", "Map", 80)
-    if " " in scenario_id or '"' in scenario_id:
-        raise LobbyError("Map cannot contain spaces or quotes.")
-    folded = "".join(scenario_id.split()).lower()
-    if folded == "junglelaw" or scenario_id.startswith(("YOUR_", "REPLACE_WITH_")):
-        raise LobbyError("Map must be a scenario ID from the list.")
-    players = _canonical_number(env.get("NB_MAX_PLAYER") or "4", 1, 20)
-    minimum = _canonical_number(env.get("NB_MIN_PLAYER") or "2", 1, players)
-    team = _canonical_number(env.get("MAX_TEAM_SIZE") or "2", 1, players)
-    combat = _canonical_number(env.get("COMBAT_RULE") or "2", 1, 2)
-    if combat not in (1, 2):
-        raise LobbyError("Combat rule must be Destruction or Conquest.")
-    mod_list = _pin_mods(env.get("MOD_LIST") or "", catalog)
-    mod_tags = env.get("MOD_TAG_LIST") or ""
-    if _none(mod_tags):
-        mod_tags = ""
-    if mod_list and not MOD_LIST.match(mod_list):
-        raise LobbyError("Workshop mod list is not an id/version list.")
-    if mod_tags and not MOD_TAGS.match(mod_tags):
-        raise LobbyError("Workshop mod tags are not words joined with hyphens.")
-    managed = {
-        "ServerName": name,
-        "NbMaxPlayer": str(players),
-        "NbMinPlayer": str(minimum),
-        "MaxTeamSize": str(team),
-        "GameType": "0",
-        "CombatRule": str(combat),
-        "Map": scenario_id,
-        "InitMoney": "750",
-        "TimeLimit": "1200",
-        "ScoreLimit": "2000",
-        "IncomeRate": "3",
-        "Upkeep": "0",
-    }
-    if mod_list:
-        managed["ModList"] = mod_list
-    if mod_tags:
-        managed["ModTagList"] = mod_tags
-    return render(managed, dict(SEEDED), [])
 
 
 def publish(settings_dir, text):

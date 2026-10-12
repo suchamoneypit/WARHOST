@@ -1393,5 +1393,21 @@
         }
       ]
     }
+  ],
+  "mods": [
+    {
+      "name": "Galactic Divide",
+      "id": "3595948209",
+      "modList": "3595948209/16",
+      "modTags": "Gameplay-Interface-Sound-Scenarios-Maps",
+      "tagsWithMapPack": ""
+    },
+    {
+      "name": "A World in Flames",
+      "id": "3388575848",
+      "modList": "3388575848/7",
+      "modTags": "Gameplay-Interface",
+      "tagsWithMapPack": "Gameplay-Interface-Maps-Scenarios"
+    }
   ]
 }

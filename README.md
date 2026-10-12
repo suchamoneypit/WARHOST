@@ -1,8 +1,8 @@
 # WARHOST — WARNO Dedicated Server for Unraid
 
-A mod-friendly, multi-instance capable WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key (provided by Eugen upon request) and writes `login.ini`, `variables.ini`, and `params_for_ai.json`. The container then runs the entrypoint from the official `eugensystems/warno` image.
+A mod-friendly, multi-instance capable WARNO dedicated server manager for Unraid. One [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server per container. The install form takes your Eugen login and dedicated key (provided by Eugen upon request) and writes `login.ini`. The WebUI writes `variables.ini`. The container then runs the entrypoint from the official `eugensystems/warno` image.
 
-The preset is a 2v2 Conquest server on the base-game map Hesse (`_2x2_Hesse_2vs2_CONQ`) with no workshop mods, so players need only the game. To host the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`) instead, set Workshop Mod List to `3811913066` and choose a scenario ID from the [scenario lists](#scenario-ids). Each start reads that mod's current `Version` from Steam, so after the author publishes an update, restart the container.
+The first start seeds a 2v2 Conquest lobby on the base-game map Hesse (`_2x2_Hesse_2vs2_CONQ`), named `WARHOST - default server name`, with no workshop mods, so players need only the game. Open the WebUI to set the server name, map, and workshop mods, then restart that container to load the save. To host the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`), check `3811913066` on that page and choose a scenario ID from the [scenario lists](#scenario-ids). A save writes the bare id. The next start reads that mod's current `Version` from Steam and writes `id/Version`. After the author publishes an update, save again in the WebUI and restart. A pin already stored as `id/Version` stays until that save.
 
 If you've used other game servers before you likely can toll the unraid template tooltips only, and setup your standard port forward and you are done. Looking for more info? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
 
@@ -65,60 +65,28 @@ Fill in:
 </tr>
 <tr>
 <td nowrap>Game Port</td>
-<td><code>10400</code> for the first server. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Players join by Server Name.</td>
-</tr>
-<tr>
-<td nowrap>Server Name</td>
-<td><code>WARHOST - default server name</code> on the first server. Give each container a different name. No <code>=</code> sign.</td>
-</tr>
-<tr>
-<td nowrap>Map</td>
-<td><code>_2x2_Hesse_2vs2_CONQ</code>, a base-game map that needs no mod. A scenario ID, not the display name. Base-game and workshop lists are in the tables below.</td>
-</tr>
-<tr>
-<td nowrap>Max Players</td>
-<td><code>4</code> for this 2v2 preset. Usual sizes are in the Map section below. The lobby is not locked to the size in the scenario ID.</td>
-</tr>
-<tr>
-<td nowrap>Minimum Players</td>
-<td><code>2</code>, and not above Max Players</td>
-</tr>
-<tr>
-<td nowrap>Team Size</td>
-<td><code>2</code> for this 2v2 preset. Slots on one side, usually half of Max Players.</td>
-</tr>
-<tr>
-<td nowrap>Combat Rule</td>
-<td><code>2</code> for Conquest, <code>1</code> for Destruction. The scenario lists below give the mode of each map.</td>
-</tr>
-<tr>
-<td nowrap>Workshop Mod List (Show more settings)</td>
-<td>Empty for a base-game map, which is the preset. For the Red Dragon pack, <code>3811913066</code>. Each start reads the mod's current <code>Version</code> from Steam and writes the pair, for example <code>3811913066/27</code>. Typing <code>3811913066/27</code> pins that number. <code>none</code> also means empty. Named mods are in the tables below.</td>
+<td><code>10400</code> for the first server. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Players join by the server name set in the WebUI.</td>
 </tr>
 <tr>
 <td nowrap>Write Config From Form (Show more settings)</td>
-<td><code>true</code>. Rewrites the settings files from this form on every start. With WebUI <code>true</code>, an existing <code>variables.ini</code> stays. <code>false</code> leaves those files and sets <code>login.ini</code> to mode 600.</td>
-</tr>
-<tr>
-<td nowrap>Workshop Mod Tags (Show more settings)</td>
-<td>Empty for a base-game map. <code>Maps-Scenarios</code> for a map pack such as Red Dragon. Browser icons only. These tags do not download mods. <code>none</code> also means empty.</td>
+<td><code>true</code>. Rewrites <code>login.ini</code> and <code>params_for_ai.json</code> on every start. When <code>variables.ini</code> is missing, that start writes the Hesse preset. A bare Workshop id already in that file is refreshed to <code>id/Version</code>. <code>false</code> leaves the files and sets <code>login.ini</code> to mode 600.</td>
 </tr>
 </tbody>
 </table>
 
-Map is on the main form, under Server Name and before Max Players. On the form, WebUI follows Public WAN IP and Game Port follows WebUI. **Show more settings** holds Workshop Mod List, Write Config From Form, and Workshop Mod Tags, in that order. The preset is Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with both workshop fields empty. Scenario IDs and named mods are in the tables below.
+On the form, WebUI follows Public WAN IP and Game Port follows WebUI. **Show more settings** holds Write Config From Form. The first start seeds Hesse 2v2 (`_2x2_Hesse_2vs2_CONQ`) with no workshop mods and the server name `WARHOST - default server name`. Two new containers both use that name until each is changed in its WebUI. Scenario IDs and named mods are in the tables below.
 
-Unraid refills a cleared field from the template default ([Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php)). A container added from an earlier version of this template still holds the old Red Dragon defaults, so type `none` in both workshop fields there.
+A container saved from an earlier template can still show Server Name, Map, player counts, combat rule, and the workshop fields. This entrypoint ignores those values and prints `Lobby settings on the Docker template are ignored. Change the server in the WebUI.`
 
 ### Map
 
-**Map** takes a scenario ID from the [lists below](#scenario-ids). Base-game maps need no mod, so leave **Workshop Mod List** and **Workshop Mod Tags** empty for them. A workshop map also needs its mod in those two fields, from the [workshop mods](#workshop-mods) table. When the startup log warns about the map or the mod list, the [troubleshooting table](docs/INSTALL-UNRAID.md#troubleshooting) in the install guide says what to change.
+The WebUI map list uses a scenario ID from the [lists below](#scenario-ids). Base-game maps need no workshop mod. A workshop map needs its pack checked under Workshop mods on that page, from the [workshop mods](#workshop-mods) table. When the startup log warns about the map or the mod list, the [troubleshooting table](docs/INSTALL-UNRAID.md#troubleshooting) in the install guide says what to change.
 
-The size in the ID is the usual lobby. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. The usual settings are Max Players 2 and Team Size 1 for 1v1, 4 and 2 for 2v2, 6 and 3 for 3v3, 8 and 4 for 4v4, and 20 and 10 for 10v10.
+The size in the ID is the usual lobby. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. The usual settings are Max Players 2 and Team Size 1 for 1v1, 4 and 2 for 2v2, 6 and 3 for 3v3, 8 and 4 for 4v4, and 20 and 10 for 10v10. A WebUI save sets those counts from the selected map. A hand-edited count in `variables.ini` survives a restart, and the next WebUI save sets the map's usual count again.
 
 #### Workshop mods
 
-**Workshop Mod List** loads the mod that contains the maps. Enter the Workshop id from the table; each start reads that mod's current `Version` and writes `id/version`. Pick **Map** from that mod's scenario list below. Red Dragon is the first row: Workshop Mod List `3811913066`, Workshop Mod Tags `Maps-Scenarios`, and Map `RDPort_JungleLaw_2v2_CONQ` for Jungle Law.
+The WebUI checklist loads the mod that contains the maps. Check the Workshop id from the table. Save writes the bare id. The next start reads that mod's current `Version` and writes `id/version`. Pick the map from that mod's scenario list below. Red Dragon is the first row: check `3811913066`, which sets tags `Maps-Scenarios`, and choose `RDPort_JungleLaw_2v2_CONQ` for Jungle Law.
 
 | Mod | Workshop Mod List | Pin as read | Workshop Mod Tags |
 | --- | --- | --- | --- |
@@ -131,20 +99,20 @@ The size in the ID is the usual lobby. Eugen's [variables.ini](https://hub.docke
 | [Galactic Divide](https://steamcommunity.com/sharedfiles/filedetails/?id=3595948209) | `3595948209` | `3595948209/16` | `Gameplay-Interface-Sound-Scenarios-Maps` |
 | [A World in Flames](https://steamcommunity.com/sharedfiles/filedetails/?id=3388575848) | `3388575848` | `3388575848/7` | `Gameplay-Interface`, or `Gameplay-Interface-Maps-Scenarios` with a map pack |
 
-The pin column is each mod's `Version` from its `Config.ini`, read on 2026-10-09 (Red Dragon on 2026-10-10). A pin holds that number, so players are refused once the author increments `Version`. Enter the bare id unless you need to hold a number.
+The pin column is each mod's `Version` from its `Config.ini`, read on 2026-10-09 (Red Dragon on 2026-10-10). A pin holds that number, so players are refused once the author increments `Version`. The WebUI writes the bare id. A pin already in `variables.ini` stays until that mod is saved again from the page.
 
-Galactic Divide is a total conversion and A World in Flames is a modern-day overhaul. Neither has scenario IDs of its own, so **Map** comes from the base game or a map pack. Join a conversion and a map pack with a hyphen, for example `3595948209-3811913066`.
+Galactic Divide is a total conversion and A World in Flames is a modern-day overhaul. Neither has scenario IDs of its own, so the map comes from the base game or a map pack. Check a conversion and a map pack together. The page joins their ids with a hyphen, for example `3595948209-3811913066`. Tags are the union of the checked mods. A World in Flames uses `Gameplay-Interface` alone, and `Gameplay-Interface-Maps-Scenarios` when a map pack is also checked.
 
 Joining players subscribe to each Workshop item in the list and enable it in WARNO's Mod Center. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says a joining player who is missing a `ModList` mod is prompted to download and enable it. To read `Version`, the container downloads just the mod's `Config.ini` from Steam with [DepotDownloader](https://github.com/SteamRE/DepotDownloader), on the first start and after each update the author publishes.
 
 #### Scenario IDs
 
-Map packs come first and the base game is last. Copy the value from the **Scenario ID** column into **Map**. The `SM_` names under some packs are Army General files; pick **Map** from the tables. For a mod not listed here, [step 4 of the install guide](docs/INSTALL-UNRAID.md#4-decide-the-map-and-find-a-scenario-id) shows how to find its IDs.
+Map packs come first and the base game is last. Choose the value from the **Scenario ID** column in the WebUI. The `SM_` names under some packs are Army General files; pick a scenario from the tables. For a mod not listed here, [step 4 of the install guide](docs/INSTALL-UNRAID.md#4-decide-the-map-and-find-a-scenario-id) shows how to find its IDs. An id already in `variables.ini` that is not in this list stays if you leave it checked.
 
 <details>
 <summary>Red Dragon map pack (28 scenario IDs)</summary>
 
-Workshop Mod List `3811913066`. Every map is Conquest, so **Combat Rule** stays `2`.
+Check `3811913066` in the WebUI checklist. Every map is Conquest, so leave combat rule as the page sets it.
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -293,7 +261,7 @@ Army General file names:
 <details>
 <summary>Base game (102 scenario IDs)</summary>
 
-Leave **Workshop Mod List** and **Workshop Mod Tags** empty. These are the Map Base Id values from Eugen's [Docker Hub page](https://hub.docker.com/r/eugensystems/warno).
+Leave the WebUI workshop checklist clear. These are the Map Base Id values from Eugen's [Docker Hub page](https://hub.docker.com/r/eugensystems/warno).
 
 | Map | Scenario ID | Size |
 | --- | --- | --- |
@@ -406,28 +374,24 @@ Leave **Workshop Mod List** and **Workshop Mod Tags** empty. These are the Map B
 
 Each server is its own container. Add another one from this same template. Do not use Unraid's reinstall action. Reinstall replaces the container you already have.
 
-The container name, Game Port, Settings Folder, and Server Name are unique. The directory before `/settings` is that container's Game Port. The next container adds 1 to that port, in both the Game Port field and that directory.
+The container name, Game Port, and Settings Folder are unique. The server name is set in that container's WebUI, and it has to differ from the other servers. The directory before `/settings` is that container's Game Port. The next container adds 1 to that port, in both the Game Port field and that directory.
 
 | Field | First server | Second server |
 | --- | --- | --- |
 | Name | `WARHOST` | `WARHOST2` |
 | Game Port | `10400` | `10401` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
-| Server Name | `WARHOST - default server name` | a different name |
+| Server name in the WebUI | `WARHOST - default server name` until you change it | a different name |
 
-Map, Workshop Mod List, and Workshop Mod Tags also belong to each container, so one server can run the Red Dragon map pack while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
+The map and workshop mods also belong to each container, so one server can run the Red Dragon map pack while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by server name. They are not given a port to type.
 
 Every container uses the same image, stored once. The settings folder holds `login.ini`, `variables.ini`, and `params_for_ai.json`. The wrapper also creates `warhost.lock` there so two running containers cannot share the folder. Do not copy WARNO or a Workshop folder into it. If the folder is already in use, or the game port is already taken, the start stops and the log says what to change. One pair runs five servers: fifteen servers need three pairs, fifty need ten, and one hundred needs twenty.
 
 ## Settings files
 
-On each start, **Write Config From Form** (`true`) rewrites these files in the settings folder:
+On each start, **Write Config From Form** (`true`) rewrites `login.ini` and `params_for_ai.json` in the settings folder. It creates `variables.ini` only when that file is missing, using the Hesse preset. An existing `variables.ini` stays, except a bare Workshop id in `ModList`, which that start rewrites as `id/Version`.
 
-- `login.ini`
-- `variables.ini`
-- `params_for_ai.json`
-
-When Workshop Mod List holds a bare Workshop id, the start also writes `warhost-workshop-versions.txt`: one line per id with Steam's update time and the `Version` written. Delete it to make the next start read each `Config.ini` again.
+When `ModList` holds a bare Workshop id, the start also writes `warhost-workshop-versions.txt`: one line per id with Steam's update time and the `Version` written. Delete it to make the next start read each `Config.ini` again, after a WebUI save has put the bare id back.
 
 The wrapper writes those files in a private `.warhost-stage.*` folder first, then moves them into place. The next start that locks the settings folder removes one left by a crash or power loss, so do not keep anything under that name.
 
@@ -435,7 +399,7 @@ The wrapper writes those files in a private `.warhost-stage.*` folder first, the
 
 The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same size (`DeltaMaxTeamSize = 0`). AI decks are empty. RCON is not configured.
 
-Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true` and **WebUI** is `false`, the next start overwrites hand edits. While WebUI is `true` and `variables.ini` already exists, the next start leaves that file and still rewrites `login.ini` and `params_for_ai.json`. Set WebUI back to `false` to make the form the source of `variables.ini` again. While Write Config From Form is `false`, the three files stay as edited, `login.ini` is set to mode `600`, and no Workshop id is looked up on Steam. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
+Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start still rewrites `login.ini` and `params_for_ai.json`, leaves an existing `variables.ini` in place, and refreshes bare Workshop ids in that file. While it is `false`, the three files stay as edited, `login.ini` is set to mode `600`, and no Workshop id is looked up on Steam. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
 
 ## WebUI
 
@@ -443,7 +407,7 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 Set it to `false` and no extra process listens. The dedicated server starts the same way. The log says `WebUI is off. Nothing is listening on port 11400.` If that port is already taken, the log says `WebUI is off. Port 11400 is already in use.` The Docker WebUI button still opens that port, so the browser reports that the address refused to connect.
 
-The map list (scenario ID list) shows the base-game maps. When `ModList` already contains a workshop id from the named map packs, that pack's maps appear below in their own section. Two or more of those packs use a dropdown to switch packs. A workshop id with no maps in the list, such as Galactic Divide or A World in Flames, is named and does not add rows. Workshop mod tags do not add maps. Search matches the map name and scenario ID. Size and combat rule stay separate dropdowns. The match dropdowns are command and control, combat rules, opposition, starting resources, income, score limit, and time limit. Save writes the selected map and those dropdowns into `variables.ini`. Save keeps the existing ModList and ModTagList and does not add a workshop id; a modded map whose pack is absent is rejected. It keeps the previous copy as `variables.ini.bak` and does not signal the game. Restart that container in Unraid to load the save. Reset from Unraid form writes the form's current map, name, slots, combat rule, and mods, including the seeded match values (`InitMoney` 750 and a 20 minute limit), and also waits for that restart.
+Workshop mods is a checklist of the named map packs plus Galactic Divide and A World in Flames. Checking a map pack shows that pack's maps below the base-game list. Two or more checked packs use a dropdown to switch packs. Galactic Divide and A World in Flames add no map rows. An id already in `variables.ini` that is not in the list is a checkbox labeled with that id. The map list shows the base-game maps. Search matches the map name and scenario ID. Size and combat rule stay separate dropdowns. The match dropdowns are command and control, combat rules, opposition, starting resources, income, score limit, and time limit. Save writes the server name, the selected map, the checked mods as bare ids, and those dropdowns into `variables.ini`. Tags are derived from the checked mods. A modded map whose pack is unchecked is rejected. An unknown id stays, including a pin, when it remains checked. Save keeps the previous copy as `variables.ini.bak` and does not signal the game. Restart that container in Unraid to load the save. The usual player counts for the selected map are written on save.
 
 If the page fails to start, or its port is already taken, the log warns and the game server still starts. A privilege drop that fails leaves the page running and the container log warns that it stayed root. The page does not show the Eugen login or dedicated key. `ghcr.io/suchamoneypit/warhost:latest` has no WebUI until this work is published to `main` and the image rebuild finishes; until then the Docker WebUI button still opens port 11400 and the browser connection is refused.
 
@@ -461,7 +425,7 @@ Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not 
 
 Change the entrypoint only if Eugen renames `entrypoint2.sh` or the settings filenames. A normal game patch does not require an edit here.
 
-Workshop mods update apart from the image. Each start reads the current `Version` of every bare id in Workshop Mod List, so after a mod author publishes, restart the container. Until that restart, players who have the update are refused. A pinned `id/version` keeps its number until you change the field.
+Workshop mods update apart from the image. A WebUI save writes bare ids. The next start reads the current `Version` of each bare id in `variables.ini` and writes `id/Version`. After a mod author publishes, save again in the WebUI and restart. Until that restart, players who have the update are refused. A pin already stored as `id/version` keeps its number until that save.
 
 ## Publishing the image (maintainers)
 

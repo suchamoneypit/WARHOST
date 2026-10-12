@@ -38,6 +38,53 @@ EOF
   chmod 755 "${server}/entrypoint2.sh"
 }
 
+plant_lobby() {
+  map_id=$1
+  mod_list=${2-}
+  mod_tags=${3-}
+  name=${4-WARHOST - default server name}
+  players=${5-4}
+  mkdir -p "${server}/settings"
+  {
+    printf 'ServerName = %s\n' "$name"
+    printf 'NbMaxPlayer = %s\n' "$players"
+    printf 'NbMinPlayer = 2\n'
+    printf 'MaxTeamSize = 2\n'
+    printf 'GameType = 0\n'
+    printf 'CombatRule = 2\n'
+    printf 'Map = %s\n' "$map_id"
+    if [ -n "$mod_list" ]; then
+      printf 'ModList = %s\n' "$mod_list"
+    fi
+    if [ -n "$mod_tags" ]; then
+      printf 'ModTagList = %s\n' "$mod_tags"
+    fi
+    printf 'InitMoney = 750\n'
+  } > "${server}/settings/variables.ini"
+}
+
+set_file_mod_list() {
+  list=$1
+  dest="${server}/settings/variables.ini"
+  tmp="${dest}.next"
+  replaced=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+      "ModList = "*)
+        printf 'ModList = %s\n' "$list"
+        replaced=1
+        ;;
+      *)
+        printf '%s\n' "$line"
+        ;;
+    esac
+  done < "$dest" > "$tmp"
+  if [ "$replaced" -eq 0 ]; then
+    printf 'ModList = %s\n' "$list" >> "$tmp"
+  fi
+  mv "$tmp" "$dest"
+}
+
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
   if [ -f "${WORKDIR}/stdout.txt" ]; then
@@ -182,8 +229,7 @@ expect_ok "writes settings and execs Eugen entrypoint" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x3_Ripple_2vs2_CONQ
+  EXPOSEDPORT=10400
 ENTRY_ARGS=
 
 settings="${server}/settings"
@@ -192,17 +238,16 @@ login="host-login"
 dedicated_key="host-key-value"
 EOF
 
-sed 's/_2x2_Hesse_2vs2_CONQ/_2x3_Ripple_2vs2_CONQ/' "${ROOT}/samples/variables.ini.example" > "${WORKDIR}/expected-variables.ini"
-cmp -s "${settings}/variables.ini" "${WORKDIR}/expected-variables.ini" || fail "variables.ini drifted from the sample"
+cmp -s "${settings}/variables.ini" "${ROOT}/samples/variables.ini.example" || fail "variables.ini drifted from the sample"
 cmp -s "${settings}/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.example" || fail "params_for_ai.json drifted from the sample"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint did not run from the settings directory"
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
-grep -qx 'Wrote WARNO settings for WARHOST - default server name on port 10400. Map _2x3_Ripple_2vs2_CONQ. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "default log named a mod list or the wrong server name"
+grep -qx 'Wrote WARNO settings for WARHOST - default server name on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "default log named a mod list or the wrong server name"
 grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not name the key last 4"
 if grep -qE '^(ModList|ModTagList) =' "${settings}/variables.ini"; then
   fail "default run wrote a workshop mod line"
 fi
-grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
+grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
 if grep -qE 'warning: (Map|Workshop Mod List)' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the map or the mod list"
 fi
@@ -223,31 +268,6 @@ expect_fail "rejects a quoted dedicated key" \
 
 grep -q 'bad"key' "${settings}/login.ini" && fail "rejected key was written" || true
 
-expect_fail "rejects the Jungle Law display name" \
-  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
-  EUGEN_LOGIN=host-login \
-  EUGEN_DEDICATED_KEY=host-key-value \
-  EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP="Jungle Law"
-grep -q 'scenario ID' "${WORKDIR}/stderr.txt" || fail "Jungle Law error did not mention the scenario ID"
-
-expect_fail "rejects a placeholder map" \
-  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
-  EUGEN_LOGIN=host-login \
-  EUGEN_DEDICATED_KEY=host-key-value \
-  EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=YOUR_JUNGLE_LAW_SCENARIO_ID
-
-expect_fail "rejects an empty map" \
-  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
-  EUGEN_LOGIN=host-login \
-  EUGEN_DEDICATED_KEY=host-key-value \
-  EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=
-
 expect_fail "rejects a missing dedicated key" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
@@ -263,34 +283,6 @@ expect_fail "rejects a dedicated key shorter than 4 characters" \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
 
-expect_fail "rejects a bad workshop mod list" \
-  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
-  EUGEN_LOGIN=host-login \
-  EUGEN_DEDICATED_KEY=host-key-value \
-  EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
-  MOD_LIST=not-an-id
-
-expect_fail "rejects minimum players above the maximum" \
-  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
-  EUGEN_LOGIN=host-login \
-  EUGEN_DEDICATED_KEY=host-key-value \
-  EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
-  NB_MAX_PLAYER=4 \
-  NB_MIN_PLAYER=5
-
-expect_fail "rejects a combat rule other than 1 or 2" \
-  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
-  EUGEN_LOGIN=host-login \
-  EUGEN_DEDICATED_KEY=host-key-value \
-  EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
-  COMBAT_RULE=9
-
 expect_fail "rejects port 0" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
@@ -299,14 +291,33 @@ expect_fail "rejects port 0" \
   EXPOSEDPORT=0 \
   MAP=TestScenario_2v2
 
-expect_fail "rejects an equals sign in the server name" \
+expect_ok "ignores lobby fields left on the Docker template" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
-  SERVER_NAME='Bad=Name'
+  SERVER_NAME='Bad=Name' \
+  MAP='Jungle Law' \
+  NB_MAX_PLAYER=4 \
+  NB_MIN_PLAYER=9 \
+  COMBAT_RULE=9 \
+  MOD_LIST=not-an-id \
+  MOD_TAG_LIST=not-tags
+cmp -s "${settings}/variables.ini" "${ROOT}/samples/variables.ini.example" || fail "ignored lobby fields changed variables.ini"
+grep -qx 'Lobby settings on the Docker template are ignored. Change the server in the WebUI.' "${WORKDIR}/stdout.txt" || fail "ignored lobby fields were not named"
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "ignored lobby fields stopped the server"
+
+make_server
+plant_lobby _2x2_Hesse_2vs2_CONQ not-an-id
+expect_fail "rejects a bad workshop mod list in variables.ini" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400
+grep -q 'Workshop ids such as 3811913066' "${WORKDIR}/stderr.txt" || fail "a bad mod list did not explain the format"
+grep -qx 'ModList = not-an-id' "${server}/settings/variables.ini" || fail "a bad mod list was rewritten"
 
 make_server
 expect_ok "omits an empty workshop mod list" \
@@ -353,15 +364,13 @@ fi
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "none stopped the server"
 
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ
 expect_ok "warns when an empty workshop mod list is paired with a workshop map" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST= \
-  MOD_TAG_LIST=
+  EXPOSEDPORT=10400
 grep -q 'warning: Workshop Mod List is empty and Map RDPort_JungleLaw_2v2_CONQ is not a base-game scenario' "${WORKDIR}/stdout.txt" || fail "empty mod list on a Red Dragon map did not warn"
 if grep -q '^ModList =' "${server}/settings/variables.ini"; then
   fail "empty mod list warning wrote a mod list"
@@ -373,27 +382,24 @@ if grep -q '^note:' "${WORKDIR}/stdout.txt"; then
 fi
 
 make_server
+plant_lobby _3x3_WFulda_4v4_CONQ
 expect_ok "warns when an empty workshop mod list is paired with a workshop map that starts with an underscore" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_3x3_WFulda_4v4_CONQ \
-  MOD_LIST=
+  EXPOSEDPORT=10400
 grep -q 'warning: Workshop Mod List is empty and Map _3x3_WFulda_4v4_CONQ is not a base-game scenario' "${WORKDIR}/stdout.txt" || fail "West Fulda with an empty mod list did not warn"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "West Fulda warning stopped the server"
 
 make_server
+plant_lobby _2x2_Hesse_2vs2_CONQ "" Maps-Scenarios
 expect_ok "notes mod tags when no workshop mod is selected" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Hesse_2vs2_CONQ \
-  MOD_LIST= \
-  MOD_TAG_LIST=Maps-Scenarios
+  EXPOSEDPORT=10400
 grep -q 'note: Workshop Mod Tags is Maps-Scenarios and Workshop Mod List is empty' "${WORKDIR}/stdout.txt" || fail "tags without a mod list did not print the note"
 grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "tags without a mod list were not written"
 if grep -q '^ModList =' "${server}/settings/variables.ini"; then
@@ -405,15 +411,13 @@ fi
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "tags note stopped the server"
 
 make_server
+plant_lobby _2x2_Oslo_Conquest "" Maps-Scenarios
 expect_ok "warns and notes when a workshop map has tags and no mod list" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Oslo_Conquest \
-  MOD_LIST=none \
-  MOD_TAG_LIST=Maps-Scenarios
+  EXPOSEDPORT=10400
 grep -q 'warning: Workshop Mod List is empty and Map _2x2_Oslo_Conquest is not a base-game scenario' "${WORKDIR}/stdout.txt" || fail "Oslo with none did not warn"
 grep -q 'note: Workshop Mod Tags is Maps-Scenarios and Workshop Mod List is empty' "${WORKDIR}/stdout.txt" || fail "Oslo with tags did not print the note"
 if grep -q '^ModList =' "${server}/settings/variables.ini"; then
@@ -423,70 +427,63 @@ grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fai
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "Oslo warning stopped the server"
 
 make_server
+plant_lobby _2x2_Hesse_2vs2_CONQ 3595948209/16-3811913066/27 Maps-Scenarios
 expect_ok "warns when a base-game map lists the Red Dragon pack" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Hesse_2vs2_CONQ \
-  MOD_LIST=3595948209/16-3811913066/27 \
-  MOD_TAG_LIST=Maps-Scenarios
+  EXPOSEDPORT=10400
 grep -q 'warning: Map _2x2_Hesse_2vs2_CONQ is not a Red Dragon scenario' "${WORKDIR}/stdout.txt" || fail "base-game map with the Red Dragon pack did not warn"
 grep -qx 'ModList = 3595948209/16-3811913066/27' "${server}/settings/variables.ini" || fail "base-game map warning did not write the mod list through"
 grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "base-game map warning did not write the tags through"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "base-game map warning stopped the server"
 
 make_server
+plant_lobby _2x2_Hesse_2vs2_CONQ 3811913066/15
 expect_ok "names only the map warning for a base-game map with the previous preset" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Hesse_2vs2_CONQ \
-  MOD_LIST=3811913066/15
+  EXPOSEDPORT=10400
 grep -q 'warning: Map _2x2_Hesse_2vs2_CONQ is not a Red Dragon scenario' "${WORKDIR}/stdout.txt" || fail "base-game map with version 15 did not warn about the map"
 if grep -q 'warning: Workshop Mod List contains' "${WORKDIR}/stdout.txt"; then
   fail "base-game map also told the operator to update the Red Dragon version"
 fi
 
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066/0
 expect_ok "warns when the Red Dragon mod list is version 0" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066/0
+  EXPOSEDPORT=10400
 grep -q 'warning: Workshop Mod List contains 3811913066/0' "${WORKDIR}/stdout.txt" || fail "version 0 did not warn"
 grep -qx 'ModList = 3811913066/0' "${server}/settings/variables.ini" || fail "version 0 was not written through"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "version 0 warning stopped the server"
 
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066/15
 expect_ok "warns when the Red Dragon mod list is the previous preset" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066/15
+  EXPOSEDPORT=10400
 grep -q 'warning: Workshop Mod List contains 3811913066/15' "${WORKDIR}/stdout.txt" || fail "version 15 did not warn"
 grep -qx 'ModList = 3811913066/15' "${server}/settings/variables.ini" || fail "version 15 was not written through"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "version 15 warning stopped the server"
 
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066/27 Maps-Scenarios
 expect_ok "does not warn for a Red Dragon map with the current pack version" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066/27 \
-  MOD_TAG_LIST=Maps-Scenarios
+  EXPOSEDPORT=10400
 if grep -qE '^(warning|note):' "${WORKDIR}/stdout.txt"; then
   fail "a Red Dragon map with 3811913066/27 printed a warning or a tags note"
 fi
@@ -494,14 +491,13 @@ grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "R
 grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "Red Dragon mod tags were not written"
 
 make_server
+plant_lobby TestScenario_2v2 123456/0
 expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=TestScenario_2v2 \
-  MOD_LIST=123456/0
+  EXPOSEDPORT=10400
 if grep -qE 'warning: Workshop Mod List contains 3811913066/0|warning: Map' "${WORKDIR}/stdout.txt"; then
   fail "another mod's version 0 raised a Red Dragon warning"
 fi
@@ -598,19 +594,19 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 27
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066 Maps-Scenarios "WARHOST - default server name" 8
 expect_ok "reads Version from Config.ini for a bare workshop id" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066 \
-  MOD_TAG_LIST=Maps-Scenarios
+  EXPOSEDPORT=10400
 grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "bare id was not written as id/version"
+grep -qx 'NbMaxPlayer = 8' "${server}/settings/variables.ini" || fail "a hand-edited player count was replaced"
+grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "mod tags were not kept"
 grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini. The rest of the item was not downloaded, and Config.ini has been deleted.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
-grep -qx 'Wrote WARNO settings for WARHOST - default server name on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
+grep -qx 'Kept variables.ini for WARHOST - default server name on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
 [ "$(call_count downloader.calls)" = 1 ] || fail "bare id did not download exactly once"
 printf 'Config.ini\n' | cmp -s - "${FAKE_STEAM}/filelist.last" || fail "the download asked for more than Config.ini"
 grep -qx '3811913066 1791628993 27' "${server}/settings/warhost-workshop-versions.txt" || fail "cache did not record id, update time, and Version"
@@ -625,15 +621,14 @@ if grep -qE '^(warning|note):' "${WORKDIR}/stdout.txt"; then
 fi
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "bare id stopped the server"
 
+set_file_mod_list 3811913066
 expect_ok "reuses the cached Version while the Steam update time is unchanged" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 [ "$(call_count downloader.calls)" = 1 ] || fail "an unchanged item was downloaded again"
 [ "$(call_count wget.calls)" = 2 ] || fail "the second start did not check the Steam update time"
 grep -qx 'Workshop item 3811913066 is unchanged on Steam since the last check. Version 27.' "${WORKDIR}/stdout.txt" || fail "cache hit was not reported"
@@ -641,30 +636,28 @@ grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "c
 
 steam_details 3811913066 1791700000
 steam_item 3811913066 28
+set_file_mod_list 3811913066
 expect_ok "reads Config.ini again after the author publishes" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 [ "$(call_count downloader.calls)" = 2 ] || fail "a new Steam update time did not download Config.ini again"
 grep -qx 'ModList = 3811913066/28' "${server}/settings/variables.ini" || fail "the new Version was not written"
 grep -qx '3811913066 1791700000 28' "${server}/settings/warhost-workshop-versions.txt" || fail "cache did not record the new update"
 assert_no_stage_dirs "${server}/settings"
 
 rm -f "${FAKE_STEAM}/details/3811913066.json"
+set_file_mod_list 3811913066
 expect_ok "uses the cached Version when Steam gives no update time" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 [ "$(call_count downloader.calls)" = 2 ] || fail "a failed update check still downloaded"
 grep -q '^warning: Steam gave no update time for Workshop item 3811913066, so Version 28 from the last check is used.' "${WORKDIR}/stdout.txt" || fail "failed update check did not warn"
 grep -qx 'ModList = 3811913066/28' "${server}/settings/variables.ini" || fail "failed update check did not write the cached Version"
@@ -673,15 +666,14 @@ grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed update check
 
 steam_details 3811913066 1791800000
 rm -f "${FAKE_STEAM}/items/3811913066.ini"
+set_file_mod_list 3811913066
 expect_ok "keeps the cached Version when Config.ini cannot be read after an update" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 [ "$(call_count downloader.calls)" = 3 ] || fail "a new update time did not try the download"
 grep -qx 'warning: Could not read Config.ini for Workshop item 3811913066. Steam sent no Config.ini for it. Version 28 from the last check is used, and the next start tries again.' "${WORKDIR}/stdout.txt" || fail "failed download did not warn"
 grep -qx 'DepotDownloader: Unable to locate manifest ID for published file 3811913066' "${WORKDIR}/stderr.txt" || fail "failed download did not print the DepotDownloader log"
@@ -693,38 +685,37 @@ reset_fake_steam
 steam_details 3474588989 1787211611
 : > "${FAKE_STEAM}/offline"
 make_server
+plant_lobby _2x2_Oslo_Conquest 3474588989
 expect_fail "refuses to start when a bare id has no cache and Steam cannot be reached" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Oslo_Conquest \
-  MOD_LIST=3474588989
+  EXPOSEDPORT=10400
 grep -q 'Could not read Version for Workshop item 3474588989. DepotDownloader exited with status 1. No earlier Version is saved for it, so the server does not start.' "${WORKDIR}/stderr.txt" || fail "failed first download did not say why"
 grep -qx 'DepotDownloader: Could not connect to Steam after 10 tries' "${WORKDIR}/stderr.txt" || fail "failed first download did not print the DepotDownloader log"
 grep -q 'pin the number as 3474588989/' "${WORKDIR}/stderr.txt" || fail "failed first download did not offer a pin"
 if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
   fail "a bare id with no Version started the server"
 fi
-[ ! -e "${server}/settings/variables.ini" ] || fail "a bare id with no Version wrote variables.ini"
+grep -qx 'ModList = 3474588989' "${server}/settings/variables.ini" || fail "a bare id with no Version was rewritten"
+[ ! -e "${server}/settings/login.ini" ] || fail "a bare id with no Version wrote login.ini"
 assert_no_stage_dirs "${server}/settings"
 
 reset_fake_steam
 make_server
+plant_lobby _2x2_Hesse_2vs2_CONQ 3999999999
 expect_fail "refuses to start when Steam sends no Config.ini for a bare id" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Hesse_2vs2_CONQ \
-  MOD_LIST=3999999999
+  EXPOSEDPORT=10400
 grep -q 'Could not read Version for Workshop item 3999999999. Steam sent no Config.ini for it. No earlier Version is saved for it' "${WORKDIR}/stderr.txt" || fail "an item with no Config.ini did not say why"
 grep -q 'Check the id and the connection to Steam' "${WORKDIR}/stderr.txt" || fail "an item with no Config.ini did not ask to check the id"
-[ ! -e "${server}/settings/variables.ini" ] || fail "an item with no Config.ini wrote variables.ini"
+grep -qx 'ModList = 3999999999' "${server}/settings/variables.ini" || fail "an item with no Config.ini was rewritten"
 assert_no_stage_dirs "${server}/settings"
 
 reset_fake_steam
@@ -738,15 +729,14 @@ exit 124
 EOF
 chmod 755 "${WORKDIR}/fake-timeout/timeout"
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066
 expect_fail "refuses to start when DepotDownloader runs past its time limit" \
   PATH="${WORKDIR}/fake-timeout:${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 grep -q '^300 DepotDownloader -app 1611600 -pubfile 3811913066 ' "${WORKDIR}/fake-timeout/timeout.args" || fail "DepotDownloader did not run under a 300 second limit"
 grep -q 'Could not read Version for Workshop item 3811913066. DepotDownloader did not finish within 300 seconds.' "${WORKDIR}/stderr.txt" || fail "a timed-out download did not say why"
 assert_no_stage_dirs "${server}/settings"
@@ -757,15 +747,14 @@ steam_details 3474588989 1787211611
 steam_item 3811913066 27
 steam_item_crlf 3474588989 14
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066-3474588989
 expect_ok "resolves two bare ids one at a time with no Config.ini left between them" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066-3474588989
+  EXPOSEDPORT=10400
 grep -qx 'ModList = 3811913066/27-3474588989/14' "${server}/settings/variables.ini" || fail "two bare ids were not both resolved"
 printf '3811913066\n3474588989\n' | cmp -s - "${FAKE_STEAM}/downloader.calls" || fail "the two ids were not downloaded in order"
 [ ! -e "${FAKE_STEAM}/leftovers" ] || fail "a Config.ini was still present when the next item was fetched: $(cat "${FAKE_STEAM}/leftovers")"
@@ -777,15 +766,14 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 27
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066-3811913066
 expect_ok "resolves a repeated bare id once" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066-3811913066
+  EXPOSEDPORT=10400
 grep -qx 'ModList = 3811913066/27-3811913066/27' "${server}/settings/variables.ini" || fail "a repeated bare id was not resolved"
 [ "$(call_count downloader.calls)" = 1 ] || fail "a repeated bare id was downloaded twice"
 [ "$(call_count wget.calls)" = 1 ] || fail "a repeated bare id was checked on Steam twice"
@@ -795,6 +783,7 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 27
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066
 mkdir -p "${server}/settings/warhost-workshop-versions.txt"
 expect_ok "starts without saving Versions when a directory holds the cache name" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
@@ -802,9 +791,7 @@ expect_ok "starts without saving Versions when a directory holds the cache name"
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "a directory at the cache name blocked the resolved mod list"
 grep -q '^warning: .*/warhost-workshop-versions.txt is a directory, so Workshop Versions were not saved\.' "${WORKDIR}/stdout.txt" || fail "a directory at the cache name did not warn"
 [ -d "${server}/settings/warhost-workshop-versions.txt" ] || fail "the directory at the cache name was replaced"
@@ -815,30 +802,28 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 27
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066-3474588989/14
 expect_ok "writes a pinned id/version as typed and resolves only the bare id" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066-3474588989/14
+  EXPOSEDPORT=10400
 grep -qx 'ModList = 3811913066/27-3474588989/14' "${server}/settings/variables.ini" || fail "a mixed list was not written as id/version"
 printf '3811913066\n' | cmp -s - "${FAKE_STEAM}/downloader.calls" || fail "a pinned id was downloaded"
 printf '3811913066\n' | cmp -s - "${FAKE_STEAM}/wget.calls" || fail "a pinned id was checked on Steam"
 
 reset_fake_steam
 make_server
+plant_lobby _2x2_Oslo_Conquest 3474588989/14
 expect_ok "does not contact Steam for a list of pins" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Oslo_Conquest \
-  MOD_LIST=3474588989/14
+  EXPOSEDPORT=10400
 [ "$(call_count wget.calls)" = 0 ] || fail "a pinned list called the Steam details API"
 [ "$(call_count downloader.calls)" = 0 ] || fail "a pinned list ran DepotDownloader"
 [ ! -e "${server}/settings/warhost-workshop-versions.txt" ] || fail "a pinned list wrote the version cache"
@@ -848,15 +833,14 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 27
 make_server
+plant_lobby _2x2_Hesse_2vs2_CONQ 3811913066
 expect_ok "warns when a base-game map lists the bare Red Dragon id" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=_2x2_Hesse_2vs2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 grep -q 'warning: Map _2x2_Hesse_2vs2_CONQ is not a Red Dragon scenario' "${WORKDIR}/stdout.txt" || fail "a bare Red Dragon id on a base-game map did not warn"
 grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "the map warning did not write the resolved list"
 
@@ -864,29 +848,27 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 15
 make_server
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066
 expect_ok "does not call a Version read from Config.ini out of date" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066
+  EXPOSEDPORT=10400
 grep -qx 'ModList = 3811913066/15' "${server}/settings/variables.ini" || fail "Version 15 from Config.ini was not written"
 if grep -q 'warning: Workshop Mod List contains' "${WORKDIR}/stdout.txt"; then
   fail "a Version read from Config.ini raised the typed-pin warning"
 fi
 
+set_file_mod_list '3811913066/'
 expect_fail "rejects a workshop id with an empty version" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
-  EXPOSEDPORT=10400 \
-  MAP=RDPort_JungleLaw_2v2_CONQ \
-  MOD_LIST=3811913066/
+  EXPOSEDPORT=10400
 grep -q 'Workshop ids such as 3811913066' "${WORKDIR}/stderr.txt" || fail "an empty version did not explain the format"
 
 reset_fake_steam
@@ -920,7 +902,7 @@ expect_ok "keeps hand-edited files when write config is false" \
   EXPOSEDPORT=10401
 grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "hand-edited login.ini was replaced"
 grep -qx 'Left existing WARNO settings in place.' "${WORKDIR}/stdout.txt" || fail "write-config false did not say it left files alone"
-grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different Server Name. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
+grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
 
 make_server
 expect_fail "refuses write-config false when settings files are missing" \
@@ -981,7 +963,8 @@ expect_ok "starts again after the other container releases the settings folder" 
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
   SERVER_NAME="After Lock"
-grep -qx 'ServerName = After Lock' "${server}/settings/variables.ini" || fail "settings were not written after the lock was released"
+grep -qx 'ServerName = WARHOST - default server name' "${server}/settings/variables.ini" || fail "a template server name replaced the lobby file after the lock was released"
+grep -qx 'Lobby settings on the Docker template are ignored. Change the server in the WebUI.' "${WORKDIR}/stdout.txt" || fail "a template server name was not ignored after the lock was released"
 
 make_server
 taken="${WORKDIR}/taken-port"
@@ -1371,7 +1354,7 @@ expect_ok "lobby page keeps variables.ini and still refreshes login.ini" \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'ServerName = from-the-page' "${server}/settings/variables.ini" || fail "second start rewrote the lobby page file"
 grep -qx 'login="host-login"' "${server}/settings/login.ini" || fail "lobby page start did not refresh login.ini"
-grep -q 'Kept variables.ini from the WebUI' "${WORKDIR}/stdout.txt" || fail "second start did not say it kept variables.ini"
+grep -q 'Kept variables.ini for from-the-page on port 21400. Map _2x2_Hesse_2vs2_CONQ.' "${WORKDIR}/stdout.txt" || fail "second start did not say it kept variables.ini"
 grep -q 'WebUI port 22400 is already in use' "${WORKDIR}/stdout.txt" "${WORKDIR}/stderr.txt" || fail "taken lobby port did not warn"
 if grep -q 'WebUI listening' "${WORKDIR}/stdout.txt"; then
   fail "taken lobby port still said it was listening"

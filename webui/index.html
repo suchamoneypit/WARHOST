@@ -95,6 +95,9 @@
     color: var(--muted);
     background: #100a0b;
   }
+  .mods { margin: 0 0 12px; }
+  .mods label { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .mods input { width: auto; }
   .actions { display: flex; gap: 8px; margin-top: 16px; }
   button {
     padding: 8px 12px;
@@ -124,6 +127,8 @@
   <p id="status" role="status"></p>
   <div class="layout">
     <section class="maps">
+      <h2>Workshop mods</h2>
+      <div id="mod-checks" class="mods"></div>
       <h2>Map list (scenario ID list)</h2>
       <div class="filters">
         <div>
@@ -198,7 +203,6 @@
       <p class="hint">Player slots are not locked to the size in the scenario ID. Usual slots for the selected row are shown above.</p>
       <div class="actions">
         <button id="save" type="button">Save</button>
-        <button id="reset" type="button">Reset from Unraid form</button>
       </div>
     </section>
   </div>
@@ -216,6 +220,7 @@ const MENUS = {
 const EXTRA = { gameType: "PACT vs NATO", initMoney: " PTS", timeLimit: " sec", upkeep: " %", scoreLimit: " PTS", incomeRate: "" };
 const SIZES = { 2: "1v1", 4: "2v2", 6: "3v3", 8: "4v4", 20: "10v10" };
 let catalog = [];
+let extraMods = [];
 let selected = "";
 let modList = "";
 let modTags = "";
@@ -251,6 +256,44 @@ function packId(group) {
 function enabledIds() {
   if (!modList) return [];
   return modList.split("-").map((part) => part.split("/")[0]).filter((id) => /^[0-9]+$/.test(id));
+}
+
+function catalogMods() {
+  const mods = [];
+  catalog.forEach((group) => {
+    const id = packId(group);
+    if (!id) return;
+    mods.push({ id: id, name: group.name });
+  });
+  extraMods.forEach((mod) => {
+    if (!mod.id) return;
+    mods.push({ id: String(mod.id), name: mod.name });
+  });
+  return mods;
+}
+
+function renderChecks() {
+  const box = document.getElementById("mod-checks");
+  const known = catalogMods();
+  const enabled = enabledIds();
+  const rows = [];
+  enabled.forEach((id) => {
+    const found = known.find((mod) => mod.id === id);
+    rows.push({ id: id, name: found ? found.name : "Workshop id " + id });
+  });
+  known.forEach((mod) => {
+    if (enabled.indexOf(mod.id) === -1) rows.push(mod);
+  });
+  box.replaceChildren();
+  rows.forEach((row) => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = row.id;
+    input.checked = enabled.indexOf(row.id) !== -1;
+    label.append(input, document.createTextNode(" " + row.name));
+    box.appendChild(label);
+  });
 }
 
 function fillSelect(id, current) {
@@ -415,6 +458,7 @@ function renderModded(packs) {
 function render() {
   const base = catalog.find((group) => !group.modList);
   fillTable(document.getElementById("base-rows"), base ? [base] : []);
+  renderChecks();
   renderNotes();
   renderModded(enabledPacks());
   markSelected();
@@ -453,7 +497,8 @@ function payload() {
     incomeRate: document.getElementById("incomeRate").value,
     scoreLimit: document.getElementById("scoreLimit").value,
     timeLimit: document.getElementById("timeLimit").value,
-    upkeep: document.getElementById("upkeep").value
+    upkeep: document.getElementById("upkeep").value,
+    mods: enabledIds()
   };
 }
 
@@ -462,6 +507,15 @@ document.getElementById("size").addEventListener("change", () => render());
 document.getElementById("mode").addEventListener("change", () => render());
 document.getElementById("pack").addEventListener("change", (event) => {
   packChoice = event.target.value;
+  render();
+});
+document.getElementById("mod-checks").addEventListener("change", (event) => {
+  if (event.target.type !== "checkbox") return;
+  const ids = [];
+  document.querySelectorAll("#mod-checks input").forEach((input) => {
+    if (input.checked) ids.push(input.value);
+  });
+  modList = ids.join("-");
   render();
 });
 document.getElementById("save").addEventListener("click", async () => {
@@ -473,19 +527,11 @@ document.getElementById("save").addEventListener("click", async () => {
     status.textContent = error.message;
   }
 });
-document.getElementById("reset").addEventListener("click", async () => {
-  const status = document.getElementById("status");
-  try {
-    applyState(await request({ action: "reset" }));
-    status.textContent = "Reset from the Unraid form and saved. Restart this container to load it.";
-  } catch (error) {
-    status.textContent = error.message;
-  }
-});
 
 Promise.all([fetch("/scenarios.json").then((response) => response.json()), fetch("/api/lobby").then((response) => response.json())])
   .then(([data, state]) => {
     catalog = data.groups;
+    extraMods = data.mods || [];
     applyState(state);
   })
   .catch(() => {

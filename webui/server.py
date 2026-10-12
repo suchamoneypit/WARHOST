@@ -194,9 +194,7 @@ class Handler(BaseHTTPRequestHandler):
         dest = self.settings / "variables.ini"
         before = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
         try:
-            if payload.get("action") == "reset":
-                text = lobby.reset_from_form(os.environ, CATALOG)
-            elif payload.get("action") == "save":
+            if payload.get("action") == "save":
                 if dest.is_symlink():
                     existing = {"values": {}, "extras": []}
                 else:

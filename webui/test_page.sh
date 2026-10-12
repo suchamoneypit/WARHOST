@@ -134,7 +134,7 @@ grep -qx 'InitMoney = 750' "${settings}/variables.ini" || fail "rejected save ch
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
-  --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5}' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5,"mods":[]}' \
   "${base}/api/lobby"
 [ "$code" = "400" ] || fail "modded map without a workshop id returned ${code}"
 [ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "rejected modded map changed variables.ini"
@@ -154,13 +154,13 @@ PY
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
-  --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5}' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5,"mods":["3811913066","3474588989"]}' \
   "${base}/api/lobby"
 [ "$code" = "200" ] || fail "save returned ${code}"
 grep -qx 'ServerName = Saved Lobby' "${settings}/variables.ini" || fail "save did not write the server name"
 grep -qx 'Map = RDPort_JungleLaw_2v2_CONQ' "${settings}/variables.ini" || fail "save did not write the map"
-grep -qx 'ModList = 3811913066/27-3474588989/14' "${settings}/variables.ini" || fail "save did not keep the workshop mod list"
-grep -qx 'ModTagList = Maps-Scenarios' "${settings}/variables.ini" || fail "save did not keep the mod tags"
+grep -qx 'ModList = 3811913066-3474588989' "${settings}/variables.ini" || fail "save did not write bare workshop ids"
+grep -qx 'ModTagList = Maps-Scenarios' "${settings}/variables.ini" || fail "save did not derive the mod tags"
 grep -qx 'GameType = 1' "${settings}/variables.ini" || fail "save did not write opposition"
 grep -qx 'InitMoney = 1500' "${settings}/variables.ini" || fail "save did not write starting resources"
 grep -qx 'TimeLimit = 2400' "${settings}/variables.ini" || fail "save did not write the time limit"
@@ -179,31 +179,69 @@ fi
 grep -q 'Scenic view' "${WORKDIR}/page.html" || fail "page is missing the scenic slot"
 grep -q 'Tactical zones' "${WORKDIR}/page.html" || fail "page is missing the tactical slot"
 grep -q 'Map list (scenario ID list)' "${WORKDIR}/page.html" || fail "page is missing the map list heading"
-python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["map"]=="RDPort_JungleLaw_2v2_CONQ"; assert d["modList"]=="3811913066/27-3474588989/14"; assert d["modTags"]=="Maps-Scenarios"' "${WORKDIR}/state.json" || fail "state did not return the saved map"
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["map"]=="RDPort_JungleLaw_2v2_CONQ"; assert d["modList"]=="3811913066-3474588989"; assert d["modTags"]=="Maps-Scenarios"' "${WORKDIR}/state.json" || fail "state did not return the saved map"
 kill -HUP "$PAGE_PID" || fail "could not signal the lobby page"
 curl -fsS -o /dev/null "${base}/" || fail "lobby page exited on hangup"
 
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
-  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0}' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":["3811913066","3474588989"]}' \
   "${base}/api/lobby"
 [ "$code" = "200" ] || fail "base-game save returned ${code}"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "base-game save did not write the map"
-grep -qx 'ModList = 3811913066/27-3474588989/14' "${settings}/variables.ini" || fail "base-game save dropped the workshop mod list"
+grep -qx 'ModList = 3811913066-3474588989' "${settings}/variables.ini" || fail "base-game save dropped the workshop mod list"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":["999000111","3811913066"]}' \
+  "${base}/api/lobby"
+[ "$code" = "400" ] || fail "unknown workshop id returned ${code}"
+grep -qx 'ModList = 3811913066-3474588989' "${settings}/variables.ini" || fail "rejected workshop id changed the mod list"
+
+python3 - << PY
+from pathlib import Path
+path = Path("${settings}/variables.ini")
+text = path.read_text()
+text = text.replace("ModList = 3811913066-3474588989\n", "ModList = 999000111/3-3811913066/27\n", 1)
+text = text.replace("ModTagList = Maps-Scenarios\n", "ModTagList = Custom-Tags\n", 1)
+path.write_text(text)
+PY
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":["999000111"]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "unknown id save returned ${code}"
+grep -qx 'ModList = 999000111/3' "${settings}/variables.ini" || fail "save did not keep the unknown workshop pin"
+grep -qx 'ModTagList = Custom-Tags' "${settings}/variables.ini" || fail "unknown-only save did not keep the previous tags"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":["3388575848"]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "flames save returned ${code}"
+grep -qx 'ModList = 3388575848' "${settings}/variables.ini" || fail "flames save did not write the bare id"
+grep -qx 'ModTagList = Gameplay-Interface' "${settings}/variables.ini" || fail "flames save did not use its tags"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":["3811913066","3388575848","3595948209"]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "combined mod save returned ${code}"
+grep -qx 'ModList = 3388575848-3811913066-3595948209' "${settings}/variables.ini" || fail "combined save did not keep the existing id first"
+grep -qx 'ModTagList = Gameplay-Interface-Maps-Scenarios-Sound' "${settings}/variables.ini" || fail "combined save did not union the tags"
 
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
   --data '{"action":"reset"}' \
   "${base}/api/lobby"
-[ "$code" = "200" ] || fail "reset returned ${code}"
-grep -qx 'ServerName = WARHOST - Hesse 2v2' "${settings}/variables.ini" || fail "reset did not restore the form name"
-grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "reset did not restore the form map"
-grep -qx 'InitMoney = 750' "${settings}/variables.ini" || fail "reset did not restore the form starting resources"
-if grep -q '^ModList =' "${settings}/variables.ini"; then
-  fail "reset wrote a workshop mod for an empty form"
-fi
+[ "$code" = "400" ] || fail "reset returned ${code}"
+grep -qx 'ModList = 3388575848-3811913066-3595948209' "${settings}/variables.ini" || fail "reset changed the lobby file"
 
 outside="${WORKDIR}/outside.ini"
 printf 'secret-target\n' > "$outside"
@@ -211,7 +249,7 @@ ln -sf "$outside" "${settings}/variables.ini"
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
-  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":500,"timeLimit":1200,"scoreLimit":1000,"incomeRate":0,"upkeep":0}' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":500,"timeLimit":1200,"scoreLimit":1000,"incomeRate":0,"upkeep":0,"mods":[]}' \
   "${base}/api/lobby"
 [ "$code" = "200" ] || fail "symlink save returned ${code}"
 [ ! -L "${settings}/variables.ini" ] || fail "save followed a symlink"

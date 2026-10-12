@@ -57,6 +57,44 @@ def combat_rule(size, scenario_id):
     raise SystemExit(f"no combat rule for {scenario_id} ({size})")
 
 
+def gameplay_mods(readme):
+    start = readme.index("| Mod | Workshop Mod List |")
+    group_ids = set()
+    for _needle, _name, mod_list, _tags in GROUPS:
+        if mod_list:
+            group_ids.add(mod_list.split("/", 1)[0])
+    mods = []
+    for line in readme[start:].splitlines():
+        if line.startswith("####") or line.startswith("The pin column"):
+            break
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 4 or "Workshop Mod List" in cells[1] or set(cells[1]) <= {"-"}:
+            continue
+        name = re.search(r"\[([^\]]+)\]", cells[0])
+        ids = re.findall(r"`([^`]+)`", cells[1])
+        pins = re.findall(r"`([^`]+)`", cells[2])
+        tags = re.findall(r"`([^`]+)`", cells[3])
+        if name is None or not ids:
+            raise SystemExit(f"workshop row has no mod: {line}")
+        mod_id = ids[0]
+        if mod_id in group_ids:
+            continue
+        mods.append(
+            {
+                "name": name.group(1),
+                "id": mod_id,
+                "modList": pins[0] if pins else mod_id,
+                "modTags": tags[0] if tags else "",
+                "tagsWithMapPack": tags[1] if len(tags) > 1 else "",
+            }
+        )
+    if [mod["id"] for mod in mods] != ["3595948209", "3388575848"]:
+        raise SystemExit(f"gameplay mods {[mod['id'] for mod in mods]}")
+    return mods
+
+
 def catalog(readme):
     groups = []
     for part in readme.split("<details>")[1:]:
@@ -106,7 +144,7 @@ def catalog(readme):
     expected = [item[1] for item in GROUPS]
     if [group["name"] for group in groups] != expected:
         raise SystemExit(f"group order {[group['name'] for group in groups]}")
-    return {"groups": groups}
+    return {"groups": groups, "mods": gameplay_mods(readme)}
 
 
 def main():
