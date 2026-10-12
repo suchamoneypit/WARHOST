@@ -10,13 +10,6 @@ die() {
   exit 1
 }
 
-# #region agent log
-dbg() {
-  { printf '%s\n' "$1" >> /home/matt/Documents/WARHOST/WARHOST/.cursor/debug-60fcc4.log; } 2>/dev/null || true
-  return 0
-}
-# #endregion
-
 has_line_break() {
   cr=$(printf '\r')
   case "$1" in
@@ -691,18 +684,8 @@ case "$web_ui" in
   false|no|0|'') web_ui=false ;;
   *) die "WebUI must be true or false." ;;
 esac
-# #region agent log
-map_empty=no
-if [ -z "${MAP-}" ]; then
-  map_empty=yes
-fi
-dbg "{\"sessionId\":\"60fcc4\",\"hypothesisId\":\"B\",\"location\":\"entrypoint-unraid.sh:lobby-env\",\"message\":\"lobby env before unset\",\"data\":{\"map_set\":\"${MAP+set}\",\"map_empty\":\"${map_empty}\",\"server_name_set\":\"${SERVER_NAME+set}\",\"mod_list_set\":\"${MOD_LIST+set}\",\"web_ui\":\"${web_ui}\",\"write_config\":\"${write_config}\"},\"timestamp\":$(date +%s)000}"
-# #endregion
 note_ignored_lobby_env
 unset SERVER_NAME MAP NB_MAX_PLAYER NB_MIN_PLAYER MAX_TEAM_SIZE COMBAT_RULE MOD_LIST MOD_TAG_LIST
-# #region agent log
-dbg "{\"sessionId\":\"60fcc4\",\"hypothesisId\":\"B\",\"location\":\"entrypoint-unraid.sh:after-unset\",\"message\":\"lobby env after unset\",\"data\":{\"map_set\":\"${MAP+set}\"},\"timestamp\":$(date +%s)000}"
-# #endregion
 
 if [ "$write_config" = "true" ]; then
   : "${EUGEN_LOGIN:?Set your Eugen login.}"
@@ -766,9 +749,6 @@ if [ "$write_config" = "true" ]; then
       lobby_mods=$MOD_LIST
     fi
   fi
-  # #region agent log
-  dbg "{\"sessionId\":\"60fcc4\",\"hypothesisId\":\"C\",\"location\":\"entrypoint-unraid.sh:lobby-file\",\"message\":\"lobby file decision\",\"data\":{\"lobby_kept\":\"$lobby_kept\",\"map_len\":\"${#lobby_map}\",\"mods_len\":\"${#lobby_mods}\",\"name_len\":\"${#lobby_name}\"},\"timestamp\":$(date +%s)000}"
-  # #endregion
 
   stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
   trap 'on_stage_exit' EXIT
@@ -878,7 +858,4 @@ else
 fi
 
 cd "$server_root"
-# #region agent log
-dbg "{\"sessionId\":\"60fcc4\",\"hypothesisId\":\"D\",\"location\":\"entrypoint-unraid.sh:exec\",\"message\":\"reached upstream exec\",\"data\":{\"web_ui\":\"$web_ui\"},\"timestamp\":$(date +%s)000}"
-# #endregion
 exec "$UPSTREAM_ENTRYPOINT" "$@"
