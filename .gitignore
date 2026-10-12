@@ -11,3 +11,4 @@ appdata/
 *.code-workspace
 webui/run/
 webui/__pycache__/
+webui/previews/

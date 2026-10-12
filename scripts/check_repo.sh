@@ -316,6 +316,7 @@ python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").r
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/next_version.py").read_text(), "scripts/next_version.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/release_notes.py").read_text(), "scripts/release_notes.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/list_workshop_mods.py").read_text(), "scripts/list_workshop_mods.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("scripts/extract_map_previews.py").read_text(), "scripts/extract_map_previews.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("webui/lobby.py").read_text(), "webui/lobby.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("webui/server.py").read_text(), "webui/server.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("webui/make_catalog.py").read_text(), "webui/make_catalog.py", "exec")'
@@ -344,6 +345,7 @@ echo "version numbering ok"
 
 python3 scripts/list_workshop_mods.py --self-test
 python3 scripts/release_notes.py --self-test
+python3 scripts/extract_map_previews.py --self-test
 
 sh tests/entrypoint_test.sh
 sh webui/test_page.sh

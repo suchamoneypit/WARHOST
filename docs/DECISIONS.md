@@ -304,6 +304,12 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 
 **Rationale:** Map packs are the common case and stay in the existing list. Galactic Divide and A World in Flames are already stored in `mods` because they are not scenario groups. The page uses that split, so a later mod follows the catalog instead of a name list. An id the catalog does not know is not a map pack, so it stays on the right. Moving a checkbox between the lists does not change the ids written to `variables.ini`.
 
+## 2026-10-12 — Map pictures stay out of the published image
+
+**Decision:** `scripts/extract_map_previews.py` copies each battlefield's Overview and Preview pictures from a local WARNO install into `webui/previews/`. The WebUI shows Overview as Scenic view and Preview as Tactical zones when `index.json` names that map. The same pair is used for every scenario ID that starts with that map stem. `webui/previews/` is gitignored and listed in `.dockerignore`. The published image keeps the text labels.
+
+**Rationale:** On 2026-10-12 the local install stored those pictures as WebP or PNG inside `Maps/*_Details.dat`, including `_2x2_Hesse_Details.dat` and Red Dragon's `RDPort_JungleLaw_Details.dat`. The `.tgv` files in `*_Assets.dat` are a second copy and are not used. A public wiki does not publish a current set. Putting the files in git or in `ghcr.io/suchamoneypit/warhost` would redistribute Eugen's art.
+
 ## 2026-10-12 — Release notes say what changed
 
 **Decision:** Each GitHub Release body is a short summary of that version, then the compare link. `scripts/release_notes.py` holds the written summary for `v0.90` through `v1.11`. A later tag lists the commit subjects since the previous version tag and leaves out wording-only subjects. `.github/workflows/release.yml` publishes that text. `python3 scripts/release_notes.py --apply` writes the `v0.90` through `v1.11` summaries onto the releases already on GitHub.

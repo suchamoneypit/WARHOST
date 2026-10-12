@@ -11,3 +11,4 @@ icon.png
 webui/test_page.sh
 webui/make_catalog.py
 webui/run/
+webui/previews/

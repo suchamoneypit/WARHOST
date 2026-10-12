@@ -81,6 +81,7 @@ Project commands in `.cursor/commands/` (name = file name):
 | `/credential-review` | You want an adversarial review of the Eugen login and dedicated key. Clear text on the Unraid form is accepted. |
 | `/slop-review` | You want an adversarial read of what ships (the app card, the form, the README, the install guide, the wrapper, and the icon) the way a moderator, a first-time installer, and a skeptical homelabber would read it. Start a new Agent chat and pick your strongest model first. It reports only; reply `apply` with finding IDs to fix those. |
 | `/workshop-mods` | You want the local WARNO workshop mods compared with the README: versions, tags, and scenario IDs. It reports only, unless you also ask it to apply the report. |
+| `/map-previews` | You want Scenic view and Tactical zones pictures extracted from the local WARNO install into `webui/previews/`. That folder stays out of git. |
 
 Useful built-ins (from Cursor's docs; the editor and the CLI differ slightly): `/plan` to switch to Plan mode, `/create-rule`, `/create-subagent`, `/create-skill`, `/review` for a diff review, `/summarize` (CLI) to compact context. Cursor's docs now treat skills (`.cursor/skills/<name>/SKILL.md`) as the successor to commands and offer `/migrate-to-skills`; the commands above are small enough that migrating them is optional.
 

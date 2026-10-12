@@ -94,6 +94,14 @@
     place-items: center;
     color: var(--muted);
     background: #100a0b;
+    overflow: hidden;
+  }
+  .shot img {
+    width: 100%;
+    height: auto;
+    max-height: 16rem;
+    object-fit: contain;
+    display: block;
   }
   .mods { margin: 0 0 12px; }
   .mods label { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
@@ -183,8 +191,8 @@
       <p id="detail-meta"></p>
       <p id="detail-id"></p>
       <div class="shots">
-        <div class="shot">Scenic view</div>
-        <div class="shot">Tactical zones</div>
+        <div class="shot" id="shot-overview"><span>Scenic view</span></div>
+        <div class="shot" id="shot-preview"><span>Tactical zones</span></div>
       </div>
       <label for="serverName">Server name</label>
       <input id="serverName" type="text" maxlength="64">
@@ -237,6 +245,7 @@ const EXTRA = { gameType: "PACT vs NATO", initMoney: " PTS", timeLimit: " sec", 
 const SIZES = { 2: "1v1", 4: "2v2", 6: "3v3", 8: "4v4", 20: "10v10" };
 let catalog = [];
 let extraMods = [];
+let previews = {};
 let selected = "";
 let modList = "";
 let modTags = "";
@@ -445,6 +454,39 @@ function presetLimits(scenario) {
   return { players: players, team: team, minPlayers: minPlayers };
 }
 
+function previewStem(id) {
+  let best = "";
+  Object.keys(previews).forEach((stem) => {
+    if ((id === stem || id.startsWith(stem + "_")) && stem.length > best.length) best = stem;
+  });
+  return best;
+}
+
+function showShot(elementId, label, src) {
+  const box = document.getElementById(elementId);
+  box.replaceChildren();
+  if (!src) {
+    const span = document.createElement("span");
+    span.textContent = label;
+    box.appendChild(span);
+    return;
+  }
+  const img = document.createElement("img");
+  img.alt = label;
+  img.src = src;
+  img.addEventListener("error", () => showShot(elementId, label, ""));
+  box.appendChild(img);
+}
+
+function showShots(id) {
+  const stem = previewStem(id);
+  const record = stem ? previews[stem] || {} : {};
+  const overview = record.overview ? "/previews/" + encodeURIComponent(stem) + "/" + record.overview : "";
+  const preview = record.preview ? "/previews/" + encodeURIComponent(stem) + "/" + record.preview : "";
+  showShot("shot-overview", "Scenic view", overview);
+  showShot("shot-preview", "Tactical zones", preview);
+}
+
 function showDetail(id) {
   selected = id;
   const found = findScenario(id);
@@ -462,6 +504,7 @@ function showDetail(id) {
     scenarioLine.textContent = "Scenario ID: " + found.scenario.id;
     lockCombatRule(found.scenario.rule);
   }
+  showShots(id);
   markSelected();
 }
 
@@ -677,10 +720,12 @@ document.getElementById("confirm-no").addEventListener("click", () => {
   document.getElementById("status").textContent = "Restart cancelled.";
 });
 
-Promise.all([fetch("/scenarios.json").then((response) => response.json()), fetch("/api/lobby").then((response) => response.json())])
-  .then(([data, state]) => {
+const previewList = fetch("/previews/index.json").then((response) => response.ok ? response.json() : {}).catch(() => ({}));
+Promise.all([fetch("/scenarios.json").then((response) => response.json()), fetch("/api/lobby").then((response) => response.json()), previewList])
+  .then(([data, state, pictures]) => {
     catalog = data.groups;
     extraMods = data.mods || [];
+    previews = pictures && typeof pictures === "object" ? pictures : {};
     applyState(state);
   })
   .catch(() => {

@@ -130,8 +130,26 @@ EOF
 checksum=$(cksum "${settings}/variables.ini")
 
 PORT=39521
+mkdir -p "${WORKDIR}/previews/_2x2_Hesse"
+python3 - "${WORKDIR}/previews" << 'PY'
+import json
+import pathlib
+import struct
+import sys
+import zlib
+
+def chunk(tag, payload):
+    return struct.pack(">I", len(payload)) + tag + payload + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
+
+ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b"")
+root = pathlib.Path(sys.argv[1])
+(root / "_2x2_Hesse" / "overview.png").write_bytes(png)
+(root / "index.json").write_text(json.dumps({"_2x2_Hesse": {"overview": "overview.png"}}) + "\n")
+PY
 export SETTINGS_DIR="$settings"
 export WARHOST_WEB_PORT="$PORT"
+export WARHOST_PREVIEWS="${WORKDIR}/previews"
 export EXPOSEDPORT=38521
 export SERVER_NAME="WARHOST - Hesse 2v2"
 export MAP=_2x2_Hesse_2vs2_CONQ
@@ -142,6 +160,7 @@ export COMBAT_RULE=2
 setsid env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
   SETTINGS_DIR="$settings" \
   WARHOST_WEB_PORT="$PORT" \
+  WARHOST_PREVIEWS="${WORKDIR}/previews" \
   EXPOSEDPORT=38521 \
   SERVER_NAME="WARHOST - Hesse 2v2" \
   MAP=_2x2_Hesse_2vs2_CONQ \
@@ -296,7 +315,15 @@ if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WO
   fail "lobby page exposed the dedicated key"
 fi
 grep -q 'Scenic view' "${WORKDIR}/page.html" || fail "page is missing the scenic slot"
+grep -q 'id="shot-overview"' "${WORKDIR}/page.html" || fail "scenic slot is not a picture target"
 grep -q 'Tactical zones' "${WORKDIR}/page.html" || fail "page is missing the tactical slot"
+grep -q '/previews/index.json' "${WORKDIR}/page.html" || fail "page does not ask for map pictures"
+curl -fsS "${base}/previews/index.json" > "${WORKDIR}/previews.json" || fail "map picture index did not load"
+grep -q '_2x2_Hesse' "${WORKDIR}/previews.json" || fail "map picture index omitted Hesse"
+curl -fsS "${base}/previews/_2x2_Hesse/overview.png" > "${WORKDIR}/overview.png" || fail "scenic picture did not load"
+cmp -s "${WORKDIR}/overview.png" "${WORKDIR}/previews/_2x2_Hesse/overview.png" || fail "scenic picture bytes changed"
+code=$(curl --path-as-is -sS -o /dev/null -w '%{http_code}' "${base}/previews/../server.py") || fail "preview traversal request failed"
+[ "$code" = "404" ] || fail "preview path escaped the picture directory"
 grep -q 'Map list (scenario ID list)' "${WORKDIR}/page.html" || fail "page is missing the map list heading"
 grep -q 'Save and restart' "${WORKDIR}/page.html" || fail "page is missing Save and restart"
 grep -q 'id="players"' "${WORKDIR}/page.html" || fail "page is missing max players"

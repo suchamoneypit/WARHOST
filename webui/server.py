@@ -15,6 +15,12 @@ import lobby
 ROOT = Path(__file__).resolve().parent
 CATALOG = json.loads((ROOT / "scenarios.json").read_text())
 LIMIT = 65536
+PREVIEW_TYPES = {
+    "overview.webp": "image/webp",
+    "overview.png": "image/png",
+    "preview.webp": "image/webp",
+    "preview.png": "image/png",
+}
 
 
 def settings_dir():
@@ -170,6 +176,42 @@ def request_container_restart(settings):
     return signal_supervisor(settings)
 
 
+def previews_root():
+    raw = os.environ.get("WARHOST_PREVIEWS", "")
+    path = Path(raw) if raw else ROOT / "previews"
+    if path.is_symlink() or not path.is_dir():
+        return None
+    return path
+
+
+def preview_target(url_path):
+    root = previews_root()
+    if root is None or not url_path.startswith("/previews/"):
+        return None
+    rest = url_path[len("/previews/"):]
+    if rest == "index.json":
+        target = root / "index.json"
+        content_type = "application/json"
+    else:
+        parts = rest.split("/")
+        if len(parts) != 2:
+            return None
+        stem, name = parts
+        if name not in PREVIEW_TYPES or not stem or stem in (".", ".."):
+            return None
+        if not all(char.isalnum() or char in "._-" for char in stem):
+            return None
+        target = root / stem / name
+        content_type = PREVIEW_TYPES[name]
+    if target.is_symlink() or not target.is_file():
+        return None
+    try:
+        target.resolve().relative_to(root.resolve())
+    except ValueError:
+        return None
+    return target, content_type
+
+
 def same_origin(headers):
     if headers.get("X-WARHOST-Request") != "1":
         return False
@@ -217,6 +259,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(409, {"error": str(exc)})
                 return
             self._json(200, public_state(existing))
+            return
+        found = preview_target(path)
+        if found:
+            target, content_type = found
+            self._send(200, target.read_bytes(), content_type)
             return
         self._json(404, {"error": "Not found."})
 

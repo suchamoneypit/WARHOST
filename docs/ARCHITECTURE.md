@@ -21,15 +21,18 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 | `scripts/next_version.py` | Prints the next `MAJOR.MINOR` release number |
 | `scripts/release_notes.py` | Prints the GitHub Release summary for a version tag |
 | `scripts/print_template_fetch.sh` | Prints one Unraid terminal command per branch, saving `my-<Name>.xml` or `my-<Name>-NAME.xml`. `--clean` removes those containers, their `/mnt/user/appdata/warno/<port>/settings` folders when no other container still mounts them, and the image only when unused |
+| `scripts/extract_map_previews.py` | Copies Overview and Preview pictures from a local WARNO install into `webui/previews/`. That directory is gitignored and left out of the image |
 | `.github/workflows/rebuild-image.yml` | Rebuilds the GHCR image when Eugen's digest changes |
 | `.github/workflows/release.yml` | Tags each `main` push and opens a GitHub Release with a summary of what changed |
 | `.github/workflows/check-repo.yml` | Runs `scripts/check_repo.sh` |
 | `docs/INSTALL-UNRAID.md` | First-install walkthrough for Unraid 7 with verification and troubleshooting |
 | `docs/UNRAID-TEMPLATE-GUIDE.md` | Generic Unraid template guidance, reusable for other game servers |
 | `docs/CURSOR-QUICKSTART.md` | How the Cursor rules, subagents, and commands in `.cursor/` are meant to be used |
-| `.cursor/rules/`, `.cursor/agents/`, `.cursor/commands/` | Agent rules (generic workflow, generic Unraid conventions, WARNO project), six subagents, eight slash commands |
+| `.cursor/rules/`, `.cursor/agents/`, `.cursor/commands/` | Agent rules (generic workflow, generic Unraid conventions, WARNO project), six subagents, nine slash commands |
 
-`.dockerignore` keeps templates, tests, samples, Markdown, and `.github` out of the image build context. The Dockerfile installs DepotDownloader, copies `entrypoint-unraid.sh` and `webui/`, and adds the `warhost-web` user.
+`.dockerignore` keeps templates, tests, samples, Markdown, `.github`, and `webui/previews/` out of the image build context. The Dockerfile installs DepotDownloader, copies `entrypoint-unraid.sh` and `webui/`, and adds the `warhost-web` user.
+
+The WebUI scenic and tactical slots show Overview and Preview from `webui/previews/` when `index.json` names them for that map. One pair comes from each battlefield's `Maps/*_Details.dat` (`edat` archive) and is shared by every scenario ID with that stem. On 2026-10-12 those bytes in the local install were WebP or PNG: `_2x2_Hesse_Details.dat` under `Data/PC/197351/201602/Maps/` holds `Overview.webp` and `Preview.png`, and Red Dragon's `RDPort_JungleLaw_Details.dat` holds both as PNG. The `.tgv` copies in `*_Assets.dat` are not read. Eugen's map guide names Overview as the lobby texture and Preview as the top-down texture ([complete map modding guide](https://steamcommunity.com/sharedfiles/filedetails/?id=3352892580)). The published image does not include the pictures, so those slots stay labeled Scenic view and Tactical zones until the folder is present beside the page.
 
 ## Template behavior
 
