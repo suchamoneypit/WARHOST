@@ -7,7 +7,7 @@ A step-by-step guide from nothing to a WARHOST container running a WARNO dedicat
 What this guide rests on, checked on 2026-10-09:
 
 - Eugen's instructions on [Docker Hub](https://hub.docker.com/r/eugensystems/warno) (key request, settings files, host networking, TCP and UDP).
-- The image the template installs, `ghcr.io/suchamoneypit/warhost:latest`, after **Rebuild WARHOST image** has published it. Entrypoint `/server/entrypoint-unraid.sh`.
+- The image the `main` template installs, `ghcr.io/suchamoneypit/warhost:latest`, after **Rebuild WARHOST image** has published it. The `dev` template installs `ghcr.io/suchamoneypit/warhost:dev`. Entrypoint `/server/entrypoint-unraid.sh`.
 - Unraid's [container management docs](https://docs.unraid.net/unraid-os/manual/docker-management/) and the Community Applications author's statement that Unraid 6.10 [removed the Template Repositories field](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/).
 - The Red Dragon map pack files on a PC subscribed to Steam Workshop item `3811913066`.
 
@@ -104,7 +104,15 @@ curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST.xml \
   https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
 ```
 
-Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** under **User templates**. Every field prefills.
+The `dev` template is a separate download. It installs `ghcr.io/suchamoneypit/warhost:dev`, which starts with Map unset and serves the WebUI. Paste this instead of the `main` command when that is the container you are adding. Wait until **Rebuild WARHOST image** has published that tag, or Apply cannot pull it.
+
+```sh
+mkdir -p /boot/config/plugins/dockerMan/templates-user
+curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST-dev.xml \
+  https://raw.githubusercontent.com/suchamoneypit/WARHOST/dev/templates/warhost.xml
+```
+
+Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** for the `main` download, or **WARHOST-dev** for the `dev` download, under **User templates**. Every field prefills. The dev entry's repository is `ghcr.io/suchamoneypit/warhost:dev`.
 
 Unraid labels that menu from the filename, with `my-` removed ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php), read 2026-10-09). The `<Name>` in the XML is `WARHOST`. That string is the Docker container name. It cannot contain spaces, so the Apps and dropdown title is `WARHOST`, and WARNO stays in the overview. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`. If an earlier download is still in the folder, delete it:
 
@@ -113,7 +121,7 @@ rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
   /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml
 ```
 
-The filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). On 2026-10-09 Unraid 7.3.3 showed `my-WARHOST.xml` in the Template dropdown as **WARHOST**. A file left from an earlier Apply kept the old fields until it was removed and this curl was run again. Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. The curl changes the form only. The container runs `ghcr.io/suchamoneypit/warhost:latest`, which changes when a rebuild of that tag succeeds. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
+The filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). On 2026-10-09 Unraid 7.3.3 showed `my-WARHOST.xml` in the Template dropdown as **WARHOST**. A file left from an earlier Apply kept the old fields until it was removed and this curl was run again. Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. The curl changes the form only. A download of `main` still runs `ghcr.io/suchamoneypit/warhost:latest`, which changes when a rebuild of that tag succeeds. A download of `dev` runs `ghcr.io/suchamoneypit/warhost:dev` after **Rebuild WARHOST image** has published that tag. That image starts with Map unset. `:latest` from `main` still stops when Map is unset. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 
 Alternative, still until Community Applications lists it: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
 
@@ -129,7 +137,7 @@ It then appears in the **Apps** tab under **Private**. The user-template downloa
 
 Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers.
 
-WebUI is on the main form, after Public WAN IP and before **Show more settings**. **Show more settings** holds Write Config From Form. The server name, map, player counts, combat rule, and workshop mods are set in the WebUI after the first start, then loaded by restarting that container. WebUI is on the `dev` template and defaults to `true`. The `main` download above still has the lobby fields on the form and WebUI default `false` behind Show more settings. A container added from that file keeps those fields until this template is published. This entrypoint ignores them. The first start of a new settings folder writes the server name `WARHOST - default server name`. An existing `variables.ini` keeps the name already in that file. `ghcr.io/suchamoneypit/warhost:latest` does not serve the page until this work is published and the image rebuild finishes. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README.
+WebUI is on the main form, after Public WAN IP and before **Show more settings**. **Show more settings** holds Write Config From Form. The server name, map, player counts, combat rule, and workshop mods are set in the WebUI after the first start, then loaded by restarting that container. WebUI is on the `dev` template and defaults to `true`. The `main` download above still has the lobby fields on the form and WebUI default `false` behind Show more settings. A container added from that file keeps those fields until this template is published. The `dev` entrypoint ignores leftover lobby fields. The first start of a new settings folder writes the server name `WARHOST - default server name`. An existing `variables.ini` keeps the name already in that file. `ghcr.io/suchamoneypit/warhost:dev` serves the page and starts with Map unset. `ghcr.io/suchamoneypit/warhost:latest` still stops when Map is unset, and it does not serve the page until this work is published and that image rebuild finishes. Leave defaults alone unless the table says otherwise. Scenario IDs are in the README.
 
 | Field | Default | Enter |
 | --- | --- | --- |
@@ -221,7 +229,7 @@ On start, the log names the next port and its settings folder. If the settings f
 | Pull fails on Apply (`denied`, `unauthorized`, `not found`) | Package is private or image name is wrong | Step 2. |
 | Container stops at once; log ends with `Set Public WAN IP.`, `Set your Eugen login.`, or `Set your Eugen dedicated key.` | A required field is empty | Edit the container, fill the field, Apply. |
 | Container stops at once; log ends with `Eugen dedicated key must be at least 4 characters.` | The key is shorter than 4 characters | Paste the full key from Eugen's reply, and Apply. |
-| Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Set Map to a scenario ID...` | The container is still running an entrypoint that reads Map from the Docker form | Update the container after this image is published, then set the map in the WebUI. |
+| Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Set Map to a scenario ID...` | The container is still running `ghcr.io/suchamoneypit/warhost:latest`, whose entrypoint reads Map from the Docker form. The dev template does not send Map, so that image exits before the WebUI starts | Re-download the `dev` template after `ghcr.io/suchamoneypit/warhost:dev` exists, Apply, and confirm the repository is that `:dev` tag. The log should say `Wrote WARNO settings` or `Kept variables.ini`, then `WebUI listening on port`. |
 | Log ends with `Workshop mod list must be empty, none, or Workshop ids such as 3811913066...` | `ModList` in `variables.ini` is not a list of Workshop ids | Open the WebUI and save the checklist, or fix that line. Ids are joined with hyphens. `/version` is a pin. |
 | Log ends with `Workshop mod list must be empty, none, or look like 3811913066/27...` | The container still runs an image from before bare Workshop ids | On the **Docker** tab, check for updates and update the container. Until then, enter the pin from the README workshop table, such as `3811913066/27`. |
 | Log ends with `Could not read Version for Workshop item ...` | That id has no saved `Version` in this settings folder, and Steam did not send its `Config.ini`. The `DepotDownloader:` lines above it give the reason: no connection to Steam, a wrong id, or a run longer than 300 seconds | Check the id against the number in the Workshop page URL, check the server's internet access, and start the container again. Or pin `id/version` with the `Version` from the mod's `Config.ini` (step 4). |

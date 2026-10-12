@@ -8,6 +8,7 @@ ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
 python3 - "$ROOT" << 'PY'
+import os
 import pathlib
 import re
 import subprocess
@@ -74,6 +75,28 @@ if template is not None:
         fail("EUGEN_DEDICATED_KEY must be a Config with Mask=false")
     if not settings_target:
         fail("settings Config target must be /server/settings")
+    repository = (template.findtext("Repository") or "").strip()
+    latest_image = "ghcr.io/suchamoneypit/warhost:latest"
+    dev_image = "ghcr.io/suchamoneypit/warhost:dev"
+    if repository not in (latest_image, dev_image):
+        fail(f"template Repository must be {latest_image} or {dev_image}")
+    branch = ""
+    completed_branch = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+    )
+    if completed_branch.returncode == 0:
+        branch = completed_branch.stdout.strip()
+    ref = os.environ.get("GITHUB_REF", "")
+    base = os.environ.get("GITHUB_BASE_REF", "")
+    if ref == "refs/heads/main" or base == "main" or branch == "main":
+        if repository != latest_image:
+            fail(f"template Repository on main must be {latest_image}")
+    elif ref == "refs/heads/dev" or branch == "dev":
+        if repository != dev_image:
+            fail(f"template Repository on dev must be {dev_image}")
     text = (root / "templates/warhost.xml").read_text()
     for number, line in enumerate(text.splitlines(), 1):
         if "<Config " in line and "</Config>" not in line:
