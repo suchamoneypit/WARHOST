@@ -22,7 +22,6 @@ Checked against the files in this repo on 2026-10-09, the Docker Hub page [eugen
 | `scripts/release_notes.py` | Prints the GitHub Release summary for a version tag |
 | `scripts/print_template_fetch.sh` | Prints one Unraid terminal command per branch, saving `my-<Name>.xml` or `my-<Name>-NAME.xml`. `--clean` removes those containers, their `/mnt/user/appdata/warno/<port>/settings` folders when no other container still mounts them, and the image only when unused |
 | `scripts/extract_map_previews.py` | Copies Overview and Preview pictures from a local WARNO install into `webui/previews/`. That directory is gitignored and left out of the image |
-| `scripts/extract_map_previews.py` | Copies Overview and Preview pictures from a local WARNO install into `webui/previews/`. That directory is gitignored and left out of the image |
 | `.github/workflows/rebuild-image.yml` | Rebuilds the GHCR image when Eugen's digest changes |
 | `.github/workflows/release.yml` | Tags each `main` push and opens a GitHub Release with a summary of what changed |
 | `.github/workflows/check-repo.yml` | Runs `scripts/check_repo.sh` |

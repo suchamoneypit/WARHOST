@@ -654,39 +654,6 @@ function showShots(id) {
   showShot("shot-preview", "Tactical zones", preview);
 }
 
-function previewStem(id) {
-  let best = "";
-  Object.keys(previews).forEach((stem) => {
-    if ((id === stem || id.startsWith(stem + "_")) && stem.length > best.length) best = stem;
-  });
-  return best;
-}
-
-function showShot(elementId, label, src) {
-  const box = document.getElementById(elementId);
-  box.replaceChildren();
-  if (!src) {
-    const span = document.createElement("span");
-    span.textContent = label;
-    box.appendChild(span);
-    return;
-  }
-  const img = document.createElement("img");
-  img.alt = label;
-  img.src = src;
-  img.addEventListener("error", () => showShot(elementId, label, ""));
-  box.appendChild(img);
-}
-
-function showShots(id) {
-  const stem = previewStem(id);
-  const record = stem ? previews[stem] || {} : {};
-  const overview = record.overview ? "/previews/" + encodeURIComponent(stem) + "/" + record.overview : "";
-  const preview = record.preview ? "/previews/" + encodeURIComponent(stem) + "/" + record.preview : "";
-  showShot("shot-overview", "Scenic view", overview);
-  showShot("shot-preview", "Tactical zones", preview);
-}
-
 function showDetail(id) {
   selected = id;
   const found = findScenario(id);
