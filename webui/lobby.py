@@ -13,6 +13,9 @@ MENU_SCORE = (1000, 2000, 4000)
 MENU_INCOME = (0, 1, 2, 3, 4, 5)
 MENU_GAME_TYPE = (0, 1, 2)
 
+UNCHANGED_RESTART = "No settings have changed, are you sure you want to restart the container?"
+CHANGED_RESTART = "Save these settings and restart the container? The current match will stop."
+
 SEEDED = {
     "MapRotationType": "0",
     "WarmupCountdown": "60",
@@ -208,6 +211,33 @@ def _derive_tags(selected_ids, catalog, previous_tags):
     return "-".join(ranked)
 
 
+def _player_count(value, low, high, whole, bounds):
+    text = str(value).strip()
+    if not text.isdigit():
+        raise LobbyError(whole)
+    number = int(text)
+    if str(number) != text or number < low or number > high:
+        raise LobbyError(bounds)
+    return number
+
+
+def _posted(payload, key):
+    if not isinstance(payload, dict) or key not in payload:
+        return False
+    value = payload.get(key)
+    if value is None or str(value).strip() == "":
+        return False
+    return True
+
+
+def _choose_count(payload, key, values, ini_key, use_file, base, low, high, whole, bounds):
+    if _posted(payload, key):
+        return _player_count(payload.get(key), low, high, whole, bounds)
+    if use_file and ini_key in values:
+        return _player_count(values.get(ini_key), low, high, whole, bounds)
+    return _player_count(base, low, high, whole, bounds)
+
+
 def validate_save(payload, existing, catalog):
     if not isinstance(payload, dict):
         raise LobbyError("The WebUI sent an unreadable save.")
@@ -243,17 +273,29 @@ def validate_save(payload, existing, catalog):
     posted_ids = [part.split("/", 1)[0] for part in mod_list.split("-") if part]
     mod_tags = _derive_tags(posted_ids, catalog, values.get("ModTagList", ""))
     if known is None:
-        players = _canonical_number(values.get("NbMaxPlayer", "4"), 1, 20)
-        team = _canonical_number(values.get("MaxTeamSize", "2"), 1, players)
-        minimum = _canonical_number(values.get("NbMinPlayer", "2"), 1, players)
+        use_file = True
+        base_players, base_team, base_min = 4, 2, 2
     else:
         group, scenario = known
-        players = int(scenario["players"])
-        team = int(scenario["team"])
-        minimum = 2 if players >= 2 else players
+        use_file = False
+        base_players = int(scenario["players"])
+        base_team = int(scenario["team"])
+        base_min = 2 if base_players >= 2 else base_players
         pack = _pack_id(group)
         if pack and pack not in set(posted_ids):
             raise LobbyError("That map needs its workshop mod in Workshop Mod List.")
+    players = _choose_count(
+        payload, "players", values, "NbMaxPlayer", use_file, base_players, 1, 20,
+        "Max players must be a whole number.", "Max players must be from 1 to 20.",
+    )
+    team = _choose_count(
+        payload, "team", values, "MaxTeamSize", use_file, base_team, 1, players,
+        "Team size must be a whole number.", "Team size must be from 1 to the max player count.",
+    )
+    minimum = _choose_count(
+        payload, "minPlayers", values, "NbMinPlayer", use_file, base_min, 1, players,
+        "Minimum players must be a whole number.", "Minimum players must be from 1 to the max player count.",
+    )
     if mod_list and not MOD_LIST.match(mod_list):
         raise LobbyError("Workshop mod list is not an id/version list.")
     if mod_tags and not MOD_TAGS.match(mod_tags):
@@ -284,6 +326,36 @@ def validate_save(payload, existing, catalog):
             raise LobbyError("variables.ini has a line this page cannot keep.")
         seeded[key] = str(int(current))
     return managed, seeded, existing.get("extras", [])
+
+
+def form_payload(existing):
+    values = existing.get("values", {}) if isinstance(existing, dict) else {}
+    mod_list = values.get("ModList", "")
+    mods = [part.split("/", 1)[0] for part in mod_list.split("-") if part] if mod_list else []
+    return {
+        "serverName": values.get("ServerName", ""),
+        "map": values.get("Map", ""),
+        "gameType": values.get("GameType", "0"),
+        "combatRule": values.get("CombatRule", "2"),
+        "initMoney": values.get("InitMoney", "750"),
+        "timeLimit": values.get("TimeLimit", "1200"),
+        "scoreLimit": values.get("ScoreLimit", "2000"),
+        "incomeRate": values.get("IncomeRate", "3"),
+        "upkeep": values.get("Upkeep", "0"),
+        "players": values.get("NbMaxPlayer", "4"),
+        "team": values.get("MaxTeamSize", "2"),
+        "minPlayers": values.get("NbMinPlayer", "2"),
+        "mods": mods,
+    }
+
+
+def settings_changed(payload, existing, catalog):
+    managed, seeded, extras = validate_save(payload, existing, catalog)
+    try:
+        current, _, _ = validate_save(form_payload(existing), existing, catalog)
+    except LobbyError:
+        return True, managed, seeded, extras
+    return managed != current, managed, seeded, extras
 
 
 def render(managed, seeded, extras):

@@ -20,6 +20,18 @@ GROUPS = (
     ("Base game", "Base game", "", ""),
 )
 
+# Steam Workshop "Created by" names, read 2026-10-11. A missing id stays blank.
+AUTHORS = {
+    "3811913066": "Zim",
+    "3363584349": "Silver",
+    "3474588989": "Kel",
+    "3705706772": "Kel",
+    "3415339374": "Kel",
+    "3762638679": "Silver",
+    "3595948209": "BiometricNuke",
+    "3388575848": "etouf fement",
+}
+
 
 def slots(size, scenario_id):
     text = f"{size} {scenario_id}"
@@ -84,6 +96,7 @@ def gameplay_mods(readme):
         mods.append(
             {
                 "name": name.group(1),
+                "author": AUTHORS.get(mod_id, ""),
                 "id": mod_id,
                 "modList": pins[0] if pins else mod_id,
                 "modTags": tags[0] if tags else "",
@@ -136,6 +149,7 @@ def catalog(readme):
         groups.append(
             {
                 "name": matched[0],
+                "author": AUTHORS.get(matched[1].split("/", 1)[0], ""),
                 "modList": matched[1],
                 "modTags": matched[2],
                 "scenarios": scenarios,

@@ -42,13 +42,17 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+pidfile="${SETTINGS_DIR}/.warhost-webui.pid"
 if ! python3 "$here/server.py" --check; then
+  if [ "${WARHOST_WEBUI_KEEP:-}" = 1 ] && [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
+    printf 'WebUI still listening on port %s.\n' "$web_port"
+    exit 0
+  fi
   warn "warning: WebUI port ${web_port} is already in use. The game server will still start."
   exit 0
 fi
 
 log="${SETTINGS_DIR}/.warhost-webui.log"
-pidfile="${SETTINGS_DIR}/.warhost-webui.pid"
 ready="${SETTINGS_DIR}/.warhost-webui.ready"
 rm -f "$ready" "$pidfile"
 

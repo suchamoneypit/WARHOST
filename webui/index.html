@@ -65,7 +65,7 @@
   .filters { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px; }
   .filters label { margin-top: 0; }
   input, select, button { font: inherit; color: var(--text); }
-  input[type="text"], select {
+  input[type="text"], input[type="number"], select {
     width: 100%;
     box-sizing: border-box;
     background: var(--input);
@@ -98,7 +98,9 @@
   .mods { margin: 0 0 12px; }
   .mods label { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
   .mods input { width: auto; }
-  .actions { display: flex; gap: 8px; margin-top: 16px; }
+  .mod-author { color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .confirm { margin-top: 12px; padding: 12px; border: 1px solid var(--accent-strong); background: var(--header); }
   button {
     padding: 8px 12px;
     background: var(--accent);
@@ -121,7 +123,7 @@
 <body>
 <header>
   <h1>WARHOST WebUI</h1>
-  <p class="note">Save writes this server's variables.ini. Restart that container in Unraid to load it. This page does not stop the current match.</p>
+  <p class="note">Save writes this server's variables.ini and leaves the current match running. Save and restart writes it when the form differs from that file, then restarts the dedicated server so the save loads. That stops the current match. If this page cannot restart the container, restart it in Unraid.</p>
 </header>
 <main>
   <p id="status" role="status"></p>
@@ -200,9 +202,23 @@
       <select id="scoreLimit"></select>
       <label for="timeLimit">Time limit</label>
       <select id="timeLimit"></select>
-      <p class="hint">Player slots are not locked to the size in the scenario ID. Usual slots for the selected row are shown above.</p>
+      <p class="hint">Picking a map fills these from that map's usual lobby. They stay editable: a 2v2 map can use 8 and 4, or a 1v1 with max 2, team size 1, and minimum 2. The lobby is not locked to the size in the scenario ID.</p>
+      <label for="players">Max players</label>
+      <input id="players" type="number" min="1" max="20" step="1" inputmode="numeric">
+      <label for="team">Team size</label>
+      <input id="team" type="number" min="1" max="20" step="1" inputmode="numeric">
+      <label for="minPlayers">Minimum players</label>
+      <input id="minPlayers" type="number" min="1" max="20" step="1" inputmode="numeric">
+      <div id="confirm-box" class="confirm" hidden>
+        <p id="confirm-text"></p>
+        <div class="actions">
+          <button id="confirm-yes" type="button">Restart</button>
+          <button id="confirm-no" type="button">Cancel</button>
+        </div>
+      </div>
       <div class="actions">
         <button id="save" type="button">Save</button>
+        <button id="restart" type="button">Save and restart</button>
       </div>
     </section>
   </div>
@@ -263,13 +279,18 @@ function catalogMods() {
   catalog.forEach((group) => {
     const id = packId(group);
     if (!id) return;
-    mods.push({ id: id, name: group.name });
+    mods.push({ id: id, name: group.name, author: group.author || "" });
   });
   extraMods.forEach((mod) => {
     if (!mod.id) return;
-    mods.push({ id: String(mod.id), name: mod.name });
+    mods.push({ id: String(mod.id), name: mod.name, author: mod.author || "" });
   });
   return mods;
+}
+
+function creditText(author) {
+  const text = String(author || "").trim();
+  return text ? "by " + text : "";
 }
 
 function renderChecks() {
@@ -279,7 +300,11 @@ function renderChecks() {
   const rows = [];
   enabled.forEach((id) => {
     const found = known.find((mod) => mod.id === id);
-    rows.push({ id: id, name: found ? found.name : "Workshop id " + id });
+    rows.push({
+      id: id,
+      name: found ? found.name : "Workshop id " + id,
+      author: found ? found.author : ""
+    });
   });
   known.forEach((mod) => {
     if (enabled.indexOf(mod.id) === -1) rows.push(mod);
@@ -291,7 +316,17 @@ function renderChecks() {
     input.type = "checkbox";
     input.value = row.id;
     input.checked = enabled.indexOf(row.id) !== -1;
-    label.append(input, document.createTextNode(" " + row.name));
+    const name = document.createElement("span");
+    name.className = "mod-name";
+    name.textContent = row.name;
+    label.append(input, name);
+    const credit = creditText(row.author);
+    if (credit) {
+      const author = document.createElement("span");
+      author.className = "mod-author";
+      author.textContent = credit;
+      label.append(author);
+    }
     box.appendChild(label);
   });
 }
@@ -373,6 +408,8 @@ function fillTable(body, groups) {
       });
       row.addEventListener("click", () => {
         showDetail(scenario.id);
+        const limits = presetLimits(scenario);
+        setLimits(limits.players, limits.team, limits.minPlayers);
       });
       body.appendChild(row);
     });
@@ -393,6 +430,19 @@ function markSelected() {
     if (!row.dataset.id) return;
     row.setAttribute("aria-selected", row.dataset.id === selected ? "true" : "false");
   });
+}
+
+function setLimits(players, team, minPlayers) {
+  document.getElementById("players").value = String(players);
+  document.getElementById("team").value = String(team);
+  document.getElementById("minPlayers").value = String(minPlayers);
+}
+
+function presetLimits(scenario) {
+  const players = Number(scenario.players);
+  const team = Number(scenario.team);
+  const minPlayers = players >= 2 ? 2 : players;
+  return { players: players, team: team, minPlayers: minPlayers };
 }
 
 function showDetail(id) {
@@ -490,6 +540,11 @@ function applyState(state) {
   ["upkeep", "combatRule", "gameType", "initMoney", "incomeRate", "scoreLimit", "timeLimit"].forEach((id) => {
     fillSelect(id, state[id]);
   });
+  setLimits(
+    state.players === undefined ? 4 : state.players,
+    state.team === undefined ? 2 : state.team,
+    state.minPlayers === undefined ? 2 : state.minPlayers
+  );
   showDetail(state.map || "");
   render();
 }
@@ -501,13 +556,20 @@ async function request(payload) {
     body: JSON.stringify(payload)
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.error || "Save failed.");
+  if (!response.ok) {
+    const error = new Error(body.error || "Save failed.");
+    error.confirmRestart = body.confirmRestart === true;
+    error.confirmUnchanged = body.confirmUnchanged === true;
+    throw error;
+  }
   return body;
 }
 
-function payload() {
+let pendingRestart = "";
+
+function payload(action) {
   return {
-    action: "save",
+    action: action || "save",
     serverName: document.getElementById("serverName").value,
     map: selected,
     gameType: document.getElementById("gameType").value,
@@ -517,8 +579,46 @@ function payload() {
     scoreLimit: document.getElementById("scoreLimit").value,
     timeLimit: document.getElementById("timeLimit").value,
     upkeep: document.getElementById("upkeep").value,
+    players: document.getElementById("players").value,
+    team: document.getElementById("team").value,
+    minPlayers: document.getElementById("minPlayers").value,
     mods: enabledIds()
   };
+}
+
+function restartPayload(confirmUnchanged, confirmRestart) {
+  const body = payload("restart");
+  if (confirmUnchanged) body.confirmUnchanged = true;
+  if (confirmRestart) body.confirmRestart = true;
+  return body;
+}
+
+function restartStatus(result) {
+  if (result.restarted && result.changed) {
+    return "Saved. The server is restarting. The current match will stop.";
+  }
+  if (result.restarted) {
+    return "The server is restarting. The current match will stop.";
+  }
+  if (result.changed) {
+    return "Saved. This page cannot restart the container. Restart it in Unraid to load the save.";
+  }
+  return "This page cannot restart the container. Restart it in Unraid.";
+}
+
+function showRestartConfirm(error) {
+  pendingRestart = error.confirmUnchanged ? "unchanged" : "changed";
+  document.getElementById("confirm-text").textContent = error.message;
+  document.getElementById("confirm-box").hidden = false;
+}
+
+async function runRestart(confirmUnchanged, confirmRestart) {
+  const status = document.getElementById("status");
+  const result = await request(restartPayload(confirmUnchanged, confirmRestart));
+  document.getElementById("confirm-box").hidden = true;
+  pendingRestart = "";
+  applyState(result);
+  status.textContent = restartStatus(result);
 }
 
 document.getElementById("filter").addEventListener("input", () => render());
@@ -541,10 +641,40 @@ document.getElementById("save").addEventListener("click", async () => {
   const status = document.getElementById("status");
   try {
     applyState(await request(payload()));
-    status.textContent = "Saved. Restart this container in Unraid to load it. The current match keeps running.";
+    status.textContent = "Saved. The current match keeps running. Use Save and restart to load this file.";
   } catch (error) {
     status.textContent = error.message;
   }
+});
+document.getElementById("restart").addEventListener("click", async () => {
+  const status = document.getElementById("status");
+  document.getElementById("confirm-box").hidden = true;
+  try {
+    await runRestart(false, false);
+  } catch (error) {
+    if (error.confirmUnchanged || error.confirmRestart) {
+      showRestartConfirm(error);
+      status.textContent = "";
+      return;
+    }
+    status.textContent = error.message;
+  }
+});
+document.getElementById("confirm-yes").addEventListener("click", async () => {
+  const status = document.getElementById("status");
+  const unchanged = pendingRestart === "unchanged";
+  try {
+    await runRestart(unchanged, !unchanged);
+  } catch (error) {
+    document.getElementById("confirm-box").hidden = true;
+    pendingRestart = "";
+    status.textContent = error.message;
+  }
+});
+document.getElementById("confirm-no").addEventListener("click", () => {
+  document.getElementById("confirm-box").hidden = true;
+  pendingRestart = "";
+  document.getElementById("status").textContent = "Restart cancelled.";
 });
 
 Promise.all([fetch("/scenarios.json").then((response) => response.json()), fetch("/api/lobby").then((response) => response.json())])

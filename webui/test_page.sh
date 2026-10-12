@@ -7,7 +7,12 @@ WORKDIR=$(mktemp -d)
 PAGE_PID=
 ROOT_PAGE_PID=
 ROOT_RUN=
+SUPERVISOR_PID=
 cleanup() {
+  if [ -n "${SUPERVISOR_PID:-}" ]; then
+    kill "$SUPERVISOR_PID" 2>/dev/null || true
+    wait "$SUPERVISOR_PID" 2>/dev/null || true
+  fi
   if [ -n "${PAGE_PID:-}" ]; then
     kill -- "-$PAGE_PID" 2>/dev/null || kill "$PAGE_PID" 2>/dev/null || true
     wait "$PAGE_PID" 2>/dev/null || true
@@ -46,7 +51,48 @@ capture_code() {
 }
 
 python3 "${ROOT}/webui/make_catalog.py" --check
+python3 - "$ROOT" << 'PY' || fail "workshop author credit check failed"
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+data = json.loads((root / "webui/scenarios.json").read_text())
+expected = {
+    "3811913066": "Zim",
+    "3363584349": "Silver",
+    "3474588989": "Kel",
+    "3705706772": "Kel",
+    "3415339374": "Kel",
+    "3762638679": "Silver",
+    "3595948209": "BiometricNuke",
+    "3388575848": "etouf fement",
+}
+found = {}
+for group in data["groups"]:
+    mod_id = (group.get("modList") or "").split("/", 1)[0]
+    author = group.get("author") or ""
+    if not mod_id:
+        if str(author).strip():
+            raise SystemExit("base game has an author")
+        continue
+    found[mod_id] = author
+for mod in data["mods"]:
+    found[str(mod["id"])] = mod.get("author") or ""
+if found != expected:
+    raise SystemExit("workshop authors %s" % found)
+html = (root / "webui/index.html").read_text()
+start = html.index("function creditText")
+body = html[start:html.index("function renderChecks", start)]
+if 'return text ? "by " + text : "";' not in body:
+    raise SystemExit("creditText does not omit a blank author")
+if "creditText(row.author)" not in html or 'className = "mod-author"' not in html:
+    raise SystemExit("checklist does not place the author next to the name")
+if 'author: found ? found.author : ""' not in html:
+    raise SystemExit("an unknown workshop id would invent an author")
+PY
 printf 'ok scenario catalog matches the README\n'
+printf 'ok workshop authors sit next to the checklist names\n'
 
 settings="${WORKDIR}/settings"
 mkdir -p "$settings"
@@ -113,6 +159,66 @@ done
 [ -f "${settings}/.warhost-webui.ready" ] || fail "lobby page did not become ready"
 
 base="http://127.0.0.1:${PORT}"
+same='{"action":"restart","serverName":"WARHOST - Hesse 2v2","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":750,"timeLimit":1200,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":4,"team":2,"minPlayers":2,"mods":[]}'
+capture_code "${WORKDIR}/body.txt" \
+  -H 'Origin: http://evil.example' \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data "$same" \
+  "${base}/api/lobby"
+[ "$code" = "403" ] || fail "cross-site restart returned ${code}"
+[ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "cross-site restart changed variables.ini"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data "$same" \
+  "${base}/api/lobby"
+[ "$code" = "409" ] || fail "unchanged restart returned ${code}"
+python3 -c 'import json,sys; body=json.load(open(sys.argv[1])); raise SystemExit(0 if body.get("error")=="No settings have changed, are you sure you want to restart the container?" else 1)' "${WORKDIR}/body.txt" || fail "unchanged restart did not use the warning"
+python3 -c 'import json,sys; body=json.load(open(sys.argv[1])); assert body.get("confirmUnchanged") is True' "${WORKDIR}/body.txt" || fail "unchanged restart did not ask for confirmation"
+[ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "unchanged restart changed variables.ini"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"restart","confirmUnchanged":true,"serverName":"WARHOST - Hesse 2v2","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":750,"timeLimit":1200,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":4,"team":2,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "confirmed unchanged restart returned ${code}"
+python3 -c 'import json,sys; body=json.load(open(sys.argv[1])); assert body["restarted"] is False and body["changed"] is False' "${WORKDIR}/body.txt" || fail "confirmed unchanged restart claimed a restart"
+[ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "confirmed unchanged restart changed variables.ini"
+grep -q 'This page cannot restart the container. Restart it in Unraid.' "${WORKDIR}/body.txt" || fail "confirmed unchanged restart hid the limitation"
+
+ready_flag="${WORKDIR}/supervisor-ready"
+rm -f "$ready_flag"
+python3 -c 'import os,sys; os.execv(sys.executable, ["entrypoint-unraid.sh","-c","import pathlib,signal,sys,time; signal.signal(signal.SIGUSR1, lambda *a: sys.exit(0)); pathlib.Path(sys.argv[1]).write_text(\"up\"); time.sleep(60)", sys.argv[1]])' "$ready_flag" &
+SUPERVISOR_PID=$!
+i=0
+while [ "$i" -lt 50 ]; do
+  if [ -f "$ready_flag" ]; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+[ -f "$ready_flag" ] || fail "restart target did not start"
+printf '%s\n' "$SUPERVISOR_PID" > "${settings}/.warhost-supervisor.pid"
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"restart","confirmUnchanged":true,"serverName":"WARHOST - Hesse 2v2","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":750,"timeLimit":1200,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":4,"team":2,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "signaled restart returned ${code}"
+python3 -c 'import json,sys; body=json.load(open(sys.argv[1])); assert body["restarted"] is True and body["changed"] is False' "${WORKDIR}/body.txt" || fail "signaled restart did not report the signal"
+[ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "signaled restart changed variables.ini"
+if kill -0 "$SUPERVISOR_PID" 2>/dev/null; then
+  fail "restart signal left the supervisor running"
+fi
+wait "$SUPERVISOR_PID" 2>/dev/null || true
+SUPERVISOR_PID=
+kill -0 "$PAGE_PID" || fail "restart signal stopped the WebUI"
+curl -fsS -o /dev/null "${base}/" || fail "WebUI exited when it signaled a restart"
+rm -f "${settings}/.warhost-supervisor.pid"
 capture_code "${WORKDIR}/body.txt" \
   -H 'Origin: http://evil.example' \
   -H 'X-WARHOST-Request: 1' \
@@ -188,6 +294,21 @@ fi
 grep -q 'Scenic view' "${WORKDIR}/page.html" || fail "page is missing the scenic slot"
 grep -q 'Tactical zones' "${WORKDIR}/page.html" || fail "page is missing the tactical slot"
 grep -q 'Map list (scenario ID list)' "${WORKDIR}/page.html" || fail "page is missing the map list heading"
+grep -q 'Save and restart' "${WORKDIR}/page.html" || fail "page is missing Save and restart"
+grep -q 'id="players"' "${WORKDIR}/page.html" || fail "page is missing max players"
+grep -q 'id="team"' "${WORKDIR}/page.html" || fail "page is missing team size"
+grep -q 'id="minPlayers"' "${WORKDIR}/page.html" || fail "page is missing minimum players"
+grep -q 'presetLimits(scenario)' "${WORKDIR}/page.html" || fail "picking a map does not fill player limits"
+python3 - "${WORKDIR}/page.html" << 'PY' || fail "player limits are locked"
+import sys
+from pathlib import Path
+html = Path(sys.argv[1]).read_text()
+for field in ("players", "team", "minPlayers"):
+    start = html.index(f'id="{field}"')
+    tag = html[html.rindex("<input", 0, start):html.index(">", start) + 1]
+    if "disabled" in tag or "readonly" in tag:
+        raise SystemExit(tag)
+PY
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["map"]=="RDPort_JungleLaw_2v2_CONQ"; assert d["modList"]=="3811913066-3474588989"; assert d["modTags"]=="Maps-Scenarios"' "${WORKDIR}/state.json" || fail "state did not return the saved map"
 kill -HUP "$PAGE_PID" || fail "could not signal the lobby page"
 curl -fsS -o /dev/null "${base}/" || fail "lobby page exited on hangup"
@@ -260,6 +381,63 @@ capture_code "${WORKDIR}/body.txt" \
 [ "$code" = "200" ] || fail "destruction save returned ${code}"
 grep -qx 'CombatRule = 1' "${settings}/variables.ini" || fail "destruction save did not write the combat rule"
 grep -qx 'Map = _2x3_Death_Row_2vs2_DEST' "${settings}/variables.ini" || fail "destruction save did not write the map"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"restart","serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":2,"team":1,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "409" ] || fail "changed restart without confirmation returned ${code}"
+grep -q 'Save these settings and restart the container? The current match will stop.' "${WORKDIR}/body.txt" || fail "changed restart did not ask to confirm"
+grep -qx 'NbMaxPlayer = 4' "${settings}/variables.ini" || fail "unconfirmed restart wrote player limits"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"restart","confirmRestart":true,"serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":2,"team":1,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "1v1 restart returned ${code}"
+python3 -c 'import json,sys; body=json.load(open(sys.argv[1])); assert body["changed"] is True and body["restarted"] is False' "${WORKDIR}/body.txt" || fail "1v1 restart did not save without a supervisor"
+grep -qx 'NbMaxPlayer = 2' "${settings}/variables.ini" || fail "1v1 restart did not write max players"
+grep -qx 'MaxTeamSize = 1' "${settings}/variables.ini" || fail "1v1 restart did not write team size"
+grep -qx 'NbMinPlayer = 2' "${settings}/variables.ini" || fail "1v1 restart did not write minimum players"
+grep -qx 'Map = _2x3_Death_Row_2vs2_DEST' "${settings}/variables.ini" || fail "1v1 restart changed the map"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"restart","serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":2,"team":1,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "409" ] || fail "saved 1v1 was still treated as changed"
+grep -q 'No settings have changed, are you sure you want to restart the container?' "${WORKDIR}/body.txt" || fail "saved 1v1 did not warn before restart"
+grep -qx 'NbMaxPlayer = 2' "${settings}/variables.ini" || fail "unchanged 1v1 warning rewrote max players"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":8,"team":4,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "4v4 override returned ${code}"
+grep -qx 'NbMaxPlayer = 8' "${settings}/variables.ini" || fail "4v4 override did not write max players"
+grep -qx 'MaxTeamSize = 4' "${settings}/variables.ini" || fail "4v4 override did not write team size"
+grep -qx 'NbMinPlayer = 2' "${settings}/variables.ini" || fail "4v4 override did not write minimum players"
+grep -qx 'Map = _2x3_Death_Row_2vs2_DEST' "${settings}/variables.ini" || fail "4v4 override changed the map"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":2,"team":3,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "400" ] || fail "team size above max players returned ${code}"
+grep -qx 'NbMaxPlayer = 8' "${settings}/variables.ini" || fail "rejected team size changed max players"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":21,"team":4,"minPlayers":2,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "400" ] || fail "max players above 20 returned ${code}"
+grep -qx 'NbMaxPlayer = 8' "${settings}/variables.ini" || fail "rejected max players changed the file"
 
 outside="${WORKDIR}/outside.ini"
 printf 'secret-target\n' > "$outside"

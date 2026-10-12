@@ -9,6 +9,7 @@ EMPTY_PORT_TABLE="${WORKDIR}/empty-ports"
 mkdir -p "$EMPTY_PORT_TABLE"
 holder=
 stage_pid=
+restart_pid=
 stop_webui() {
   find "$WORKDIR" -name '.warhost-webui.pid' -type f 2>/dev/null |
     while IFS= read -r pidfile; do
@@ -18,7 +19,7 @@ stop_webui() {
       fi
     done
 }
-trap 'stop_webui; if [ -n "${stage_pid:-}" ]; then kill "$stage_pid" 2>/dev/null || true; wait "$stage_pid" 2>/dev/null || true; fi; if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
+trap 'stop_webui; if [ -n "${stage_pid:-}" ]; then kill "$stage_pid" 2>/dev/null || true; wait "$stage_pid" 2>/dev/null || true; fi; if [ -n "${holder:-}" ]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi; if [ -n "${restart_pid:-}" ]; then kill "$restart_pid" 2>/dev/null || true; wait "$restart_pid" 2>/dev/null || true; fi; rm -rf "$WORKDIR"' EXIT
 
 SERVER_COUNT=0
 
@@ -1389,6 +1390,75 @@ expect_fail "lobby page flag must be true or false" \
   EXPOSEDPORT=21403 \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'old' "${server}/settings/variables.ini" || fail "bad lobby page flag rewrote variables.ini"
+
+make_server
+hold="${WORKDIR}/hold-upstream"
+count="${WORKDIR}/upstream-count"
+: > "$hold"
+: > "$count"
+cat > "${server}/entrypoint2.sh" << EOF
+#!/bin/sh
+printf '%s\n' reached-upstream >> "$count"
+while [ -f "$hold" ]; do
+  sleep 0.05
+done
+exit 0
+EOF
+chmod 755 "${server}/entrypoint2.sh"
+: > "${WORKDIR}/restart-out.txt"
+: > "${WORKDIR}/restart-err.txt"
+env -i PATH="$PATH" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21620 \
+  WEB_UI=false \
+  sh "$ENTRY" >"${WORKDIR}/restart-out.txt" 2>"${WORKDIR}/restart-err.txt" &
+restart_pid=$!
+i=0
+while [ "$i" -lt 50 ]; do
+  if [ -f "${server}/settings/.warhost-supervisor.pid" ] && [ "$(wc -l < "$count" | tr -d ' ')" -ge 1 ]; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+[ -f "${server}/settings/.warhost-supervisor.pid" ] || fail "restart supervisor did not record its pid"
+[ "$(wc -l < "$count" | tr -d ' ')" -ge 1 ] || fail "restart supervisor did not start the dedicated server"
+kill -USR1 "$restart_pid" || fail "could not signal the supervisor"
+i=0
+while [ "$i" -lt 80 ]; do
+  if [ "$(wc -l < "$count" | tr -d ' ')" -ge 2 ]; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+[ "$(wc -l < "$count" | tr -d ' ')" -eq 2 ] || fail "restart did not run the dedicated server again"
+grep -q 'Restarting the dedicated server to load variables.ini.' "${WORKDIR}/restart-out.txt" || fail "restart did not say it was restarting"
+if ! kill -0 "$restart_pid" 2>/dev/null; then
+  fail "restart signal stopped the wrapper"
+fi
+kill -TERM "$restart_pid" || fail "could not stop the supervisor"
+i=0
+while [ "$i" -lt 50 ]; do
+  if ! kill -0 "$restart_pid" 2>/dev/null; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+if kill -0 "$restart_pid" 2>/dev/null; then
+  fail "stop signal left the wrapper running"
+fi
+wait "$restart_pid" 2>/dev/null || true
+restart_pid=
+if [ "$(wc -l < "$count" | tr -d ' ')" -ne 2 ]; then
+  fail "stop signal started the dedicated server again"
+fi
+rm -f "$hold"
+printf 'ok webui restart runs the dedicated server again\n'
 
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"

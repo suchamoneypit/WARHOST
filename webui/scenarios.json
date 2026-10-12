@@ -2,6 +2,7 @@
   "groups": [
     {
       "name": "Red Dragon map pack",
+      "author": "Zim",
       "modList": "3811913066/27",
       "modTags": "Maps-Scenarios",
       "scenarios": [
@@ -233,6 +234,7 @@
     },
     {
       "name": "WEST FULDA 1.0",
+      "author": "Silver",
       "modList": "3363584349/1023",
       "modTags": "Maps-Scenarios",
       "scenarios": [
@@ -368,6 +370,7 @@
     },
     {
       "name": "Highway to Oslo",
+      "author": "Kel",
       "modList": "3474588989/14",
       "modTags": "Maps-Scenarios",
       "scenarios": [
@@ -407,6 +410,7 @@
     },
     {
       "name": "Ramstein Air Base",
+      "author": "Kel",
       "modList": "3705706772/9",
       "modTags": "Maps-Scenarios",
       "scenarios": [
@@ -430,6 +434,7 @@
     },
     {
       "name": "Arsenal",
+      "author": "Kel",
       "modList": "3415339374/20",
       "modTags": "Maps-Scenarios",
       "scenarios": [
@@ -469,6 +474,7 @@
     },
     {
       "name": "Helbe",
+      "author": "Silver",
       "modList": "3762638679/36",
       "modTags": "Maps-Scenarios",
       "scenarios": [
@@ -572,6 +578,7 @@
     },
     {
       "name": "Base game",
+      "author": "",
       "modList": "",
       "modTags": "",
       "scenarios": [
@@ -1397,6 +1404,7 @@
   "mods": [
     {
       "name": "Galactic Divide",
+      "author": "BiometricNuke",
       "id": "3595948209",
       "modList": "3595948209/16",
       "modTags": "Gameplay-Interface-Sound-Scenarios-Maps",
@@ -1404,6 +1412,7 @@
     },
     {
       "name": "A World in Flames",
+      "author": "etouf fement",
       "id": "3388575848",
       "modList": "3388575848/7",
       "modTags": "Gameplay-Interface",

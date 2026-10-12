@@ -4,6 +4,10 @@
 set -eu
 
 UPSTREAM_ENTRYPOINT="${UPSTREAM_ENTRYPOINT:-/server/entrypoint2.sh}"
+ENTRY_SELF=$(CDPATH= cd -- "$(dirname "$0")" && pwd)/$(basename "$0")
+# Installed before any slow start so a restart signal cannot kill PID 1.
+restart_requested=0
+trap 'restart_requested=1' USR1
 
 die() {
   printf '%s\n' "$1" >&2
@@ -368,7 +372,10 @@ prepare_server_runtime() {
   settings_locked=0
   if command -v flock >/dev/null 2>&1; then
     # fd 9 stays open across exec so the lock lasts as long as the server.
-    exec 9>"${SETTINGS_DIR}/warhost.lock"
+    # A WebUI restart re-execs this script in the same process and keeps fd 9.
+    if [ ! -e /proc/self/fd/9 ]; then
+      exec 9>"${SETTINGS_DIR}/warhost.lock"
+    fi
     if ! flock -n 9; then
       if [ -n "$NEXT_PORT" ]; then
         die "This settings folder is already used by a running container. This Game Port uses /mnt/user/appdata/warno/${EXPOSEDPORT}/settings. If that folder is the one in use, set Game Port to ${NEXT_PORT} and Settings Folder to /mnt/user/appdata/warno/${NEXT_PORT}/settings. Do not copy WARNO or Workshop files into it."
@@ -857,5 +864,130 @@ else
   fi
 fi
 
+# The wrapper stays PID 1. Eugen's entrypoint runs in its own session.
+# SIGUSR1 stops that session and re-execs this script so a WebUI save is loaded.
+# SIGTERM and SIGINT stop that session and exit. A normal exit does too.
+process_state() {
+  proc_stat=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+  proc_tail=${proc_stat##*') '}
+  printf '%s\n' "${proc_tail%% *}"
+}
+
+write_supervisor_pid() {
+  pid_file="${SETTINGS_DIR}/.warhost-supervisor.pid"
+  if [ -L "$pid_file" ]; then
+    rm -f "$pid_file" || {
+      printf '%s\n' "warning: ${pid_file} is a symlink, so the WebUI cannot restart this server."
+      return 0
+    }
+  fi
+  if [ -d "$pid_file" ]; then
+    printf '%s\n' "warning: ${pid_file} is a directory, so the WebUI cannot restart this server."
+    return 0
+  fi
+  if ! printf '%s\n' "$$" > "$pid_file"; then
+    printf '%s\n' "warning: could not record the server process, so the WebUI cannot restart this server."
+  fi
+}
+
+clear_supervisor_pid() {
+  pid_file="${SETTINGS_DIR}/.warhost-supervisor.pid"
+  if [ -f "$pid_file" ] && [ ! -L "$pid_file" ]; then
+    rm -f "$pid_file" || true
+  fi
+}
+
+upstream_pid=
+upstream_group=0
+stop_requested=0
+
+kill_upstream() {
+  if [ -z "${upstream_pid:-}" ]; then
+    return 0
+  fi
+  if [ "$upstream_group" -eq 1 ]; then
+    kill -TERM -- "-$upstream_pid" 2>/dev/null || kill -TERM "$upstream_pid" 2>/dev/null || true
+  else
+    kill -TERM "$upstream_pid" 2>/dev/null || true
+  fi
+}
+
+on_usr1() {
+  restart_requested=1
+  kill_upstream
+}
+
+on_stop() {
+  stop_requested=1
+  restart_requested=0
+  kill_upstream
+}
+
+supervise_upstream() {
+  # Drop the re-exec marker before the game process starts. launch.sh already saw it.
+  unset WARHOST_WEBUI_KEEP
+  trap 'clear_supervisor_pid' EXIT
+  trap 'on_stop' TERM INT
+  trap 'on_usr1' USR1
+  write_supervisor_pid
+  if [ "$stop_requested" -eq 1 ]; then
+    exit 143
+  fi
+  if [ "$restart_requested" -eq 1 ]; then
+    printf '%s\n' "Restarting the dedicated server to load variables.ini."
+    WARHOST_WEBUI_KEEP=1 exec "$ENTRY_SELF" "$@"
+  fi
+  if command -v setsid >/dev/null 2>&1; then
+    setsid "$UPSTREAM_ENTRYPOINT" "$@" &
+    upstream_group=1
+  else
+    "$UPSTREAM_ENTRYPOINT" "$@" &
+    upstream_group=0
+  fi
+  upstream_pid=$!
+  kill_tries=0
+  while :; do
+    state=$(process_state "$upstream_pid" || true)
+    if [ -z "$state" ] || [ "$state" = "Z" ]; then
+      break
+    fi
+    if [ "$stop_requested" -eq 1 ] || [ "$restart_requested" -eq 1 ]; then
+      kill_tries=$((kill_tries + 1))
+      if [ "$kill_tries" -gt 80 ]; then
+        die "The dedicated server did not exit after the restart signal."
+      fi
+      if [ "$kill_tries" -gt 40 ]; then
+        if [ "$upstream_group" -eq 1 ]; then
+          kill -KILL -- "-$upstream_pid" 2>/dev/null || kill -KILL "$upstream_pid" 2>/dev/null || true
+        else
+          kill -KILL "$upstream_pid" 2>/dev/null || true
+        fi
+      else
+        kill_upstream
+      fi
+    fi
+    sleep 0.05 || true
+  done
+  upstream_status=0
+  wait "$upstream_pid" || upstream_status=$?
+  upstream_pid=
+  if [ "$stop_requested" -eq 1 ]; then
+    exit 143
+  fi
+  if [ "$restart_requested" -eq 1 ]; then
+    i=0
+    while local_port_taken "$EXPOSEDPORT" && [ "$i" -lt 50 ]; do
+      i=$((i + 1))
+      sleep 0.1 || true
+    done
+    if local_port_taken "$EXPOSEDPORT"; then
+      die "The game port was still in use after the restart signal, so the dedicated server did not start again."
+    fi
+    printf '%s\n' "Restarting the dedicated server to load variables.ini."
+    WARHOST_WEBUI_KEEP=1 exec "$ENTRY_SELF" "$@"
+  fi
+  exit "$upstream_status"
+}
+
 cd "$server_root"
-exec "$UPSTREAM_ENTRYPOINT" "$@"
+supervise_upstream "$@"

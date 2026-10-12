@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""WebUI. It replaces variables.ini and does not signal the game server."""
+"""WebUI. It replaces variables.ini. Restart signals the wrapper, not this process."""
 
 import json
 import os
@@ -97,15 +97,11 @@ def apply_sock():
     return ROOT / "run" / "apply.sock"
 
 
-def apply_text(text, settings):
-    sock_path = apply_sock()
-    if not sock_path.exists():
-        lobby.publish(settings, text)
-        return
-    payload = json.dumps({"text": text}).encode() + b"\n"
+def helper_exchange(message):
+    payload = json.dumps(message).encode() + b"\n"
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client.settimeout(5)
-    client.connect(str(sock_path))
+    client.connect(str(apply_sock()))
     client.sendall(payload)
     reply = b""
     while b"\n" not in reply and len(reply) < 4000:
@@ -114,10 +110,64 @@ def apply_text(text, settings):
             break
         reply += chunk
     client.close()
-    line = reply.decode(errors="replace").strip()
+    return reply.decode(errors="replace").strip()
+
+
+def apply_text(text, settings):
+    sock_path = apply_sock()
+    if not sock_path.exists():
+        lobby.publish(settings, text)
+        return
+    line = helper_exchange({"text": text})
     if line != "OK":
         detail = line[4:] if line.startswith("ERR ") else "The lobby file was not replaced."
         raise lobby.LobbyError(detail)
+
+
+def wrapper_command(pid):
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return False
+    args = [part.decode(errors="replace") for part in raw.split(b"\x00") if part]
+    for arg in args:
+        if arg == "entrypoint-unraid.sh" or arg.endswith("/entrypoint-unraid.sh"):
+            return True
+    return False
+
+
+def supervisor_pid(settings):
+    path = Path(settings) / ".warhost-supervisor.pid"
+    if path.is_symlink() or not path.is_file():
+        return None
+    text = path.read_text().strip()
+    if not text.isdigit() or str(int(text)) != text:
+        return None
+    pid = int(text)
+    if pid < 1 or not wrapper_command(pid):
+        return None
+    return pid
+
+
+def signal_supervisor(settings):
+    pid = supervisor_pid(settings)
+    if pid is None:
+        return False
+    try:
+        os.kill(pid, signal.SIGUSR1)
+    except OSError:
+        return False
+    return True
+
+
+def request_container_restart(settings):
+    if apply_sock().exists():
+        try:
+            line = helper_exchange({"action": "restart"})
+        except OSError:
+            return False
+        return line == "OK"
+    return signal_supervisor(settings)
 
 
 def same_origin(headers):
@@ -193,17 +243,30 @@ class Handler(BaseHTTPRequestHandler):
             return
         dest = self.settings / "variables.ini"
         before = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
+        restarted = None
+        changed = None
         try:
-            if payload.get("action") == "save":
-                if dest.is_symlink():
-                    existing = {"values": {}, "extras": []}
-                else:
-                    existing = lobby.read_ini(dest)
+            if dest.is_symlink() or not dest.is_file():
+                existing = {"values": {}, "extras": []}
+            else:
+                existing = lobby.read_ini(dest)
+            action = payload.get("action")
+            if action == "save":
                 managed, seeded, extras = lobby.validate_save(payload, existing, CATALOG)
-                text = lobby.render(managed, seeded, extras)
+                apply_text(lobby.render(managed, seeded, extras), self.settings)
+            elif action == "restart":
+                changed, managed, seeded, extras = lobby.settings_changed(payload, existing, CATALOG)
+                if changed and payload.get("confirmRestart") is not True:
+                    self._json(409, {"error": lobby.CHANGED_RESTART, "confirmRestart": True})
+                    return
+                if not changed and payload.get("confirmUnchanged") is not True:
+                    self._json(409, {"error": lobby.UNCHANGED_RESTART, "confirmUnchanged": True})
+                    return
+                if changed:
+                    apply_text(lobby.render(managed, seeded, extras), self.settings)
+                restarted = request_container_restart(self.settings)
             else:
                 raise lobby.LobbyError("The WebUI sent an unreadable save.")
-            apply_text(text, self.settings)
         except lobby.LobbyError as exc:
             after = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
             if after != before:
@@ -211,8 +274,17 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._json(400, {"error": str(exc)})
             return
-        existing = lobby.read_ini(dest)
-        self._json(200, public_state(existing))
+        state = public_state(lobby.read_ini(dest))
+        if restarted is not None:
+            state["changed"] = bool(changed)
+            state["restarted"] = bool(restarted)
+            if not restarted:
+                state["restartError"] = (
+                    "This page cannot restart the container. Restart it in Unraid to load the save."
+                    if changed
+                    else "This page cannot restart the container. Restart it in Unraid."
+                )
+        self._json(200, state)
 
 
 def write_pid(settings):
@@ -266,6 +338,15 @@ def run_helper():
             data += chunk
         try:
             message = json.loads(data.split(b"\n", 1)[0].decode())
+            if not isinstance(message, dict):
+                raise lobby.LobbyError("The lobby file was not replaced.")
+            if message.get("action") == "restart":
+                if signal_supervisor(settings):
+                    conn.sendall(b"OK\n")
+                else:
+                    conn.sendall(b"ERR The dedicated server was not restarted.\n")
+                conn.close()
+                continue
             text = message["text"]
             if not isinstance(text, str) or "dedicated_key" in text or "login=" in text:
                 raise lobby.LobbyError("The lobby file was not replaced.")
