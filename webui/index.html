@@ -319,6 +319,24 @@ function fillSelect(id, current) {
   select.value = String(current);
 }
 
+function lockCombatRule(rule) {
+  const select = document.getElementById("combatRule");
+  select.replaceChildren();
+  const option = document.createElement("option");
+  option.value = String(rule);
+  option.textContent = ruleName(rule);
+  select.appendChild(option);
+  select.value = String(rule);
+  select.disabled = true;
+}
+
+function unlockCombatRule() {
+  const select = document.getElementById("combatRule");
+  const current = select.value;
+  select.disabled = false;
+  fillSelect("combatRule", current);
+}
+
 function findScenario(id) {
   for (const group of catalog) {
     for (const scenario of group.scenarios) {
@@ -355,7 +373,6 @@ function fillTable(body, groups) {
       });
       row.addEventListener("click", () => {
         showDetail(scenario.id);
-        document.getElementById("combatRule").value = String(scenario.rule);
       });
       body.appendChild(row);
     });
@@ -388,10 +405,12 @@ function showDetail(id) {
     name.textContent = id || "Game parameters";
     meta.textContent = id ? "This saved map is not in the map list." : "";
     scenarioLine.textContent = id ? "Scenario ID: " + id : "";
+    unlockCombatRule();
   } else {
     name.textContent = found.scenario.name;
     meta.textContent = ruleName(found.scenario.rule) + " · " + sizeText(found.scenario) + " · " + found.scenario.players + " players · " + found.group.name;
     scenarioLine.textContent = "Scenario ID: " + found.scenario.id;
+    lockCombatRule(found.scenario.rule);
   }
   markSelected();
 }

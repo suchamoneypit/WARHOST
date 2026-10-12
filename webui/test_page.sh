@@ -134,6 +134,15 @@ grep -qx 'InitMoney = 750' "${settings}/variables.ini" || fail "rejected save ch
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
   -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"x","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "400" ] || fail "conquest map with destruction returned ${code}"
+grep -q 'That map is Conquest only.' "${WORKDIR}/body.txt" || fail "conquest map did not name its rule"
+[ "$(cksum "${settings}/variables.ini")" = "$checksum" ] || fail "rejected combat rule changed variables.ini"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
   --data '{"action":"save","serverName":"Saved Lobby","map":"RDPort_JungleLaw_2v2_CONQ","gameType":1,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":4000,"incomeRate":5,"upkeep":5,"mods":[]}' \
   "${base}/api/lobby"
 [ "$code" = "400" ] || fail "modded map without a workshop id returned ${code}"
@@ -242,6 +251,15 @@ capture_code "${WORKDIR}/body.txt" \
   "${base}/api/lobby"
 [ "$code" = "400" ] || fail "reset returned ${code}"
 grep -qx 'ModList = 3388575848-3811913066-3595948209' "${settings}/variables.ini" || fail "reset changed the lobby file"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x3_Death_Row_2vs2_DEST","gameType":0,"combatRule":1,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "destruction save returned ${code}"
+grep -qx 'CombatRule = 1' "${settings}/variables.ini" || fail "destruction save did not write the combat rule"
+grep -qx 'Map = _2x3_Death_Row_2vs2_DEST' "${settings}/variables.ini" || fail "destruction save did not write the map"
 
 outside="${WORKDIR}/outside.ini"
 printf 'secret-target\n' > "$outside"

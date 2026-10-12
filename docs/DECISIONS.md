@@ -267,3 +267,9 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 **Decision:** Pushes to `dev` that change `Dockerfile`, `entrypoint-unraid.sh`, `webui/`, or `.github/workflows/rebuild-image.yml` publish `ghcr.io/suchamoneypit/warhost:dev`. `ghcr.io/suchamoneypit/warhost:latest` is still published from `main` only. The template `<Repository>` on `dev` is the `:dev` tag. Publishing to `main` sets that element back to `:latest` before the merge. `scripts/check_repo.sh` enforces the tag for the current branch.
 
 **Rationale:** The dev template no longer sends `MAP`. The image built from `main` still stops at `${MAP:?}` when that variable is unset, so the WebUI never starts. A pull of the dev template was still `ghcr.io/suchamoneypit/warhost:latest`, so the container kept the old entrypoint. The `:dev` tag is the image whose entrypoint seeds `_2x2_Hesse_2vs2_CONQ` when `variables.ini` is missing and keeps an existing file.
+
+## 2026-10-11 — A catalog map keeps its combat rule
+
+**Decision:** The Combat rules menu offers only the rule stored on the selected scenario. A save whose combat rule differs is rejected with `That map is Conquest only.` or `That map is Destruction only.` A map that is not in the catalog and already in `variables.ini` still accepts Destruction `1` or Conquest `2`.
+
+**Rationale:** Each scenario ID is one mode. Paddy Field is Conquest (`rule` 2). The menu listed both modes after the row was selected, and a save wrote the posted value. The list filter still searches by rule and does not assign one.

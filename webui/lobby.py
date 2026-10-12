@@ -227,6 +227,11 @@ def validate_save(payload, existing, catalog):
     combat = _canonical_number(payload.get("combatRule"), 1, 2)
     if combat not in (1, 2):
         raise LobbyError("Combat rule must be Destruction or Conquest.")
+    if known is not None:
+        expected = int(known[1]["rule"])
+        if combat != expected:
+            label = "Destruction" if expected == 1 else "Conquest"
+            raise LobbyError(f"That map is {label} only.")
     money = _keep_current(payload.get("initMoney"), _current_int(values, "InitMoney"), MENU_MONEY)
     time_limit = _keep_current(payload.get("timeLimit"), _current_int(values, "TimeLimit"), MENU_TIME)
     score = _keep_current(payload.get("scoreLimit"), _current_int(values, "ScoreLimit"), MENU_SCORE)
