@@ -44,6 +44,8 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -eu
+          notes="${RUNNER_TEMP:-/tmp}/warhost-release-notes.txt"
+          python3 scripts/release_notes.py --tag "${TAG}" --to "${GITHUB_SHA}" >"${notes}"
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             existing="$(git rev-parse "${TAG}^{}")"
             if [ "$existing" != "$GITHUB_SHA" ]; then
@@ -60,5 +62,5 @@ jobs:
           if gh release view "${TAG}" >/dev/null 2>&1; then
             echo "Release ${TAG} already exists."
           else
-            gh release create "${TAG}" --generate-notes --target "${GITHUB_SHA}"
+            gh release create "${TAG}" --title "${TAG}" --notes-file "${notes}" --target "${GITHUB_SHA}"
           fi
