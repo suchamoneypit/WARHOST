@@ -7,6 +7,7 @@ WORKDIR=$(mktemp -d)
 PAGE_PID=
 ROOT_PAGE_PID=
 ROOT_RUN=
+PAGE_COPY=
 SUPERVISOR_PID=
 cleanup() {
   if [ -n "${SUPERVISOR_PID:-}" ]; then
@@ -22,6 +23,9 @@ cleanup() {
   fi
   if [ -n "${ROOT_RUN:-}" ]; then
     sudo rm -rf "$ROOT_RUN"
+  fi
+  if [ -n "${PAGE_COPY:-}" ]; then
+    sudo rm -rf "$PAGE_COPY"
   fi
   rm -rf "$WORKDIR"
 }
@@ -457,9 +461,17 @@ printf 'ok lobby page saves and rejects\n'
 if sudo -n true 2>/dev/null; then
   sudo useradd --system --user-group --no-create-home --shell /usr/sbin/nologin warhost-web 2>/dev/null || true
   getent passwd warhost-web >/dev/null || fail "warhost-web user was not created"
+  # The Actions checkout lives under the runner home, which warhost-web cannot
+  # enter. The page files for this drop are a copy outside that home.
+  PAGE_COPY=$(mktemp -d)
+  chmod 755 "$PAGE_COPY"
+  cp -a "${ROOT}/webui/." "$PAGE_COPY/"
+  chmod -R a+rX "$PAGE_COPY"
   root_settings="${WORKDIR}/root-settings"
   mkdir -p "$root_settings"
+  chmod 755 "$WORKDIR" "$root_settings"
   printf 'ServerName = WARHOST - Hesse 2v2\nMap = _2x2_Hesse_2vs2_CONQ\n' > "${root_settings}/variables.ini"
+  chmod a+r "${root_settings}/variables.ini"
   ROOT_RUN="${ROOT}/webui/run"
 
   # sudo stays in the foreground until the page answers. setsid puts the
@@ -482,7 +494,7 @@ if sudo -n true 2>/dev/null; then
         sleep 0.05
       done
       exit 1
-    ' sh "${ROOT}/webui/server.py" "$_log" "${root_settings}/.warhost-webui.ready" "$_port" \
+    ' sh "${PAGE_COPY}/server.py" "$_log" "${root_settings}/.warhost-webui.ready" "$_port" \
       || return $?
   }
 
