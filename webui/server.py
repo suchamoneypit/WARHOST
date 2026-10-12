@@ -99,6 +99,23 @@ def public_state(existing):
     }
 
 
+def with_setup(state, values, decks):
+    coop = values.get("CoopVsAI", "0")
+    if coop in ("1", "2"):
+        humans, ai = lobby.counts_from_values(values)
+        state["setup"] = "pve"
+        state["humanSide"] = int(coop)
+        state["humans"] = humans
+        state["ai"] = ai
+    else:
+        state["setup"] = "pvp"
+        state["humanSide"] = 1
+        state["humans"] = state["team"]
+        state["ai"] = state["team"]
+    state["decks"] = decks
+    return state
+
+
 def apply_sock():
     return ROOT / "run" / "apply.sock"
 
@@ -119,12 +136,17 @@ def helper_exchange(message):
     return reply.decode(errors="replace").strip()
 
 
-def apply_text(text, settings):
+def apply_text(text, settings, params=None):
     sock_path = apply_sock()
+    message = {"text": text}
+    if params is not None:
+        message["params"] = params
     if not sock_path.exists():
         lobby.publish(settings, text)
+        if params is not None:
+            lobby.publish_params(settings, params)
         return
-    line = helper_exchange({"text": text})
+    line = helper_exchange(message)
     if line != "OK":
         detail = line[4:] if line.startswith("ERR ") else "The lobby file was not replaced."
         raise lobby.LobbyError(detail)
@@ -258,7 +280,8 @@ class Handler(BaseHTTPRequestHandler):
             except lobby.LobbyError as exc:
                 self._json(409, {"error": str(exc)})
                 return
-            self._json(200, public_state(existing))
+            decks = lobby.read_decks(self.settings / "params_for_ai.json")
+            self._json(200, with_setup(public_state(existing), existing.get("values", {}), decks))
             return
         found = preview_target(path)
         if found:
@@ -289,7 +312,9 @@ class Handler(BaseHTTPRequestHandler):
             self._json(400, {"error": "The WebUI sent an unreadable save."})
             return
         dest = self.settings / "variables.ini"
+        params_path = self.settings / "params_for_ai.json"
         before = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
+        params_before = params_path.read_bytes() if params_path.is_file() and not params_path.is_symlink() else None
         restarted = None
         changed = None
         try:
@@ -297,12 +322,16 @@ class Handler(BaseHTTPRequestHandler):
                 existing = {"values": {}, "extras": []}
             else:
                 existing = lobby.read_ini(dest)
+            decks_on_disk = lobby.read_decks(params_path)
             action = payload.get("action")
             if action == "save":
-                managed, seeded, extras = lobby.validate_save(payload, existing, CATALOG)
-                apply_text(lobby.render(managed, seeded, extras), self.settings)
+                managed, seeded, extras, decks = lobby.validate_save(payload, existing, CATALOG)
+                params_text = None if decks is None else lobby.render_decks(decks)
+                apply_text(lobby.render(managed, seeded, extras), self.settings, params_text)
             elif action == "restart":
-                changed, managed, seeded, extras = lobby.settings_changed(payload, existing, CATALOG)
+                changed, managed, seeded, extras, decks = lobby.settings_changed(
+                    payload, existing, CATALOG, decks_on_disk
+                )
                 if changed and payload.get("confirmRestart") is not True:
                     self._json(409, {"error": lobby.CHANGED_RESTART, "confirmRestart": True})
                     return
@@ -310,18 +339,21 @@ class Handler(BaseHTTPRequestHandler):
                     self._json(409, {"error": lobby.UNCHANGED_RESTART, "confirmUnchanged": True})
                     return
                 if changed:
-                    apply_text(lobby.render(managed, seeded, extras), self.settings)
+                    params_text = None if decks is None else lobby.render_decks(decks)
+                    apply_text(lobby.render(managed, seeded, extras), self.settings, params_text)
                 restarted = request_container_restart(self.settings)
             else:
                 raise lobby.LobbyError("The WebUI sent an unreadable save.")
         except lobby.LobbyError as exc:
             after = dest.read_bytes() if dest.is_file() and not dest.is_symlink() else None
-            if after != before:
+            params_after = params_path.read_bytes() if params_path.is_file() and not params_path.is_symlink() else None
+            if after != before or params_after != params_before:
                 self._json(500, {"error": "The lobby file changed during a rejected save."})
                 return
             self._json(400, {"error": str(exc)})
             return
-        state = public_state(lobby.read_ini(dest))
+        saved = lobby.read_ini(dest)
+        state = with_setup(public_state(saved), saved.get("values", {}), lobby.read_decks(params_path))
         if restarted is not None:
             state["changed"] = bool(changed)
             state["restarted"] = bool(restarted)
@@ -397,10 +429,20 @@ def run_helper():
             text = message["text"]
             if not isinstance(text, str) or "dedicated_key" in text or "login=" in text:
                 raise lobby.LobbyError("The lobby file was not replaced.")
+            params = message.get("params")
+            if params is not None and (
+                not isinstance(params, str) or "dedicated_key" in params or "login=" in params
+            ):
+                raise lobby.LobbyError("The lobby file was not replaced.")
             lobby.publish(settings, text if text.endswith("\n") else text + "\n")
+            if params is not None:
+                lobby.publish_params(settings, params if params.endswith("\n") else params + "\n")
             variables = settings / "variables.ini"
             if variables.is_file() and not variables.is_symlink():
                 os.chmod(variables, 0o644)
+            deck_file = settings / "params_for_ai.json"
+            if params is not None and deck_file.is_file() and not deck_file.is_symlink():
+                os.chmod(deck_file, 0o644)
         except (UnicodeError, json.JSONDecodeError, KeyError, TypeError, lobby.LobbyError) as exc:
             message = str(exc) if isinstance(exc, lobby.LobbyError) else "The lobby file was not replaced."
             conn.sendall(f"ERR {message}\n".encode())
@@ -427,6 +469,9 @@ def prepare_page_user(settings):
     variables = settings / "variables.ini"
     if variables.is_file() and not variables.is_symlink():
         os.chmod(variables, 0o644)
+    deck_file = settings / "params_for_ai.json"
+    if deck_file.is_file() and not deck_file.is_symlink():
+        os.chmod(deck_file, 0o644)
 
 
 def serve_with_helper():

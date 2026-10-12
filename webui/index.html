@@ -103,7 +103,13 @@
     object-fit: contain;
     display: block;
   }
-  .mods { margin: 0 0 12px; }
+  .workshop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    margin: 0 0 12px;
+  }
+  .mods { margin: 0; }
   .mods label { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
   .mods input { width: auto; }
   .mod-author { color: var(--muted); }
@@ -119,7 +125,7 @@
     html { height: auto; }
     body { display: block; height: auto; overflow: visible; }
     main { display: block; }
-    .layout, .shots, .filters { grid-template-columns: 1fr; }
+    .layout, .shots, .filters, .workshop { grid-template-columns: 1fr; }
     .layout { display: grid; grid-template-rows: auto; height: auto; }
     .maps { display: block; overflow: visible; height: auto; }
     .layout > section:last-child { max-height: none; overflow: visible; }
@@ -137,8 +143,16 @@
   <p id="status" role="status"></p>
   <div class="layout">
     <section class="maps">
-      <h2>Workshop mods</h2>
-      <div id="mod-checks" class="mods"></div>
+      <div class="workshop">
+        <div>
+          <h2>Workshop mods</h2>
+          <div id="mod-checks" class="mods"></div>
+        </div>
+        <div>
+          <h2>Full conversions and other mods</h2>
+          <div id="other-checks" class="mods"></div>
+        </div>
+      </div>
       <h2>Map list (scenario ID list)</h2>
       <div class="filters">
         <div>
@@ -187,6 +201,11 @@
       </div>
     </section>
     <section>
+      <label for="setup">Setup</label>
+      <select id="setup">
+        <option value="pvp">PvP</option>
+        <option value="pve">PvE setup</option>
+      </select>
       <h2 id="detail-name">Game parameters</h2>
       <p id="detail-meta"></p>
       <p id="detail-id"></p>
@@ -210,6 +229,7 @@
       <select id="scoreLimit"></select>
       <label for="timeLimit">Time limit</label>
       <select id="timeLimit"></select>
+      <div id="pvp-slots">
       <p class="hint">Picking a map fills these from that map's usual lobby. They stay editable: a 2v2 map can use 8 and 4, or a 1v1 with max 2, team size 1, and minimum 2. The lobby is not locked to the size in the scenario ID.</p>
       <label for="players">Max players</label>
       <input id="players" type="number" min="1" max="20" step="1" inputmode="numeric">
@@ -217,6 +237,20 @@
       <input id="team" type="number" min="1" max="20" step="1" inputmode="numeric">
       <label for="minPlayers">Minimum players</label>
       <input id="minPlayers" type="number" min="1" max="20" step="1" inputmode="numeric">
+      </div>
+      <div id="pve-setup" hidden>
+        <label for="humanSide">Humans play as</label>
+        <select id="humanSide"></select>
+        <label for="humans">Human players</label>
+        <input id="humans" type="number" min="1" max="19" step="1" inputmode="numeric" value="2">
+        <label for="ai">AI opponents</label>
+        <input id="ai" type="number" min="1" max="19" step="1" inputmode="numeric" value="2">
+        <p id="pve-note" class="hint">Eugen documents one team cap, so the human side can fill up to that cap until the slots are full. A larger AI side has not been confirmed on a running server.</p>
+        <h2>AI decks</h2>
+        <p class="hint">The AI picks one of these decks at random. Difficulty is 1, the easiest, through 6, the hardest. Paste a deck code from the game.</p>
+        <div id="deck-rows"></div>
+        <button id="add-deck" type="button">Add deck</button>
+      </div>
       <div id="confirm-box" class="confirm" hidden>
         <p id="confirm-text"></p>
         <div class="actions">
@@ -247,6 +281,7 @@ let catalog = [];
 let extraMods = [];
 let previews = {};
 let selected = "";
+let decks = { "0": [], "1": [] };
 let modList = "";
 let modTags = "";
 let packChoice = "";
@@ -283,13 +318,18 @@ function enabledIds() {
   return modList.split("-").map((part) => part.split("/")[0]).filter((id) => /^[0-9]+$/.test(id));
 }
 
-function catalogMods() {
+function mapPackMods() {
   const mods = [];
   catalog.forEach((group) => {
     const id = packId(group);
     if (!id) return;
     mods.push({ id: id, name: group.name, author: group.author || "" });
   });
+  return mods;
+}
+
+function otherMods() {
+  const mods = [];
   extraMods.forEach((mod) => {
     if (!mod.id) return;
     mods.push({ id: String(mod.id), name: mod.name, author: mod.author || "" });
@@ -302,13 +342,13 @@ function creditText(author) {
   return text ? "by " + text : "";
 }
 
-function renderChecks() {
-  const box = document.getElementById("mod-checks");
-  const known = catalogMods();
+function fillChecks(box, known, unknownIds) {
   const enabled = enabledIds();
+  const extra = new Set(unknownIds);
   const rows = [];
   enabled.forEach((id) => {
     const found = known.find((mod) => mod.id === id);
+    if (!found && !extra.has(id)) return;
     rows.push({
       id: id,
       name: found ? found.name : "Workshop id " + id,
@@ -338,6 +378,15 @@ function renderChecks() {
     }
     box.appendChild(label);
   });
+}
+
+function renderChecks() {
+  const packs = mapPackMods();
+  const others = otherMods();
+  const known = new Set(packs.concat(others).map((mod) => mod.id));
+  const unknown = enabledIds().filter((id) => !known.has(id));
+  fillChecks(document.getElementById("mod-checks"), packs, []);
+  fillChecks(document.getElementById("other-checks"), others, unknown);
 }
 
 function fillSelect(id, current) {
@@ -419,6 +468,11 @@ function fillTable(body, groups) {
         showDetail(scenario.id);
         const limits = presetLimits(scenario);
         setLimits(limits.players, limits.team, limits.minPlayers);
+        if (document.getElementById("setup").value === "pve") {
+          document.getElementById("humans").value = String(limits.team);
+          document.getElementById("ai").value = String(limits.team);
+          updatePveNote();
+        }
       });
       body.appendChild(row);
     });
@@ -447,11 +501,157 @@ function setLimits(players, team, minPlayers) {
   document.getElementById("minPlayers").value = String(minPlayers);
 }
 
+function sideChoices() {
+  const gameType = document.getElementById("gameType").value;
+  if (gameType === "0") return [[1, "NATO"], [2, "PACT"]];
+  if (gameType === "3") return [[1, "PACT"], [2, "NATO"]];
+  return [[1, "Side 1"], [2, "Side 2"]];
+}
+
+function fillHumanSide(current) {
+  const select = document.getElementById("humanSide");
+  const chosen = current === undefined ? select.value : String(current);
+  select.replaceChildren();
+  sideChoices().forEach((pair) => {
+    const option = document.createElement("option");
+    option.value = String(pair[0]);
+    option.textContent = pair[1];
+    select.appendChild(option);
+  });
+  select.value = chosen === "2" ? "2" : "1";
+}
+
+function aiDeckKey() {
+  return document.getElementById("humanSide").value === "2" ? "0" : "1";
+}
+
+function copyDecks(source) {
+  const next = { "0": [], "1": [] };
+  ["0", "1"].forEach((side) => {
+    const rows = source && Array.isArray(source[side]) ? source[side] : [];
+    next[side] = rows.map((row) => ({
+      name: row && row.name ? String(row.name) : "",
+      deckContent: row && row.deckContent ? String(row.deckContent) : "",
+      iaLevel: row && row.iaLevel ? Number(row.iaLevel) : 1
+    }));
+  });
+  return next;
+}
+
+function updatePveNote() {
+  const note = document.getElementById("pve-note");
+  const warning = "Eugen documents one team cap, so the human side can fill up to that cap until the slots are full. A larger AI side has not been confirmed on a running server.";
+  const humans = Number(document.getElementById("humans").value);
+  const ai = Number(document.getElementById("ai").value);
+  if (!Number.isInteger(humans) || !Number.isInteger(ai) || humans < 1 || ai < 1) {
+    note.textContent = warning;
+    return;
+  }
+  const slots = humans + ai;
+  const cap = Math.max(humans, ai);
+  const diff = Math.abs(humans - ai);
+  note.textContent = slots + " slots, team cap " + cap + ", difference " + diff + ". " + warning;
+}
+
+function renderDecks() {
+  const body = document.getElementById("deck-rows");
+  const key = aiDeckKey();
+  body.replaceChildren();
+  decks[key].forEach((deck, index) => {
+    const row = document.createElement("div");
+    row.className = "deck";
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = "Deck name";
+    const name = document.createElement("input");
+    name.type = "text";
+    name.maxLength = 64;
+    name.value = deck.name;
+    name.addEventListener("input", () => {
+      decks[key][index].name = name.value;
+    });
+    const codeLabel = document.createElement("label");
+    codeLabel.textContent = "Deck code";
+    const code = document.createElement("input");
+    code.type = "text";
+    code.maxLength = 2000;
+    code.value = deck.deckContent;
+    code.addEventListener("input", () => {
+      decks[key][index].deckContent = code.value;
+    });
+    const levelLabel = document.createElement("label");
+    levelLabel.textContent = "Difficulty";
+    const level = document.createElement("select");
+    [[1, "1, easiest"], [2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6, hardest"]].forEach((pair) => {
+      const option = document.createElement("option");
+      option.value = String(pair[0]);
+      option.textContent = pair[1];
+      level.appendChild(option);
+    });
+    level.value = String(deck.iaLevel || 1);
+    level.addEventListener("change", () => {
+      decks[key][index].iaLevel = Number(level.value);
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove deck";
+    remove.addEventListener("click", () => {
+      decks[key].splice(index, 1);
+      renderDecks();
+    });
+    row.append(nameLabel, name, codeLabel, code, levelLabel, level, remove);
+    body.appendChild(row);
+  });
+  updatePveNote();
+}
+
+function showSetup() {
+  const pve = document.getElementById("setup").value === "pve";
+  document.getElementById("pvp-slots").hidden = pve;
+  document.getElementById("pve-setup").hidden = !pve;
+  if (pve) {
+    fillHumanSide();
+    renderDecks();
+  }
+}
+
 function presetLimits(scenario) {
   const players = Number(scenario.players);
   const team = Number(scenario.team);
   const minPlayers = players >= 2 ? 2 : players;
   return { players: players, team: team, minPlayers: minPlayers };
+}
+
+function previewStem(id) {
+  let best = "";
+  Object.keys(previews).forEach((stem) => {
+    if ((id === stem || id.startsWith(stem + "_")) && stem.length > best.length) best = stem;
+  });
+  return best;
+}
+
+function showShot(elementId, label, src) {
+  const box = document.getElementById(elementId);
+  box.replaceChildren();
+  if (!src) {
+    const span = document.createElement("span");
+    span.textContent = label;
+    box.appendChild(span);
+    return;
+  }
+  const img = document.createElement("img");
+  img.alt = label;
+  img.src = src;
+  img.addEventListener("error", () => showShot(elementId, label, ""));
+  box.appendChild(img);
+}
+
+function showShots(id) {
+  const stem = previewStem(id);
+  const record = stem ? previews[stem] || {} : {};
+  const overview = record.overview ? "/previews/" + encodeURIComponent(stem) + "/" + record.overview : "";
+  const preview = record.preview ? "/previews/" + encodeURIComponent(stem) + "/" + record.preview : "";
+  showShot("shot-overview", "Scenic view", overview);
+  showShot("shot-preview", "Tactical zones", preview);
 }
 
 function previewStem(id) {
@@ -583,6 +783,12 @@ function applyState(state) {
   ["upkeep", "combatRule", "gameType", "initMoney", "incomeRate", "scoreLimit", "timeLimit"].forEach((id) => {
     fillSelect(id, state[id]);
   });
+  document.getElementById("setup").value = state.setup === "pve" ? "pve" : "pvp";
+  decks = copyDecks(state.decks);
+  document.getElementById("humans").value = String(state.humans === undefined ? 2 : state.humans);
+  document.getElementById("ai").value = String(state.ai === undefined ? 2 : state.ai);
+  fillHumanSide(state.humanSide);
+  showSetup();
   setLimits(
     state.players === undefined ? 4 : state.players,
     state.team === undefined ? 2 : state.team,
@@ -625,6 +831,11 @@ function payload(action) {
     players: document.getElementById("players").value,
     team: document.getElementById("team").value,
     minPlayers: document.getElementById("minPlayers").value,
+    setup: document.getElementById("setup").value,
+    humanSide: document.getElementById("humanSide").value,
+    humans: document.getElementById("humans").value,
+    ai: document.getElementById("ai").value,
+    decks: decks,
     mods: enabledIds()
   };
 }
@@ -671,14 +882,31 @@ document.getElementById("pack").addEventListener("change", (event) => {
   packChoice = event.target.value;
   render();
 });
-document.getElementById("mod-checks").addEventListener("change", (event) => {
+document.querySelector(".workshop").addEventListener("change", (event) => {
   if (event.target.type !== "checkbox") return;
-  const ids = [];
-  document.querySelectorAll("#mod-checks input").forEach((input) => {
-    if (input.checked) ids.push(input.value);
+  const checked = new Set();
+  document.querySelectorAll("#mod-checks input, #other-checks input").forEach((input) => {
+    if (input.checked) checked.add(input.value);
+  });
+  const ids = enabledIds().filter((id) => checked.has(id));
+  checked.forEach((id) => {
+    if (ids.indexOf(id) === -1) ids.push(id);
   });
   modList = ids.join("-");
   render();
+});
+document.getElementById("setup").addEventListener("change", () => showSetup());
+document.getElementById("gameType").addEventListener("change", () => {
+  if (document.getElementById("setup").value === "pve") fillHumanSide();
+});
+document.getElementById("humanSide").addEventListener("change", () => renderDecks());
+document.getElementById("humans").addEventListener("input", () => updatePveNote());
+document.getElementById("ai").addEventListener("input", () => updatePveNote());
+document.getElementById("add-deck").addEventListener("click", () => {
+  const key = aiDeckKey();
+  if (decks[key].length >= 8) return;
+  decks[key].push({ name: "", deckContent: "", iaLevel: 1 });
+  renderDecks();
 });
 document.getElementById("save").addEventListener("click", async () => {
   const status = document.getElementById("status");

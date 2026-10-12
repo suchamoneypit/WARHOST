@@ -1088,6 +1088,39 @@ if [ -e "${outside_dir}/login.ini" ] || [ -e "${outside_dir}/variables.ini" ] ||
 fi
 outside_mode=$(stat -c '%a' "$outside_dir")
 [ "$outside_mode" = "755" ] || fail "directory symlink target mode became ${outside_mode}"
+[ ! -L "${server}/settings/params_for_ai.json" ] || fail "params_for_ai.json stayed a symlink"
+cmp -s "${server}/settings/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.example" || fail "a params_for_ai.json symlink was not seeded"
+assert_no_stage_dirs "${server}/settings"
+
+make_server
+mkdir -p "${server}/settings"
+printf 'ServerName = kept\nMap = _2x2_Hesse_2vs2_CONQ\n' > "${server}/settings/variables.ini"
+printf '%s\n' '{"0":[{"name":"Kept","deckContent":"AAAA","iaLevel":1}],"1":[]}' > "${server}/settings/params_for_ai.json"
+cp "${server}/settings/params_for_ai.json" "${WORKDIR}/kept-params.json"
+chmod 640 "${server}/settings/params_for_ai.json"
+expect_ok "keeps an existing params_for_ai.json" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400
+cmp -s "${WORKDIR}/kept-params.json" "${server}/settings/params_for_ai.json" || fail "an existing params_for_ai.json was rewritten"
+kept_mode=$(stat -c '%a' "${server}/settings/params_for_ai.json")
+[ "$kept_mode" = "640" ] || fail "an existing params_for_ai.json mode changed to ${kept_mode}"
+grep -qx 'login="host-login"' "${server}/settings/login.ini" || fail "keeping params_for_ai.json skipped login.ini"
+
+make_server
+mkdir -p "${server}/settings/params_for_ai.json"
+expect_fail "refuses to replace params_for_ai.json when that path is a directory" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400
+grep -q 'params_for_ai.json is a directory, so it was not replaced' "${WORKDIR}/stderr.txt" || fail "a directory named params_for_ai.json did not stop the start"
+if grep -R -F 'host-key-value' "${server}/settings" >/dev/null 2>&1; then
+  fail "a directory named params_for_ai.json received the dedicated key"
+fi
 assert_no_stage_dirs "${server}/settings"
 
 make_server
