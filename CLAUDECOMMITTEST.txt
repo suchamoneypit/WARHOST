@@ -1,0 +1,4 @@
+Hello Matt!
+
+If you can see this file in Cursor's Source Control panel, the workflow works.
+Claude wrote it to disk; committing and pushing is up to you in Cursor.
