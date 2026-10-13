@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>WARHOST</Name>
-  <Repository>ghcr.io/suchamoneypit/warhost:dev</Repository>
+  <Repository>ghcr.io/suchamoneypit/warhost:latest</Repository>
   <Registry>https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost</Registry>
   <Network>host</Network>
   <MyIP/>
@@ -15,7 +15,7 @@ WARHOST runs Eugen's official WARNO dedicated server. This form writes login.ini
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers). The first start seeds a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Open the WebUI to change that. Save and restart on that page loads the save. If the page cannot restart the container, restart it in Unraid. Map and mod IDs are in the project README. Each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled. The Docker WebUI button is http://[IP]:[PORT:11400]/; do not forward that port. This template installs ghcr.io/suchamoneypit/warhost:dev. Lobby settings are edited in the WebUI.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers). The first start seeds a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Open the WebUI to change that. Save and restart on that page loads the save. If the page cannot restart the container, restart it in Unraid. Map and mod IDs are in the project README. Each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled. The Docker WebUI button is http://[IP]:[PORT:11400]/; do not forward that port. This template installs ghcr.io/suchamoneypit/warhost:latest. Lobby settings are edited in the WebUI.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
@@ -34,7 +34,7 @@ WARHOST runs Eugen's official WARNO dedicated server. This form writes login.ini
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers). The first start seeds a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Open the WebUI to change that. Save and restart on that page loads the save. If the page cannot restart the container, restart it in Unraid. Map and mod IDs are in the project README. Each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled. The Docker WebUI button is http://[IP]:[PORT:11400]/; do not forward that port. This template installs ghcr.io/suchamoneypit/warhost:dev. Lobby settings are edited in the WebUI.]]>
+Request a login and key from eugsupport@eugensystems.com (one pair runs five servers). The first start seeds a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Open the WebUI to change that. Save and restart on that page loads the save. If the page cannot restart the container, restart it in Unraid. Map and mod IDs are in the project README. Each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled. The Docker WebUI button is http://[IP]:[PORT:11400]/; do not forward that port. This template installs ghcr.io/suchamoneypit/warhost:latest. Lobby settings are edited in the WebUI.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. Use /mnt/user/appdata/warno/10400/settings. The next container uses this path with the port number plus 1, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>
