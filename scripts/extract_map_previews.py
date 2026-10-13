@@ -2,8 +2,10 @@
 """Copy Scenic view and Tactical zones pictures out of a local WARNO install.
 
 Each battlefield's Maps/*_Details.dat archive stores Overview (the lobby
-picture) and Preview (the top-down picture) as WebP or PNG. The .tgv files
-in *_Assets.dat are left alone.
+picture) and Preview (the top-down picture) as WebP or PNG. Base-game names
+include the extension, and that file's header is the block before the name.
+Workshop names are Name. with the header after the name. The .tgv files in
+*_Assets.dat are left alone.
 
 From the repository root:
 
@@ -46,11 +48,7 @@ def archive_dict_size(data):
     return size
 
 
-def entry_bytes(data, name_at, dict_size):
-    end = data.find(b"\x00", name_at, dict_size)
-    if end < 0 or end + 25 > dict_size:
-        return None
-    offset, size = struct.unpack_from("<QQ", data, end + 9)
+def payload_image(data, dict_size, offset, size):
     if size < 16 or size > 30_000_000:
         return None
     start = dict_size + offset
@@ -66,13 +64,36 @@ def entry_bytes(data, name_at, dict_size):
     return None
 
 
+def image_before_name(data, name_at, dict_size):
+    # type u32, offset u64, size u64, hash u32, 12 zero bytes, then the name.
+    if name_at < 36 or data[name_at - 12:name_at] != b"\x00" * 12:
+        return None
+    offset, size = struct.unpack_from("<QQ", data, name_at - 32)
+    return payload_image(data, dict_size, offset, size)
+
+
+def image_after_name(data, name_at, dict_size):
+    end = data.find(b"\x00", name_at, dict_size)
+    if end < 0 or end + 25 > dict_size:
+        return None
+    offset, size = struct.unpack_from("<QQ", data, end + 9)
+    return payload_image(data, dict_size, offset, size)
+
+
 def picture(data, role):
     dict_size = archive_dict_size(data)
     if dict_size is None:
         return None
     window = data[:dict_size]
-    for suffix in (b".webp", b".png", b"."):
-        key = role.encode("ascii") + suffix
+    role_b = role.encode("ascii")
+    # Extension in the name: the header is the block before that name.
+    # Dotted name: the header follows the name, then a separate extension token.
+    for suffix, reader in (
+        (b".webp", image_before_name),
+        (b".png", image_before_name),
+        (b".", image_after_name),
+    ):
+        key = role_b + suffix
         start = 0
         while True:
             at = window.find(key, start)
@@ -83,7 +104,7 @@ def picture(data, role):
                 rest = window[at + len(key):at + len(key) + 4]
                 if rest.startswith((b"webp", b"png")):
                     continue
-            found = entry_bytes(data, at, dict_size)
+            found = reader(data, at, dict_size)
             if found:
                 return found
     return None
@@ -320,18 +341,20 @@ def tiny_webp():
     return b"RIFF" + struct.pack("<I", len(body)) + body
 
 
+def name_record(name, offset, size):
+    return struct.pack("<IQQI", 0x35, offset, size, 1) + (b"\x00" * 12) + name + b"\x00"
+
+
 def sample_archive(overview, preview):
     dict_size = 512
     directory = bytearray(dict_size)
     payload = overview + preview
     struct.pack_into("<4sIIIQQ", directory, 0, b"edat", 3, 256, 64, dict_size, len(payload))
-
-    def entry(name, offset, size):
-        return name + b"\x00\x00\x00\x00\x00" + struct.pack("<IQQ", 0x35, offset, size)
-
-    first = entry(b"Overview.webp", 0, len(overview))
-    second = entry(b"Preview.webp", len(overview), len(preview))
-    blob = bytes(directory[:64]) + first + second
+    # A header after Overview.webp points at Preview. That is the next file, not Overview.
+    decoy = b"\x00\x00\x00\x00" + struct.pack("<IQQ", 0x36, len(overview), len(preview))
+    first = name_record(b"Overview.webp", 0, len(overview))
+    second = name_record(b"Preview.webp", len(overview), len(preview))
+    blob = bytes(directory[:64]) + first + decoy + second
     if len(blob) > dict_size:
         raise SystemExit("self-test dictionary is too small")
     return blob + bytes(dict_size - len(blob)) + payload

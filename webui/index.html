@@ -60,6 +60,8 @@
     overflow: auto;
   }
   h2 { font-size: 1rem; margin: 0 0 8px; }
+  #detail-name { margin: 0; line-height: 1.1; }
+  #detail-meta, #detail-id { margin: 0; line-height: 1.15; }
   #modded h2 { margin-top: 16px; }
   label { display: block; margin: 10px 0 4px; }
   .filters { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px; }
@@ -137,7 +139,7 @@
 <body>
 <header>
   <h1>WARHOST WebUI</h1>
-  <p class="note">Save writes this server's variables.ini and leaves the current match running. Save and restart writes it when the form differs from that file, then restarts the dedicated server so the save loads. That stops the current match. If this page cannot restart the container, restart it in Unraid.</p>
+  <p class="note">Save leaves the current match running; Save and restart applies by restarting the dedicated server; if this page cannot restart the container, restart it in Unraid.</p>
 </header>
 <main>
   <p id="status" role="status"></p>
@@ -145,7 +147,7 @@
     <section class="maps">
       <div class="workshop">
         <div>
-          <h2>Workshop Maps</h2>
+          <h2>Steam Workshop Maps</h2>
           <div id="mod-checks" class="mods"></div>
         </div>
         <div>
