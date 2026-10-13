@@ -1,0 +1,41 @@
+---
+description: When and how Cursor hands work to Claude Code through claude -p. Edit the settings block to change how often.
+alwaysApply: true
+---
+
+# Cursor to Claude
+
+Cursor can hand a task to the user's Claude subscription with `sh scripts/ask_claude.sh`. Claude Code never reads this file. Edit the settings below to change how often that happens.
+
+```yaml
+enabled: true
+default_model: sonnet
+limits:                       # per chat; past a limit, treat the task as "ask"
+  sonnet_calls: 6
+  opus_calls: 1
+tasks:
+  stuck_bug:         { when: auto, model: sonnet, mode: review, after_failed_attempts: 1, max_per_chat: 2, max_turns: 25 }
+  pre_commit_review: { when: auto, model: sonnet, mode: review, max_turns: 25 }
+  plan_second_look:  { when: auto, model: sonnet, mode: review, max_turns: 15 }
+  slop_review:       { when: auto, model: opus,   mode: review, parallel: true, max_turns: 60 }
+  implement_plan:    { when: off,  model: sonnet, mode: edit,   max_turns: 40 }
+```
+
+`when`: `auto` calls without asking; `ask` asks one yes/no question ("Have Claude check too?") and waits; `suggest` mentions it in the summary only; `off` never calls.
+
+## When each task fires
+
+- `stuck_bug`: after a bug fix fails `after_failed_attempts` times (a test, `sh scripts/check_repo.sh`, or the user saying it still fails). Send the symptom, what was tried, why it failed, and the file list. Ask for the root cause, not a patch.
+- `pre_commit_review`: in `/review-and-verify`, in the background beside the `reviewer` subagent.
+- `plan_second_look`: after writing a plan in Plan mode, before presenting it. Send the plan path. Ask for missing steps, wrong assumptions, and cheaper routes.
+- `slop_review`: only when the user runs `/slop-review`. The skill starts it in the background first; never share Cursor's findings with it.
+- `implement_plan`: hand a whole plan to Claude to implement. The user usually does this in the Claude Code panel instead.
+
+## How to call
+
+- Run `sh scripts/ask_claude.sh --task <name> --mode <mode> --model <model> --max-turns <n> "<prompt>"` from the repository root with `full_network` permission. Add `--out /tmp/warhost-<task>.md` and run it in the background when the task is parallel.
+- The prompt names paths and the claim to check. Do not paste file contents; Claude reads the repo itself.
+- Bring back only Claude's report. Weigh it like a subagent result: a finding without `file:line` is unverified.
+- Do not edit files while an `edit` call runs. Its changes arrive as their own diff; review them with `git diff` before continuing.
+- Each call is logged to `.cursor/claude-calls.log`. The printed session id can be resumed in Claude Code with `claude --resume <id>`.
+- If `enabled` is false, the CLI is missing, or a call fails, say so in one line and continue without Claude.

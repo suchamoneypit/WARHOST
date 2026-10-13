@@ -1,12 +1,28 @@
+---
+name: slop-review
+description: Adversarial review of what this repository ships (app card, form, README, install guide, wrapper, icon) as a moderator, installer, auditor, player-host, and editor would read it. Reports only; reply "apply" with finding IDs to fix them. In Cursor it also runs an independent Claude Opus review in parallel.
+disable-model-invocation: true
+---
+
 # /slop-review
 
 Adversarial review of what this repository ships, read the way skeptical people read a project before they install it or list it. Report only. Do not modify files.
 
 The project says openly that AI tools built it. That is not a defect. Do not recommend hiding the disclosure; judge how it reads. The question is whether the shipped surface reads as deliberate, reviewed work or as unreviewed AI output, so the test for every line is "would a careful human maintainer ship this?", not "could an AI have written it?". Lines the maintainer wrote by hand get the same treatment, because a reader cannot tell who wrote what. Be direct: no praise outside the Keep list, no generic advice such as "improve clarity", no hedging.
 
+## Second opinion (Cursor only)
+
+When this runs in Cursor and `.cursor/rules/cursor-to-claude.mdc` sets `slop_review` to `auto`, start the Claude call before doing anything else, in the background, with the model and turn limit from that file:
+
+```sh
+sh scripts/ask_claude.sh --task slop_review --mode review --model opus --max-turns 60 --out /tmp/warhost-slop-claude.md "/slop-review"
+```
+
+Do not tell Claude anything about your own findings. When your report is written, read `/tmp/warhost-slop-claude.md` and merge: findings both reviews raised come first, then each finding is marked `[both]`, `[cursor]`, or `[claude]`, keeping one ID per finding. If the Claude call failed or is still running after your report, say so in the first line and give your report alone. When this runs in Claude Code, skip this section.
+
 ## Ground rules
 
-- Do the review in this chat. Until the report is written, do not launch this repository's subagents, and do not open `.cursor/plans/` or past chat transcripts. They carry the authoring assumptions under audit.
+- Do the review in this chat. Until the report is written, do not launch this repository's subagents, and do not open `.cursor/plans/` or past chat transcripts. They carry the authoring assumptions under audit. The background Claude call above is the one exception.
 - If this chat already holds earlier work on this repository, say so in the first line of the report. The review is meant to start without that context.
 - Read-only. You may run `git`, `rg`, `sh -n`, the repository check script, and local scripts that have no side effects. Do not edit, stage, commit, or push.
 - Review the working tree of the current branch. Run `git status --short` and `git diff --stat origin/main...HEAD`, and note what differs from `main`, which is what visitors and Community Applications see today.
@@ -100,22 +116,22 @@ Stop after the report. If I reply `apply` with finding IDs, apply only those, us
 
 Replace this section when copying the command to another repository.
 
-- **Branches.** Day-to-day work is on `dev`. `main` is the published snapshot that GitHub visitors and Community Applications read.
+- **Branches.** Day-to-day work is on `dev`. `main` is the published snapshot that GitHub visitors and Community Applications read. The template is listed in Community Applications; the flash-drive copy is the route for `dev`.
 - **Tier 1 files.** `templates/warhost.xml`, `ca_profile.xml`, `icon.png`, `README.md` (the GitHub landing page and the template's `<ReadMe>`), `docs/INSTALL-UNRAID.md`, `Dockerfile`, `entrypoint-unraid.sh`, `samples/`, `LICENSE`. The image-publishing workflow is `.github/workflows/rebuild-image.yml`.
 - **The game.** WARNO, by Eugen Systems. The image is built `FROM eugensystems/warno`, Eugen's official dedicated-server image.
 - **Check script.** `sh scripts/check_repo.sh`. It fails when a `<Config>` spans more than one line, when a Config Description is longer than 240 characters or contains a `br` tag, when `<Overview>` or `<Description>` is empty, or when the XML does not parse, which a bare `&` outside a CDATA section causes. Write `&amp;` everywhere anyway: `docs/UNRAID-TEMPLATE-GUIDE.md` says Community Applications drops a template with a bare `&`. It also fails when `README.md` or `docs/INSTALL-UNRAID.md` lacks the exact command block printed by `sh scripts/print_template_fetch.sh`, when the install guide lacks the `--private` block, or when the README does not name `scripts/print_template_fetch.sh`. It pins the `<ReadMe>` and `<License>` URLs, host networking, `Mask="false"` on the dedicated key, and the unlabeled image license.
-- **Protected values**, from `.cursor/rules/warno-project.mdc`: Game Port default `10400`, Map `_2x2_Hesse_2vs2_CONQ`, empty Workshop Mod List and Workshop Mod Tags, the Red Dragon example `RDPort_JungleLaw_2v2_CONQ` with `3811913066` in the field descriptions, host networking, container path `/server/settings`, host folder `/mnt/user/appdata/warno/10400/settings`, image `ghcr.io/suchamoneypit/warhost:latest`, the image build logic, the fixed `variables.ini` values, and Eugen's launch arguments.
+- **Protected values**, from `CLAUDE.md`: Game Port default `10400`, the seed Map `_2x2_Hesse_2vs2_CONQ` with no workshop mods, the Red Dragon example `RDPort_JungleLaw_2v2_CONQ` with `3811913066` in the README, host networking, container path `/server/settings`, host folder `/mnt/user/appdata/warno/10400/settings`, image `ghcr.io/suchamoneypit/warhost:latest`, the image build logic, the fixed `variables.ini` values, and Eugen's launch arguments.
 - **Settled decisions**, from `docs/DECISIONS.md`:
   - Host networking with no port mapping. The operator forwards the game port as TCP and UDP.
   - Eugen Login and Eugen Dedicated Key are clear text on the form, because the Docker edit page is an admin screen. The startup log names only the last 4 characters of the key. Do not recommend masking either field.
   - One container per server. Each added server uses the previous Game Port plus 1, a settings folder named for its port, and its own Server Name.
-  - Write Config From Form defaults to `true` and rewrites `login.ini`, `variables.ini`, and `params_for_ai.json` on every start.
+  - Write Config From Form defaults to `true`. It rewrites `login.ini` on every start and seeds `variables.ini` and `params_for_ai.json` only when they are missing.
   - The wrapper writes settings and then runs Eugen's entrypoint. It does not copy Eugen's launch arguments.
-  - Scenario-ID and mod catalogs live in the README, not on the form. Map is on the main form, under Server Name.
+  - The Docker form holds the settings folder, login, key, public IP, WebUI, Game Port, and Write Config From Form. Server name, map, player counts, combat rule, and workshop mods are edited in the WebUI. Scenario-ID and mod catalogs live in the README.
   - The image tracks `eugensystems/warno:latest` and is rebuilt when Eugen publishes.
   - `LICENSE` (MIT) covers the repository files. The image license is left unlabeled.
 - **How Unraid shows the template**, as recorded in `docs/ARCHITECTURE.md` from [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php): each Config Description is printed under its input, and `Display="advanced"` fields sit behind Show more settings. In the Overview, `[` and `]` become tags, `<br>` becomes a newline, tags are stripped, and the basic view turns newlines into line breaks; that has not been checked on a server. Moderators review from `<Name>` and `<Overview>` ([repository XML help](https://ca.unraid.net/submit/help/repository-xml)). Community Applications ignores `<Description>` when `<Overview>` is present ([template schema thread](https://forums.unraid.net/topic/38619-docker-template-xml-schema/)).
-- **Facts for the consistency matrix**: lobby size (Max Players, Minimum Players, Team Size, and any size named in Server Name or prose), Map, Workshop Mod List, Workshop Mod Tags, Combat Rule, Game Port and the plus-1 rule, settings folder, image, servers per login and key pair, network mode and protocols, Write Config From Form behavior, the files the wrapper writes, and Community Applications status.
+- **Facts for the consistency matrix**: lobby size (Max Players, Minimum Players, Team Size, and any size named in the server name or prose), Map, `ModList`, `ModTagList`, Combat Rule, Game Port and the plus-1 rule, settings folder, image, servers per login and key pair, network mode and protocols, Write Config From Form behavior, the files the wrapper writes, and Community Applications status.
 - **Strings users see** are in three places: the template's attributes and text, the Markdown, and every `printf` and `die` in `entrypoint-unraid.sh`.
 - **Credentials.** The only placeholders allowed in git are `YOUR_EUGEN_LOGIN_HERE` and `YOUR_EUGEN_DEDICATED_KEY_HERE`.
-- **Apply flow.** For each changed user-facing fact, launch `docs-consistency` and apply only the sentences it names. Run `sh scripts/check_repo.sh`. Then launch `unraid-template-reviewer` and `verifier` in parallel.
+- **Apply flow.** Apply the named findings. Run `sh scripts/check_repo.sh`. Then launch `reviewer` once with the changed files and the finding IDs as the claim.

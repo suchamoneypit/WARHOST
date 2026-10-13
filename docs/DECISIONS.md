@@ -1,6 +1,49 @@
 # Decisions
 
-Durable choices for this repository. Dates are the commit date or the day the decision was recorded.
+Durable choices for this repository. Dates are the commit date or the day the decision was recorded. Read the index, then `rg` the title for the full entry. Superseded entries are in `docs/DECISIONS-ARCHIVE.md`.
+
+## Index
+
+- 2026-10-09 Wrap Eugen's image: the wrapper writes settings and execs `/server/entrypoint2.sh`; Eugen's launch arguments are not copied.
+- 2026-10-09 Host networking: no published port; forward the game port (default `10400`) as TCP and UDP.
+- 2026-10-09 Keys stay out of git: keys live in Unraid's container settings; `login.ini` and `/settings/` are gitignored; samples use placeholders.
+- 2026-10-09 One container per server: each server is its own container with its own name, game port, and settings folder.
+- 2026-10-09 Rebuild when Eugen publishes: the image rebuilds when Eugen's digest or the wrapper build inputs change.
+- 2026-10-09 Install route for Unraid 7: copy the XML to `templates-user/my-<Name>.xml` on the flash; Unraid 6.10+ has no template-URL field.
+- 2026-10-09 Template icon: `icon.png` on `main` is generated WARHOST art, not an Eugen asset.
+- 2026-10-09 Day-to-day commits stay on dev: commits go to `dev`; `main` changes only on an explicit publish.
+- 2026-10-09 Brand the project WARHOST: `<Name>` and the container are `WARHOST`; WARNO stays in search terms and prose.
+- 2026-10-09 Keep scenario and mod catalogs in the README: catalogs live in the README; field descriptions stay under 240 characters with no `br`.
+- 2026-10-09 Publish only the warhost image: only `ghcr.io/suchamoneypit/warhost` is published, not `warno-unraid`.
+- 2026-10-09 Show the dedicated key in clear text: `EUGEN_DEDICATED_KEY` is `Mask="false"`; the log names only its last 4 characters.
+- 2026-10-09 Keep the Eugen login in clear text on the form: `EUGEN_LOGIN` is `Mask="false"` too; credential review runs only on request or on a credential change.
+- 2026-10-09 Several servers on one host: next container uses Game Port plus 1, its own folder and name; the wrapper locks the folder and refuses a taken port.
+- 2026-10-09 Stage settings in a private directory: files are written in a mode-`700` `.warhost-stage.*` directory and renamed; symlinks are not followed.
+- 2026-10-09 Settings folder path includes the game port: the host folder is `/mnt/user/appdata/warno/<port>/settings`.
+- 2026-10-09 MIT covers the repository, not the container image: MIT `LICENSE` covers repository files; the image has no license label.
+- 2026-10-09 Number each publish to main: each `main` push is tagged `vX.YY` and released; a higher `VERSION` sets the number.
+- 2026-10-10 Slop review is a command in a new chat: `/slop-review` is a report-only review of what ships, run in a fresh chat.
+- 2026-10-10 Empty mod list only fits a base-game map: an empty `ModList` with a non-base-game map warns and still starts.
+- 2026-10-10 Workshop Version read at container start: a bare Workshop id becomes `id/Version` on each start; DepotDownloader reads only `Config.ini`.
+- 2026-10-10 A stale VERSION does not stop the release: a `VERSION` below the latest tag is ignored and the tag increments.
+- 2026-10-10 Branch templates keep separate flash names: `--branch` saves `my-<Name>-<branch>.xml`; `--clean` removes only those containers, files, and folders.
+- 2026-10-11 No session handoff paste: no `/handoff`; continuity is the always-on rules, `docs/`, and git.
+- 2026-10-11 The form field is WebUI, and a save does not add a workshop mod: the field and log lines say WebUI; the save rule was later replaced.
+- 2026-10-11 WebUI is on by default and sits on the main form: `WEB_UI` defaults to `true` and follows Public WAN IP on the main form.
+- 2026-10-11 Placeholder server name: the seed server name is `WARHOST - default server name`.
+- 2026-10-11 WebUI owns the lobby: lobby fields left the Docker form; the WebUI edits `variables.ini`, seeded once when missing.
+- 2026-10-11 The dev template installs a dev image: `dev` publishes `:dev` and its template points there; a publish switches to `:latest`.
+- 2026-10-11 WebUI credits the workshop author on the checklist: checklist labels add `by` and the Workshop creator from the catalog.
+- 2026-10-11 A catalog map keeps its combat rule: only the scenario's own combat rule is offered and saved.
+- 2026-10-11 Save and restart re-execs the wrapper: `SIGUSR1` makes the PID-1 wrapper re-exec itself; no Docker socket.
+- 2026-10-11 Player limits stay editable: choosing a map fills the player counts; they stay editable within Eugen's limits.
+- 2026-10-11 Map packs and other workshop mods are separate checklists: map packs on the left, full conversions and other mods on the right, one `ModList`.
+- 2026-10-12 Map pictures stay out of the published image: previews come from a local install into gitignored `webui/previews/`.
+- 2026-10-12 Release notes say what changed: release bodies are summaries from `scripts/release_notes.py`.
+- 2026-10-12 PvP and PvE setup: PvE writes `CoopVsAI` and AI counts; `params_for_ai.json` is seeded only when missing.
+- 2026-10-12 The map checklist is Workshop Maps: the left checklist heading is Workshop Maps.
+- 2026-10-13 Community Applications is the main install route: the README and install guide lead with Apps, search WARHOST, Install; the flash-drive copy stays for `dev`.
+- 2026-10-13 Shared agent files for Cursor and Claude Code: `CLAUDE.md`, `.claude/agents/`, and `.claude/skills/` serve both tools; one `reviewer`; `claude -p` via `scripts/ask_claude.sh`.
 
 ## 2026-10-09 — Wrap Eugen's image
 
@@ -13,12 +56,6 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** The template uses `<Network>host</Network>` and does not publish a Docker port. Operators forward `EXPOSEDPORT` as TCP and UDP. The default port is `10400`.
 
 **Rationale:** Eugen recommends host networking and requires both protocols. Unraid host networking does not show a port mapping. `10400` is this template's default, not a port named by Eugen.
-
-## 2026-10-09 — Form-written settings
-
-**Decision:** `WRITE_CONFIG` defaults to true and rewrites `login.ini`, `variables.ini`, and `params_for_ai.json` on each start. Set it false only for hand-edited files. The 2026-10-11 entry "WebUI owns the lobby" replaces the `variables.ini` half: a missing file is seeded, and an existing file is kept except for a bare Workshop id. The 2026-10-12 entry replaces that every-start rewrite.
-
-**Rationale:** The Unraid form is the supported way to configure a server. Hand edits would otherwise be mistaken for the source of truth. Recorded in commit `b8466df`.
 
 ## 2026-10-09 — Keys stay out of git
 
@@ -38,61 +75,11 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 **Rationale:** Players on a new WARNO patch need a rebuilt dedicated server. A normal game patch should not require an edit to this repo.
 
-## 2026-10-09 — Jungle Law preset, RCON unset
-
-**Decision:** The published defaults are 2v2 Conquest for workshop item `3811913066`, with Map `RDPort_JungleLaw_2v2_CONQ`. A base-game scenario ID is valid when Workshop Mod List is cleared. RCON is not on the form. The 2026-10-10 entry "Base-game defaults, workshop fields start empty" replaces these defaults; RCON is still not on the form.
-
-**Rationale:** The first template commit (`6ee0739`) left RCON out. The Map default was empty until the scenario IDs from the Red Dragon mod files were recorded.
-
-## 2026-10-09 — Handoff length
-
-**Decision:** `/handoff` prints under 400 words. Words past a short status go to leftover intent, a do-not-redo list with a command, URL, or `file:line`, and git state (branch, commit, pushed or not). The paste points at `docs/` instead of restating them. The 2026-10-11 entry removes the command.
-
-**Rationale:** A 250-word cap fit a long template session. A multi-thousand-word paste would reload that session into the next chat. The extra room is for intent and checks that the docs do not store.
-
-## 2026-10-09 — Agent guidance and checks
-
-**Decision:** Always-on project rules live in `.cursor/rules/`. Specialist reviewers live in `.cursor/agents/`. Durable notes live in `docs/`. `scripts/check_repo.sh` checks XML well-formedness and local repository invariants.
-
-**Rationale:** Template review, upstream research, and independent verification are different jobs. A parsed XML file still needs an Unraid install test before it can be treated as working.
-
-## 2026-10-09 — Diff-scoped documentation check
-
-**Decision:** `.cursor/agents/docs-consistency.md` is part of the generic set. It runs after a functional change that alters a user-facing name, default, description, port, path, image, or command. It compares only that change with the paired template, README, and install-doc lines. The parent applies the sentences it names. It does not review untouched docs, prose, or template structure, and it states no WARNO facts.
-
-**Rationale:** A template field description can change while the README sentence for that field stays old. Checking the whole doc set on every edit costs more than the mismatches it finds.
-
-## 2026-10-09 — Generic and WARNO-specific guidance kept apart
-
-**Decision:** `.cursor/rules/agent-workflow.mdc`, `.cursor/rules/unraid-template.mdc`, `.cursor/agents/unraid-template-reviewer.md`, `.cursor/agents/verifier.md`, the commands in `.cursor/commands/`, and `docs/UNRAID-TEMPLATE-GUIDE.md` contain no WARNO facts beyond a labeled project-specifics paragraph. WARNO facts live in `.cursor/rules/warno-project.mdc`, `.cursor/agents/warno-researcher.md`, `README.md`, `docs/INSTALL-UNRAID.md`, and the other `docs/` files. Subagents are launched by the main agent per the delegation table in `agent-workflow.mdc` or by the user with `/<name>`; nothing runs continuously.
-
-**Rationale:** The generic half should move into a template repository for other game servers without editing. Rules reference docs by path instead of restating them, so the always-on context stays short.
-
 ## 2026-10-09 — Install route for Unraid 7
 
 **Decision:** The install docs tell users to copy the template XML to `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` and pick it from **Add Container → Template → User templates**, with the Community Applications `private/` folder as the alternative. The raw GitHub URL is only the download source. The flash filename uses `<Name>` as written, with a `my-` prefix.
 
 **Rationale:** The Community Applications author states that Unraid 6.10 removed the Template Repositories field, so the earlier "paste the template URL" instruction cannot be followed on Unraid 7. Unraid's Template dropdown labels the file from its name with `my-` removed, and Unraid's own save path is `my-<Name>.xml` with that case kept. A download saved as `warno-dedicated-server.xml` was tried, and the dropdown showed that lowercase filename. `my-WARNO-Dedicated-Server.xml` has not been confirmed on a server yet. The private-folder route has not been executed.
-
-## 2026-10-09 — Red Dragon ModList version
-
-**Decision:** On 2026-10-09 the preset was `3811913066/15` and the wrapper warned only for `3811913066/0`; the 2026-10-10 entry replaces both.
-
-**Rationale:** Eugen's Docker Hub page says the `ModList` version is usually `0`. This mod's `Config.ini`, read 2026-10-09, says `Version = 15` and tells the author to increment it when an update is incompatible. The operator's start with `3811913066/0` registered with matchmaking and produced no server line about the rejected join. The operator reported that `3811913066/15` allowed a client to join. The container has no copy of `Config.ini`, so a later increment has to be copied into the form by hand.
-
-## 2026-10-09 — Which form fields stay visible
-
-**Decision:** Max Players, Minimum Players, Team Size, and Combat Rule use `Display="always"`. Map, Workshop Mod List, and Workshop Mod Tags use `Display="advanced"`, after Write Config From Form, with Map and Workshop Mod List last. The Overview tells the operator to open Show more settings for the map and the mods.
-
-**Rationale:** Those four player fields change with the map, and the preset is easy to miss if they sit behind Show more settings. Unraid prints each description under the input (`CreateDocker.php` `templateDisplayConfig`, read 2026-10-09), so the scenario-ID and workshop catalogs would make the default page very long. The Jungle Law preset is already filled in, so a first install can leave Show more settings closed. Map stays required; it is hidden because it is prefilled, not because it is optional.
-
-Replaced the same day by the next entry, after those catalogs moved to `README.md`.
-
-## 2026-10-09 — Map on the main form
-
-**Decision:** Map uses `Display="always"` and follows Server Name, before Max Players. Workshop Mod List, Write Config From Form, and Workshop Mod Tags use `Display="advanced"`, in that order.
-
-**Rationale:** The scenario-ID and workshop catalogs are in `README.md`, so the Map line on the form is one sentence. Map is the lobby operators change with the server, so it stays on the main form under Server Name. Workshop Mod List, the write-config switch, and Workshop Mod Tags stay behind Show more settings.
 
 ## 2026-10-09 — Template icon
 
@@ -112,23 +99,11 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 
 **Rationale:** `<Name>` is one field. Docker container names, and `scripts/print_template_fetch.sh`, allow letters, digits, dots, underscores, and hyphens. `WARHOST - WARNO Dedicated Server` cannot be that field. Community Apps searches `<ExtraSearchTerms>` as well as the name and overview, so WARNO remains a search term without renaming saved appdata. The GitHub repository is `WARHOST`. URLs in the template point at `suchamoneypit/WARHOST`. GitHub redirects the old repository URL. The template path change does not: `templates/warhost.xml` replaces `templates/warno-dedicated-server.xml` on `main`.
 
-## 2026-10-09 — Show the last 4 characters of the dedicated key
-
-**Decision:** The Eugen dedicated key stays `Mask="true"`. A second always-visible field, Key last 4 (`EUGEN_KEY_LAST4`), must equal the last 4 characters of that key when Write Config From Form is true, or that start stops. It is not written to `login.ini`. The startup line names those 4 characters and not the rest of the key.
-
-**Rationale:** One login can run five servers, and an operator may have two keys across several containers. Unraid's masked field hides the whole value, so the form cannot reveal four characters inside that box. The companion field is what stays readable when the container is opened later.
-
 ## 2026-10-09 — Keep scenario and mod catalogs in the README
 
 **Decision:** Base-game scenario IDs and the named workshop mods live in `README.md`. Unraid field descriptions are one or two sentences and point at that README. `scripts/check_repo.sh` fails a Config description longer than 240 characters or one that contains a `br` tag.
 
 **Rationale:** Unraid prints each description under its field. The Map and Workshop Mod List descriptions rendered as walls of IDs on 2026-10-09, including after `<br>` broke them into sections. A README table can be scanned. The form cannot.
-
-## 2026-10-09 — Do not claim a 2v2 map accepts eight players
-
-**Decision:** Max Players says the lobby is not locked to the map and that 8 slots on a 2v2 map is untested. Team Size stays the per-side count. The README gives the usual lobby for each size once and does not claim that eight slots work on a 2v2 map. The wrapper still accepts any Max Players from 1 to 20.
-
-**Rationale:** Eugen's Docker Hub text, fetched 2026-10-09, defines `NbMaxPlayer` as how many players can join (maximum 20) and `MaxTeamSize` as the maximum on one side. It never says those must match the size in the scenario ID. Whether `RDPort_JungleLaw_2v2_CONQ` with 8 and 4 opens a 4v4 lobby has not been run.
 
 ## 2026-10-09 — Publish only the warhost image
 
@@ -184,18 +159,6 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 
 **Rationale:** The project discloses AI use, so the question is whether the shipped text reads as reviewed work, not whether an AI wrote it. A subagent returns one message to the parent, and this repository keeps those messages short. This report is long by design, and the apply step needs its findings in the same chat. A new chat starts without the sessions that wrote the text, and this repository's subagents carry the same authoring assumptions. The template, README, install guide, wrapper, and icon get line-by-line scrutiny. Scripts, tests, workflows, and `.cursor/` are checked only for breakage, leaks, and contradictions.
 
-## 2026-10-10 — Red Dragon ModList version 27
-
-**Decision:** The preset Workshop Mod List is `3811913066/27`. The wrapper warns when that item is listed as `3811913066/0` or `3811913066/15` and still writes that value through. It does not query Steam for a newer `Version`. The next entry keeps `3811913066/27` as the Red Dragon example and makes the template default empty. The entry "Workshop Version read at container start" makes the example `3811913066` and reads `Version` from Steam at each start.
-
-**Rationale:** `Config.ini` for workshop item `3811913066`, read 2026-10-10 from the local Steam library, says `Version = 27`. The author's change note the same day says Mod Version = 27 and 28 scenarios: https://steamcommunity.com/sharedfiles/filedetails/changelog/3811913066. The previous preset `3811913066/15` matched Version 15 on 2026-10-09 and does not match 27. Clients compare the number after the slash with that `Version`. The container has no copy of `Config.ini`, so a later increment has to be copied into the form by hand.
-
-## 2026-10-10 — Base-game defaults, workshop fields start empty
-
-**Decision:** The template defaults are Map `_2x2_Hesse_2vs2_CONQ` and Server Name `WARHOST - Hesse 2v2`. The entry "Placeholder server name" replaces that Server Name. Workshop Mod List and Workshop Mod Tags are empty in both the `Default` attribute and the element text. The Red Dragon values, Map `RDPort_JungleLaw_2v2_CONQ`, `3811913066/27`, and `Maps-Scenarios`, are examples in the Map and Workshop field descriptions and in the README workshop mods section, where Red Dragon is the first row. The wrapper treats an unset variable and `none`, in any case, as empty for both workshop fields. When the list contains `3811913066` and Map does not start with `RDPort_`, the wrapper prints one warning and still writes the list. Max Players `4`, Team Size `2`, and Combat Rule `2` are unchanged. The entry "Workshop Version read at container start" changes the Workshop Mod List example to `3811913066`.
-
-**Rationale:** Unraid's [Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php), read 2026-10-10, fills a blank `<Config>` value from its `Default` in the edit form (`xmlToVar`) and in the `docker run` variables (`xmlToCommand`). With `Default="3811913066/27"`, a cleared Workshop Mod List came back. On 2026-10-10 the operator reported that a second container, WARHOST2, hosting a base-game map kept writing the Red Dragon mod list and tags after both fields were cleared, and players without the pack could not join. An empty default lets a cleared field stay empty. A container added from the earlier template keeps the old `Default` in its saved `my-<Name>.xml`, so `none` is the opt-out that works there without recreating it. Hesse is a base-game 2v2 Conquest ID from Eugen's Map Base Id table in `README.md`, so a fresh install needs no mod and the preset player counts still fit. The warning does not stop the start because a conversion such as Galactic Divide can run on a base-game map. The 28 Red Dragon scenario IDs read on 2026-10-10 all start with `RDPort_`, so the pack does nothing for any other map.
-
 ## 2026-10-10 — Empty mod list only fits a base-game map
 
 **Decision:** When Workshop Mod List is empty, the wrapper warns if Map is not one of the 102 base-game scenario IDs in the README, and still starts. Workshop scenario IDs that start with `_` are included in that warning. When Workshop Mod Tags is set and Workshop Mod List is empty, the wrapper prints a note that the tags are written and do not select modded content, and still writes the tags.
@@ -225,18 +188,6 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 **Decision:** `/handoff` is removed. A new chat starts with the task. Continuity is the always-on rules, `docs/`, and `git status`. An unfinished goal is written to `docs/ROADMAP.md` during the work. `@Chats` or fork-chat is for when the thread itself has to carry over.
 
 **Rationale:** The command spent a closing turn on a paste that was then loaded into the next chat. Git state, recorded fetches, and checks already live in the repo, and a pasted check result from the previous session is stale. The 2026-10-09 length cap does not apply anymore.
-
-## 2026-10-10 — Lobby page stays beside the server
-
-**Decision:** `WEB_UI` defaults to `false`. The template default was replaced later the same week; see the 2026-10-11 entry that turns WebUI on. The page code lives in `webui/` on `dev`. `entrypoint-unraid.sh` gains one hook: when the variable is true and `webui/launch.sh` is executable, run it, ignore its exit, and still exec `/server/entrypoint2.sh`. A regular `variables.ini` that already exists is left in place; `login.ini` is still rewritten from the form. The page listens on the game port plus 1000, validates a save, and replaces `variables.ini`. It does not signal the game. Loading a save is an Unraid restart of that container. The Docker WebUI link is `http://[IP]:[PORT:11400]/`. A push of `dev` does not publish the page. It reaches `ghcr.io/suchamoneypit/warhost:latest` only when `dev` is merged to `main` and the image rebuild finishes.
-
-**Rationale:** A page that is the parent of `warno-server`, or that restarts it, can take the match down when the page fails. The hook is fail-open so a missing launcher, a crash, or a taken page port only warns. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page, fetched 2026-10-10, is the key list the dropdowns write. Combat rule stays Destruction `1` and Conquest `2` from that page. The in-game labels for income and command and control are the ones recorded from the lobby screens.
-
-## 2026-10-11 — The docker log says whether the lobby page is listening
-
-**Decision:** With Lobby Page off, the wrapper prints `Lobby page is off. Nothing is listening on port N.` With it on, `webui/launch.sh` prints `Lobby page listening on port N.` only after a TCP connection to `127.0.0.1` succeeds and `/proc/net/tcp` shows that port listening on `0.0.0.0`. The server writes its own pid. The ready file is completed after the privilege drop is attempted. If the drop fails, the process stays root, the container log warns that it stayed root, and the page still serves. Once it is serving, the page ignores SIGHUP, so the launcher exiting does not stop it. `WARHOST_WEBUI_DROP_FAIL` is a test seam, not a form field.
-
-**Rationale:** On 2026-10-11 the operator opened the Docker WebUI button and Brave reported `10.0.1.105 refused to connect`. The docker log from that boot shows `warno-server` reaching matchmaking on `71.241.212.203:10400` and never mentions a lobby page. `ghcr.io/suchamoneypit/warhost:latest` was the image from [Actions run 38097617038](https://github.com/suchamoneypit/WARHOST/actions/runs/38097617038) for commit `9dfec47`. Its entrypoint layer does not contain `WEB_UI`. Host networking leaves `[PORT:11400]` as 11400 ([DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getControlURL`, re-read 2026-10-11), so the button opens a port that image does not serve. The next image has to say that in the same log. A failed privilege drop must not close the port after the launcher has already returned.
 
 ## 2026-10-11 — The form field is WebUI, and a save does not add a workshop mod
 
@@ -292,12 +243,6 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 
 **Rationale:** Hosts run a larger lobby on a smaller map, such as 8 and 4 on a 2v2 scenario, and a smaller lobby, such as max 2, team size 1, and minimum 2 for a 1v1 on that same map. Eugen's `variables.ini` page, already cited in `docs/ARCHITECTURE.md`, does not tie `NbMaxPlayer` or `MaxTeamSize` to the size token in the scenario ID. `NbMinPlayer` is the minimum key already written by the seed. Whether an 8-player lobby opens on a 2v2 scenario is still untested on a running server.
 
-## 2026-10-11 — v1.10 publishes the WebUI as the lobby editor
-
-**Decision:** `VERSION` is `1.10`. The release workflow tags this publish `v1.10`. The Docker form keeps the settings folder, Eugen login, dedicated key, public WAN IP, WebUI, Game Port, and Write Config From Form. Server name, map, player counts, combat rule, and workshop mods stay in the WebUI. The merged template `<Repository>` is `ghcr.io/suchamoneypit/warhost:latest`. The `dev` template stays on `ghcr.io/suchamoneypit/warhost:dev`.
-
-**Rationale:** The WebUI is the place those lobby fields are edited. A Docker form edit cannot update a `variables.ini` the page already seeded, and the form was harder to read than the page. `1.10` is the two-digit form of 1.1, the same way `1.0` is `v1.00`. The latest tag before this file was `v1.07`. A `VERSION` of `1.01` is below that tag, so the workflow would ignore it and tag `v1.08`.
-
 ## 2026-10-11 — Map packs and other workshop mods are separate checklists
 
 **Decision:** The WebUI workshop section has two checklists above the map list. The left one keeps the heading Workshop mods and lists catalog groups that have a `modList`. Those are the map packs. The right one is headed Full conversions and other mods and lists the catalog `mods` array, which `webui/make_catalog.py` fills from README workshop rows that are not those packs. An id already in `variables.ini` that is in neither list is a checkbox on the right, labeled Workshop id and that id. Checked ids from both lists are still one `mods` array. Their order stays the previous `ModList` order, and a newly checked id is appended. A save still writes catalog ids as bare ids.
@@ -327,3 +272,15 @@ Replaced the same day by the next entry, after those catalogs moved to `README.m
 **Decision:** The left WebUI checklist heading is Workshop Maps. It still lists the catalog map packs. The right checklist stays Full conversions and other mods.
 
 **Rationale:** The left list is only map packs. Workshop mods named both lists. The 2026-10-11 entry "Map packs and other workshop mods are separate checklists" used the old heading.
+
+## 2026-10-13 — Community Applications is the main install route
+
+**Decision:** The README Install section and step 5 of `docs/INSTALL-UNRAID.md` start with the Apps tab: search for WARHOST, choose Install, fill in the form, Apply. That installs the `main` template. The flash-drive copy printed by `scripts/print_template_fetch.sh`, and its `--private` variant, stay as the route for the `dev` template and for a template change Community Applications has not picked up yet. `scripts/check_repo.sh` still requires those commands in both docs. This replaces the "until Community Applications lists it" framing in "Install route for Unraid 7".
+
+**Rationale:** The maintainer reported on 2026-10-13 that Community Applications published the listing, after approval on 2026-10-09. The Apps tab is the route a first-time installer expects. The `dev` template points at `ghcr.io/suchamoneypit/warhost:dev` and is not in the listing, so testing a branch still needs the flash-drive copy.
+
+## 2026-10-13 — Shared agent files for Cursor and Claude Code
+
+**Decision:** `CLAUDE.md` is the one always-on instruction file. Cursor loads it as a rule and Claude Code reads it natively, so `.cursor/rules/agent-workflow.mdc` and `.cursor/rules/warno-project.mdc` are removed. Subagents live in `.claude/agents/` and commands in `.claude/skills/`, which both tools load. `.cursor/commands/` keeps only the Cursor-only `/webui` and `/ask-claude`. `docs-consistency`, `unraid-template-reviewer`, and `verifier` are one `reviewer`, run once per batch before a commit. Cursor hands work to Claude through `scripts/ask_claude.sh`; how often is set in `.cursor/rules/cursor-to-claude.mdc`. Claude Code never commits: `.claude/settings.json` denies commit, push, merge, rebase, hard reset, and tag. Superseded entries moved to `docs/DECISIONS-ARCHIVE.md`, and dated observations moved from `docs/ARCHITECTURE.md` to `docs/EVIDENCE.md`. Older entries that name `.cursor/agents/` or `.cursor/commands/` files refer to the same files now under `.claude/`. `CLAUDE.md` holds both workflow and WARNO facts, which replaces the generic and WARNO-specific rule split.
+
+**Rationale:** The maintainer uses a Cursor subscription and a Claude subscription. Cursor's [rules](https://cursor.com/docs/rules.md), [subagents](https://cursor.com/docs/subagents.md), and [skills](https://cursor.com/docs/skills.md) pages say it loads `CLAUDE.md`, `.claude/agents/`, and `.claude/skills/`, so one copy serves both tools and nothing loads twice. Three reviewers each reread the same diff in a fresh context; one reviewer with the same checklist reads it once. Agents read all of this file for each feature; the index above and `docs/PROJECT-MAP.md` replace that read. `claude -p` spends the Claude subscription on reviews and stuck bugs, and the wrapper keeps those calls read-only unless edit mode is chosen on a clean tree.

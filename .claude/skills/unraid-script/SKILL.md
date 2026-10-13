@@ -1,3 +1,9 @@
+---
+name: unraid-script
+description: Print three separate Unraid web-terminal scripts - a template download for main, one for dev, and a clean-slate removal. Add "private" for the Apps tab route.
+disable-model-invocation: true
+---
+
 # /unraid-script
 
 Print three separate Unraid web-terminal scripts: a download for `main`, a download for `dev`, and a clean-slate removal. Never combine the downloads into one paste.

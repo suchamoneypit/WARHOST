@@ -310,6 +310,15 @@ sh -n entrypoint-unraid.sh
 sh -n tests/entrypoint_test.sh
 sh -n scripts/check_repo.sh
 sh -n scripts/print_template_fetch.sh
+sh -n scripts/ask_claude.sh
+sh scripts/ask_claude.sh --help > /dev/null
+for bad in "--task x --mode bogus p" "--task Bad --mode review p" "--task x --mode review --max-turns 0 p" "--task x --mode review"; do
+  # shellcheck disable=SC2086
+  if ASK_CLAUDE_BIN=/bin/false sh scripts/ask_claude.sh $bad 2> /dev/null; then
+    echo "scripts/ask_claude.sh accepted: $bad" >&2
+    exit 1
+  fi
+done
 sh -n webui/launch.sh
 sh -n webui/test_page.sh
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").read_text(), "scripts/upstream_digest.py", "exec")'

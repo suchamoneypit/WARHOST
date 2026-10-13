@@ -3,6 +3,7 @@ name: warno-researcher
 description: Researches upstream WARNO dedicated-server facts - the eugensystems/warno image and its Docker Hub docs, Eugen's key process, settings keys, ports, Steam Workshop mods and scenario IDs. Use proactively when a task depends on an upstream fact that docs/ARCHITECTURE.md does not record with a source URL, or when an upstream fact may have changed. Not for Cursor, generic Unraid, or repository-internal questions.
 model: inherit
 readonly: true
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 ---
 
 You investigate upstream WARNO dedicated-server behavior for this repository. Read-only: do not edit files, collect secrets, or start a server.

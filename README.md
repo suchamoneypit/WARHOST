@@ -4,20 +4,24 @@ A mod-friendly, multi-instance capable WARNO dedicated server manager for Unraid
 
 The first start seeds a 2v2 Conquest lobby on the base-game map Hesse (`_2x2_Hesse_2vs2_CONQ`), named `WARHOST - default server name`, with no workshop mods, so players need only the game. Open the WebUI to set the server name, map, player limits, and workshop mods. Save and restart on that page restarts the dedicated server so the save loads. If the page cannot restart the container, restart it in Unraid. To host the [Red Dragon map pack](https://steamcommunity.com/sharedfiles/filedetails/?id=3811913066) (Steam Workshop item `3811913066`), check `3811913066` on that page and choose a scenario ID from the [scenario lists](#scenario-ids). A save writes the bare id. The next start reads that mod's current `Version` from Steam and writes `id/Version`. After the author publishes an update, use Save and restart in the WebUI. A pin already stored as `id/Version` stays until that save.
 
-If you've used other game servers before you likely can toll the unraid template tooltips only, and setup your standard port forward and you are done. Looking for more info? Follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
+If you have hosted game servers before, the field descriptions on the Unraid form and a TCP and UDP port forward are likely all you need. For the full walkthrough, follow [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). It covers the Eugen key request, router setup, the Unraid 7 install route, every field, how to confirm the server works, and troubleshooting. This README is the reference.
 
 ## What you need
 
-- A dedicated-server **login and key** from Eugen. Email `eugsupport@eugensystems.com` with the email address of your EugNet account politely requesting a dedicated servery key; Eugen replies with a login and key pair ([Docker Hub](https://hub.docker.com/r/eugensystems/warno)). A dedicated key from another Eugen game also works. One pair can run up to five servers.
+- A dedicated-server **login and key** from Eugen. Email `eugsupport@eugensystems.com` with the email address of your EugNet account and ask for a dedicated-server key; Eugen replies with a login and key pair ([Docker Hub](https://hub.docker.com/r/eugensystems/warno)). A dedicated key from another Eugen game also works. One pair can run up to five servers.
 - Your **public WAN IP**, and the game port forwarded on your router **as both TCP and UDP** to the Unraid server. Eugen recommends host networking and this container uses it, so Unraid shows no Docker port mapping.
 - Outbound internet from the Unraid server, so the game server can reach Eugen's master server (no offline LAN play), and so each start can read a Workshop mod's `Version` from Steam.
 
 
 ## Install
 
-Community Applications listing comes after this template has been tested on a running server. Until then, Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown. APPROVED, PENDING PUBLISH AS OF 10/9/26
+WARHOST is listed in Community Applications. In the Unraid **Apps** tab, search for **WARHOST**, choose **Install**, fill in the [form fields](#form-fields), and **Apply**. That installs the `main` template, which runs `ghcr.io/suchamoneypit/warhost:latest`.
 
-In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints the command in step 1. In Cursor, `/unraid-script` prints that command for `main`, a separate command for `dev` (`my-WARHOST-dev.xml`), and a clean-slate command. Paste only the branch you are about to add. The download URL uses the repository name `WARHOST` and the template file on that branch. Applying a branch template still writes `my-WARHOST.xml`, because `<Name>` on each branch is `WARHOST`, and leaves the suffixed file in the dropdown. The clean-slate command removes the `WARHOST` and `WARHOST-dev` containers and those template files. It also drops those names from `/var/lib/docker/unraid-autostart` and deletes the two private files under `/boot/config/plugins/community.applications/private/suchamoneypit/`. It removes the image named in that template's `<Repository>` only when no container is still using it. On `main` that image is `ghcr.io/suchamoneypit/warhost:latest`. On `dev` it is `ghcr.io/suchamoneypit/warhost:dev`. It also removes `/mnt/user/appdata/warno/<port>/settings` for those containers, which holds the login and key. A folder still mounted by another container is left in place.
+### Without Community Applications
+
+Use this route for the `dev` template, or to install a template change before Community Applications picks it up. Unraid 7 has no field for a template URL (Unraid 6.10 removed it), so copy the template to the flash drive and pick it from the **Template** dropdown.
+
+In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints the command in step 1. In Cursor or Claude Code, `/unraid-script` prints that command for `main`, a separate command for `dev` (`my-WARHOST-dev.xml`), and a clean-slate command. Paste only the branch you are about to add. The download URL uses the repository name `WARHOST` and the template file on that branch. Applying a branch template still writes `my-WARHOST.xml`, because `<Name>` on each branch is `WARHOST`, and leaves the suffixed file in the dropdown. The clean-slate command removes the `WARHOST` and `WARHOST-dev` containers and those template files. It also drops those names from `/var/lib/docker/unraid-autostart` and deletes the two private files under `/boot/config/plugins/community.applications/private/suchamoneypit/`. It removes the image named in that template's `<Repository>` only when no container is still using it. On `main` that image is `ghcr.io/suchamoneypit/warhost:latest`. On `dev` it is `ghcr.io/suchamoneypit/warhost:dev`. It also removes `/mnt/user/appdata/warno/<port>/settings` for those containers, which holds the login and key. A folder still mounted by another container is left in place.
 
 1. Unraid web UI → terminal icon (`>_`):
 
@@ -33,7 +37,7 @@ The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml`
 
 The template on `main` installs `ghcr.io/suchamoneypit/warhost:latest`. That tag is published when **Rebuild WARHOST image** runs on `main`. The template on `dev` installs `ghcr.io/suchamoneypit/warhost:dev`, published from `dev`. The pull check is in the install guide, step 2. The first server's settings folder is `/mnt/user/appdata/warno/10400/settings`. Containers from `main` share `ghcr.io/suchamoneypit/warhost:latest`; containers from `dev` share `ghcr.io/suchamoneypit/warhost:dev`. Extra search terms are `WARNO WARNO server dedicated server game server mods modded`.
 
-Fill in:
+### Form fields
 
 <table>
 <thead>
@@ -453,15 +457,15 @@ The image also contains [DepotDownloader 3.4.0](https://github.com/SteamRE/Depot
 | File | Contents |
 | --- | --- |
 | [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md) | First install, step by step, with verification and troubleshooting |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | What the repository contains and what was verified, with sources |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the wrapper, WebUI, and image behave, with sources |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Why things are the way they are |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Goals and known issues |
 | [docs/UNRAID-TEMPLATE-GUIDE.md](docs/UNRAID-TEMPLATE-GUIDE.md) | Generic Unraid template guidance, reusable for other game servers |
-| [docs/CURSOR-QUICKSTART.md](docs/CURSOR-QUICKSTART.md) | Working on this repository with Cursor's agents |
+| [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md) | Working on this repository with Cursor and Claude Code |
 
 ## Made with AI tools
 
-This project was built with AI coding assistants (mainly [Cursor](https://cursor.com)). Humans directed the work, reviewed what shipped, and remain responsible for it. Treat the template like any other community Docker or Unraid project: verify on your own server, and open an issue if something is wrong. Notes for working on the Cursor setup in this repository are in [docs/CURSOR-QUICKSTART.md](docs/CURSOR-QUICKSTART.md).
+This project was built with AI coding assistants (mainly [Cursor](https://cursor.com)). Humans directed the work, reviewed what shipped, and remain responsible for it. Treat the template like any other community Docker or Unraid project: verify on your own server, and open an issue if something is wrong. Notes for working on the agent setup in this repository are in [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md).
 
 WARNO was a game made in France, but WARHOST was created in the United States.
 

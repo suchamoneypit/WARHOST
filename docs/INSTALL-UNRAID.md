@@ -11,7 +11,7 @@ What this guide rests on, checked on 2026-10-09:
 - Unraid's [container management docs](https://docs.unraid.net/unraid-os/manual/docker-management/) and the Community Applications author's statement that Unraid 6.10 [removed the Template Repositories field](https://forums.unraid.net/topic/112170-allow-template-repositories-to-be-hosted-from-other-sources/).
 - The Red Dragon map pack files on a PC subscribed to Steam Workshop item `3811913066`.
 
-What it does not rest on: a full recorded pass of steps 5 to 7. On 2026-10-09 two containers showed online; section 8 records that. The list at the end says what that run did not cover. If you complete a step that is still open, record what you saw in `docs/ROADMAP.md`.
+The maintainer has completed this install on Unraid: the container stays up, the key is only in the settings files, and the preset Hesse map is the running scenario. On 2026-10-09 two containers showed online; section 8 records that. The list at the end says what is still unverified. If you confirm one of those items, record what you saw in `docs/ROADMAP.md`.
 
 ## 0. Checklist before you start
 
@@ -94,7 +94,9 @@ Usual player counts for each size are in the README. Choosing a map in the WebUI
 
 ## 5. Put the template into Unraid
 
-Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so there is no place to paste a template URL in Unraid 7. Until this template is in Community Applications, copy it onto the flash drive.
+WARHOST is listed in Community Applications. In the **Apps** tab, search for **WARHOST** and choose **Install**. The Add Container form opens with every field prefilled; continue with step 6. That installs the `main` template and `ghcr.io/suchamoneypit/warhost:latest`.
+
+To install the `dev` template, or a template change before Community Applications picks it up, copy the XML onto the flash drive instead. Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so Unraid 7 has no place to paste a template URL.
 
 `sh scripts/print_template_fetch.sh`, run in a checkout of this repository, prints the command below. In the Unraid web UI, open the terminal (the `>_` icon top right) and paste it. `/unraid-script` prints this command, a separate command for `dev` under `my-<Name>-dev.xml`, and a clean-slate command. Paste only the branch you are about to add. On Apply, Unraid writes `my-<Name>.xml` from the Name field, which is `WARHOST` on each of these branches, so applying a branch template replaces `my-WARHOST.xml` and leaves the suffixed file in the dropdown. The clean-slate command removes the `WARHOST` and `WARHOST-dev` containers and those template files. It also drops those names from `/var/lib/docker/unraid-autostart` and deletes the two private files under `/boot/config/plugins/community.applications/private/suchamoneypit/`. It removes the template image only when no container is still using it. It also removes `/mnt/user/appdata/warno/<port>/settings` for those containers, which holds the login and key. A folder still mounted by another container is left in place.
 
@@ -123,7 +125,7 @@ rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
 
 The filename matches what Unraid writes on Apply (`my-<Name>.xml`, case preserved, in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php) `getUserTemplatePath`). On 2026-10-09 Unraid 7.3.3 showed `my-WARHOST.xml` in the Template dropdown as **WARHOST**. A file left from an earlier Apply kept the old fields until it was removed and this curl was run again. Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. The curl changes the form only. A download of `main` runs `ghcr.io/suchamoneypit/warhost:latest`, which changes when a rebuild of that tag succeeds. A download of `dev` runs `ghcr.io/suchamoneypit/warhost:dev` after **Rebuild WARHOST image** has published that tag. Both start with Map unset and serve the WebUI once that rebuild is green. A `:latest` image from before the v1.10 publish still stops when Map is unset, and it does not serve the page. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 
-Alternative, still until Community Applications lists it: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
+Another flash-drive route: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
 
 ```sh
 mkdir -p /boot/config/plugins/community.applications/private/suchamoneypit
@@ -199,7 +201,7 @@ Start WARNO on a PC on the same network, with each mod checked in the WebUI enab
 
 Have someone outside your LAN find and join the server. Only this step proves the port forward, the WAN IP, and your ISP are all right. A TCP port checker website can confirm the TCP half of the forward; UDP cannot be checked that way.
 
-When 7e works, the install goal in `docs/ROADMAP.md` is met. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the Name on the form. With Name left as `WARHOST`, that is the same file as the download. A different Name leaves the downloaded file in the dropdown as a second entry labeled **WARHOST**. Compare Unraid's saved copy with `templates/warhost.xml`; dockerMan's formatting is the one Community Applications expects.
+When 7e works, the server is installed. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml`, using the Name on the form. With Name left as `WARHOST`, that is the same file as the download. A different Name leaves the downloaded file in the dropdown as a second entry labeled **WARHOST**. Compare Unraid's saved copy with `templates/warhost.xml`; dockerMan's formatting is the one Community Applications expects.
 
 ## 8. Another server on the same host
 
@@ -252,7 +254,7 @@ On start, the log names the next port and its settings folder. If the settings f
 
 ## Not yet verified
 
-These need a real Unraid install with a real key. They are listed so nobody mistakes this guide for a test record.
+The maintainer's install confirmed the container, the key, and the Hesse map. These items were not recorded and still need a real Unraid install with a real key.
 
 - A line-by-line check that Unraid 7 prefills every field as written here. The dropdown label **WARHOST** for `my-WARHOST.xml` was seen on 2026-10-09, and Key last 4 was absent after a fresh curl of `main`. A file named `warno-dedicated-server.xml` was reported to show that lowercase name.
 - What a healthy `warno-server` prints after the wrapper's first log line, and how long the first start takes.

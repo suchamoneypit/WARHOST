@@ -1,6 +1,7 @@
 #!/bin/sh
 # Print the Unraid web-terminal command that downloads this container template
-# onto the flash drive. Use it until Community Applications lists the template.
+# onto the flash drive. Use it for the dev template, or for a template change
+# Community Applications has not picked up yet.
 # stdout is only that command, so it can be pasted as-is.
 set -eu
 
