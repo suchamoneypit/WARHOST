@@ -94,9 +94,28 @@ if "creditText(row.author)" not in html or 'className = "mod-author"' not in htm
     raise SystemExit("checklist does not place the author next to the name")
 if 'author: found ? found.author : ""' not in html:
     raise SystemExit("an unknown workshop id would invent an author")
+if 'id="other-checks"' not in html or "Full conversions and other mods" not in html:
+    raise SystemExit("other mods checklist is missing")
+packs = html[html.index("function mapPackMods"):html.index("function otherMods")]
+if "catalog.forEach" not in packs or "extraMods" in packs:
+    raise SystemExit("map packs are not taken from catalog groups")
+others = html[html.index("function otherMods"):html.index("function creditText")]
+if "extraMods.forEach" not in others or "catalog.forEach" in others:
+    raise SystemExit("other mods are not taken from the catalog mods array")
+render = html[html.index("function renderChecks"):html.index("function fillSelect")]
+if 'getElementById("mod-checks"), packs' not in render or 'getElementById("other-checks"), others, unknown' not in render:
+    raise SystemExit("renderChecks does not split the two lists")
+if "enabledIds().filter((id) => !known.has(id))" not in render:
+    raise SystemExit("an unknown workshop id is not kept on the other-mods list")
+handler = html[html.index('querySelector(".workshop")'):html.index('getElementById("save")')]
+if "#mod-checks input, #other-checks input" not in handler:
+    raise SystemExit("a checkbox change does not read both lists")
+if "enabledIds().filter((id) => checked.has(id))" not in handler:
+    raise SystemExit("a checkbox change does not keep the previous workshop id order")
 PY
 printf 'ok scenario catalog matches the README\n'
 printf 'ok workshop authors sit next to the checklist names\n'
+printf 'ok map packs and other mods are separate checklists\n'
 
 settings="${WORKDIR}/settings"
 mkdir -p "$settings"
@@ -130,8 +149,26 @@ EOF
 checksum=$(cksum "${settings}/variables.ini")
 
 PORT=39521
+mkdir -p "${WORKDIR}/previews/_2x2_Hesse"
+python3 - "${WORKDIR}/previews" << 'PY'
+import json
+import pathlib
+import struct
+import sys
+import zlib
+
+def chunk(tag, payload):
+    return struct.pack(">I", len(payload)) + tag + payload + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
+
+ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b"")
+root = pathlib.Path(sys.argv[1])
+(root / "_2x2_Hesse" / "overview.png").write_bytes(png)
+(root / "index.json").write_text(json.dumps({"_2x2_Hesse": {"overview": "overview.png"}}) + "\n")
+PY
 export SETTINGS_DIR="$settings"
 export WARHOST_WEB_PORT="$PORT"
+export WARHOST_PREVIEWS="${WORKDIR}/previews"
 export EXPOSEDPORT=38521
 export SERVER_NAME="WARHOST - Hesse 2v2"
 export MAP=_2x2_Hesse_2vs2_CONQ
@@ -142,6 +179,7 @@ export COMBAT_RULE=2
 setsid env -u EUGEN_LOGIN -u EUGEN_DEDICATED_KEY \
   SETTINGS_DIR="$settings" \
   WARHOST_WEB_PORT="$PORT" \
+  WARHOST_PREVIEWS="${WORKDIR}/previews" \
   EXPOSEDPORT=38521 \
   SERVER_NAME="WARHOST - Hesse 2v2" \
   MAP=_2x2_Hesse_2vs2_CONQ \
@@ -296,7 +334,15 @@ if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WO
   fail "lobby page exposed the dedicated key"
 fi
 grep -q 'Scenic view' "${WORKDIR}/page.html" || fail "page is missing the scenic slot"
+grep -q 'id="shot-overview"' "${WORKDIR}/page.html" || fail "scenic slot is not a picture target"
 grep -q 'Tactical zones' "${WORKDIR}/page.html" || fail "page is missing the tactical slot"
+grep -q '/previews/index.json' "${WORKDIR}/page.html" || fail "page does not ask for map pictures"
+curl -fsS "${base}/previews/index.json" > "${WORKDIR}/previews.json" || fail "map picture index did not load"
+grep -q '_2x2_Hesse' "${WORKDIR}/previews.json" || fail "map picture index omitted Hesse"
+curl -fsS "${base}/previews/_2x2_Hesse/overview.png" > "${WORKDIR}/overview.png" || fail "scenic picture did not load"
+cmp -s "${WORKDIR}/overview.png" "${WORKDIR}/previews/_2x2_Hesse/overview.png" || fail "scenic picture bytes changed"
+code=$(curl --path-as-is -sS -o /dev/null -w '%{http_code}' "${base}/previews/../server.py") || fail "preview traversal request failed"
+[ "$code" = "404" ] || fail "preview path escaped the picture directory"
 grep -q 'Map list (scenario ID list)' "${WORKDIR}/page.html" || fail "page is missing the map list heading"
 grep -q 'Save and restart' "${WORKDIR}/page.html" || fail "page is missing Save and restart"
 grep -q 'id="players"' "${WORKDIR}/page.html" || fail "page is missing max players"
@@ -455,6 +501,74 @@ capture_code "${WORKDIR}/body.txt" \
 [ ! -L "${settings}/variables.ini" ] || fail "save followed a symlink"
 grep -qx 'secret-target' "$outside" || fail "save wrote through a symlink"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "symlink save did not replace variables.ini"
+
+[ ! -e "${settings}/params_for_ai.json" ] || fail "a PvP save wrote params_for_ai.json"
+if grep -q '^CoopVsAI = ' "${settings}/variables.ini"; then
+  fail "a PvP save added CoopVsAI"
+fi
+
+cat > "${WORKDIR}/pve-empty.json" << 'EOF'
+{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":4,"team":2,"minPlayers":2,"mods":[],"setup":"pve","humanSide":1,"humans":2,"ai":2,"decks":{"0":[],"1":[]}}
+EOF
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data "@${WORKDIR}/pve-empty.json" \
+  "${base}/api/lobby"
+[ "$code" = "400" ] || fail "PvE setup without an AI deck returned ${code}"
+grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${settings}/variables.ini" || fail "rejected PvE setup changed the map"
+[ ! -e "${settings}/params_for_ai.json" ] || fail "rejected PvE setup wrote params_for_ai.json"
+
+cat > "${WORKDIR}/pve-2v2.json" << 'EOF'
+{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":4,"team":2,"minPlayers":2,"mods":[],"setup":"pve","humanSide":1,"humans":2,"ai":2,"decks":{"0":[],"1":[{"name":"NATO hold","deckContent":"AAAA","iaLevel":3}]}}
+EOF
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data "@${WORKDIR}/pve-2v2.json" \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "PvE setup save returned ${code}"
+grep -qx 'CoopVsAI = 1' "${settings}/variables.ini" || fail "PvE setup did not lock humans to the first team"
+grep -qx 'NbMaxPlayer = 4' "${settings}/variables.ini" || fail "2v2 PvE setup did not write max players"
+grep -qx 'NbMinPlayer = 2' "${settings}/variables.ini" || fail "2v2 PvE setup did not write the human count as the minimum"
+grep -qx 'MaxTeamSize = 2' "${settings}/variables.ini" || fail "2v2 PvE setup did not write the team cap"
+grep -qx 'DeltaMaxTeamSize = 0' "${settings}/variables.ini" || fail "2v2 PvE setup did not keep equal teams"
+python3 - "${settings}/params_for_ai.json" << 'PY' || fail "2v2 PvE setup did not write the AI deck"
+import json, sys
+data = json.load(open(sys.argv[1]))
+if data["0"] != [] or data["1"] != [{"name": "NATO hold", "deckContent": "AAAA", "iaLevel": 3}]:
+    raise SystemExit(data)
+PY
+
+cat > "${WORKDIR}/pve-2v4.json" << 'EOF'
+{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":4,"team":2,"minPlayers":2,"mods":[],"setup":"pve","humanSide":1,"humans":2,"ai":4,"decks":{"0":[],"1":[{"name":"NATO hold","deckContent":"AAAA","iaLevel":3}]}}
+EOF
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data "@${WORKDIR}/pve-2v4.json" \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "uneven PvE setup save returned ${code}"
+grep -qx 'NbMaxPlayer = 6' "${settings}/variables.ini" || fail "2 and 4 PvE setup did not write 6 slots"
+grep -qx 'NbMinPlayer = 2' "${settings}/variables.ini" || fail "2 and 4 PvE setup did not keep 2 human players"
+grep -qx 'MaxTeamSize = 4' "${settings}/variables.ini" || fail "2 and 4 PvE setup did not write the larger team cap"
+grep -qx 'DeltaMaxTeamSize = 2' "${settings}/variables.ini" || fail "2 and 4 PvE setup did not write the team difference"
+curl -fsS "${base}/" > "${WORKDIR}/pve.html" || fail "PvE setup page did not load"
+grep -q 'id="setup"' "${WORKDIR}/pve.html" || fail "page is missing the setup control"
+grep -q 'PvE setup' "${WORKDIR}/pve.html" || fail "page is missing the PvE setup label"
+grep -q 'A larger AI side has not been confirmed on a running server.' "${WORKDIR}/pve.html" || fail "page is missing the team cap warning"
+
+deck_sum=$(cksum "${settings}/params_for_ai.json")
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_2x2_Hesse_2vs2_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"players":6,"team":4,"minPlayers":2,"mods":[],"setup":"pvp"}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "switch back to PvP returned ${code}"
+grep -qx 'CoopVsAI = 0' "${settings}/variables.ini" || fail "PvP did not turn PvE setup off"
+grep -qx 'DeltaMaxTeamSize = 0' "${settings}/variables.ini" || fail "PvP did not restore equal teams"
+grep -qx 'NbMaxPlayer = 6' "${settings}/variables.ini" || fail "PvP changed the saved player count"
+[ "$(cksum "${settings}/params_for_ai.json")" = "$deck_sum" ] || fail "PvP save replaced the deck file"
 
 printf 'ok lobby page saves and rejects\n'
 

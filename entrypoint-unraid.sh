@@ -730,6 +730,18 @@ if [ "$write_config" = "true" ]; then
     die "${lobby_file} is not a regular file, so it was not replaced."
   fi
 
+  ai_file="${SETTINGS_DIR}/params_for_ai.json"
+  ai_kept=0
+  if [ -L "$ai_file" ] || [ ! -e "$ai_file" ]; then
+    ai_kept=0
+  elif [ -d "$ai_file" ]; then
+    die "${ai_file} is a directory, so it was not replaced."
+  elif [ -f "$ai_file" ]; then
+    ai_kept=1
+  else
+    die "${ai_file} is not a regular file, so it was not replaced."
+  fi
+
   lobby_name="WARHOST - default server name"
   lobby_map="_2x2_Hesse_2vs2_CONQ"
   lobby_mods=
@@ -774,7 +786,9 @@ if [ "$write_config" = "true" ]; then
   tmp_ai="${stage_dir}/params_for_ai.json"
   printf 'login="%s"\n' "$EUGEN_LOGIN" > "$tmp_login"
   printf 'dedicated_key="%s"\n' "$EUGEN_DEDICATED_KEY" >> "$tmp_login"
-  printf '%s\n' '{' '  "0": [],' '  "1": []' '}' > "$tmp_ai"
+  if [ "$ai_kept" -eq 0 ]; then
+    printf '%s\n' '{' '  "0": [],' '  "1": []' '}' > "$tmp_ai"
+  fi
   refresh_mods=0
   if [ "$lobby_kept" -eq 0 ]; then
     write_seed_variables "$tmp_variables"
@@ -798,11 +812,15 @@ if [ "$write_config" = "true" ]; then
   if [ "$lobby_kept" -eq 0 ] || [ "$refresh_mods" -eq 1 ]; then
     publish_staged_file "$tmp_variables" "${SETTINGS_DIR}/variables.ini"
   fi
-  publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
+  if [ "$ai_kept" -eq 0 ]; then
+    publish_staged_file "$tmp_ai" "${SETTINGS_DIR}/params_for_ai.json"
+  fi
+  chmod 600 "${SETTINGS_DIR}/login.ini"
   if [ "$lobby_kept" -eq 0 ] || [ "$refresh_mods" -eq 1 ]; then
-    chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/variables.ini" "${SETTINGS_DIR}/params_for_ai.json"
-  else
-    chmod 600 "${SETTINGS_DIR}/login.ini" "${SETTINGS_DIR}/params_for_ai.json"
+    chmod 600 "${SETTINGS_DIR}/variables.ini"
+  fi
+  if [ "$ai_kept" -eq 0 ]; then
+    chmod 600 "${SETTINGS_DIR}/params_for_ai.json"
   fi
   if [ -n "$workshop_cache_lines" ]; then
     cache_dest="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
