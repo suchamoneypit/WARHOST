@@ -61,8 +61,11 @@ def port_taken(port):
             if listen_only and parts[3].upper() != "0A":
                 continue
             return True
+    # The listening server sets SO_REUSEADDR. A matching probe treats TIME_WAIT
+    # as free and still fails while another listener holds the port.
     probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         probe.bind(("0.0.0.0", port))
     except OSError:
         return True

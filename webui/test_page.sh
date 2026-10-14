@@ -665,3 +665,52 @@ if sudo -n true 2>/dev/null; then
 else
   printf 'ok lobby page root drop skipped\n'
 fi
+
+if [ -n "${PAGE_PID:-}" ]; then
+  kill -- "-$PAGE_PID" 2>/dev/null || kill "$PAGE_PID" 2>/dev/null || true
+  wait "$PAGE_PID" 2>/dev/null || true
+  PAGE_PID=
+fi
+
+tw_settings="${WORKDIR}/time-wait-settings"
+mkdir -p "$tw_settings"
+printf 'ServerName = TIME WAIT\nMap = _2x2_Hesse_2vs2_CONQ\n' > "${tw_settings}/variables.ini"
+tw_port=39611
+env SETTINGS_DIR="$tw_settings" WARHOST_WEB_PORT="$tw_port" \
+  python3 "${ROOT}/webui/server.py" --serve >"${WORKDIR}/time-wait.log" 2>&1 &
+PAGE_PID=$!
+i=0
+while [ "$i" -lt 50 ]; do
+  if WARHOST_WEB_PORT="$tw_port" python3 -c 'import os,socket; socket.create_connection(("127.0.0.1", int(os.environ["WARHOST_WEB_PORT"])), 0.2).close()' >/dev/null 2>&1; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+python3 - << PY || fail "listening page port was reported free"
+import os, socket, subprocess, sys
+port = ${tw_port}
+socket.create_connection(("127.0.0.1", port), 2).close()
+proc = subprocess.run([sys.executable, "${ROOT}/webui/server.py", "--check"], env={**os.environ, "WARHOST_WEB_PORT": str(port)})
+raise SystemExit(0 if proc.returncode == 1 else 1)
+PY
+python3 - << PY
+import socket
+port = ${tw_port}
+client = socket.create_connection(("127.0.0.1", port))
+client.sendall(b"GET /api/lobby HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n")
+client.settimeout(2)
+while client.recv(4096):
+    pass
+client.close()
+PY
+kill -KILL "$PAGE_PID" 2>/dev/null || true
+wait "$PAGE_PID" 2>/dev/null || true
+PAGE_PID=
+python3 - << PY || fail "a closed page connection left the port looking taken"
+import os, subprocess, sys
+port = "${tw_port}"
+proc = subprocess.run([sys.executable, "${ROOT}/webui/server.py", "--check"], env={**os.environ, "WARHOST_WEB_PORT": port})
+raise SystemExit(proc.returncode)
+PY
+printf 'ok a closed page connection does not keep the port\n'

@@ -1495,6 +1495,107 @@ fi
 rm -f "$hold"
 printf 'ok webui restart runs the dedicated server again\n'
 
+make_server
+mkdir -p "${server}/settings" "${WORKDIR}/no-wget"
+cat > "${server}/settings/variables.ini" << 'EOF'
+ServerName = TEST SERVER WILL SHUTDOWN
+NbMaxPlayer = 4
+NbMinPlayer = 2
+MaxTeamSize = 2
+GameType = 2
+CombatRule = 2
+Map = RDPort_JungleLaw_2v2_CONQ
+ModList = 3811913066/27
+ModTagList = Maps-Scenarios
+InitMoney = 3000
+TimeLimit = 0
+ScoreLimit = 4000
+Upkeep = 7
+EOF
+printf '{ "0": [], "1": [] }\n' > "${server}/settings/params_for_ai.json"
+printf '3811913066 1791628993 27\n' > "${server}/settings/warhost-workshop-versions.txt"
+chmod 644 "${server}/settings/variables.ini" "${server}/settings/params_for_ai.json"
+cat > "${WORKDIR}/no-wget/wget" << 'EOF'
+#!/bin/sh
+exit 1
+EOF
+chmod 755 "${WORKDIR}/no-wget/wget"
+hold="${WORKDIR}/keep-hold"
+: > "$hold"
+cat > "${server}/entrypoint2.sh" << EOF
+#!/bin/sh
+printf '%s\n' reached-upstream
+while [ -f "$hold" ]; do
+  sleep 0.05
+done
+exit 0
+EOF
+chmod 755 "${server}/entrypoint2.sh"
+: > "${WORKDIR}/keep-out.txt"
+: > "${WORKDIR}/keep-err.txt"
+env -i PATH="${WORKDIR}/no-wget:${PATH}" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21640 \
+  WEB_UI=true \
+  sh "$ENTRY" >"${WORKDIR}/keep-out.txt" 2>"${WORKDIR}/keep-err.txt" &
+restart_pid=$!
+i=0
+while [ "$i" -lt 80 ]; do
+  if grep -q 'WebUI listening on port 22640.' "${WORKDIR}/keep-out.txt"; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+grep -q 'WebUI listening on port 22640.' "${WORKDIR}/keep-out.txt" || fail "kept page did not start"
+python3 - "${server}/settings/variables.ini" << 'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text().replace("ModList = 3811913066/27", "ModList = 3811913066", 1)
+path.write_text(text)
+PY
+chmod 644 "${server}/settings/variables.ini"
+kill -USR1 "$restart_pid" || fail "could not signal the kept page restart"
+i=0
+while [ "$i" -lt 80 ]; do
+  if grep -q 'WebUI still listening on port 22640.' "${WORKDIR}/keep-out.txt"; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+grep -q 'WebUI still listening on port 22640.' "${WORKDIR}/keep-out.txt" || fail "workshop restart did not keep the page"
+grep -q 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "workshop restart did not pin the version"
+kept_mode=$(stat -c '%a' "${server}/settings/variables.ini")
+[ "$kept_mode" = "644" ] || fail "workshop restart left variables.ini mode ${kept_mode}"
+login_mode=$(stat -c '%a' "${server}/settings/login.ini")
+[ "$login_mode" = "600" ] || fail "workshop restart left login.ini mode ${login_mode}"
+python3 - << 'PY' || fail "kept page could not read the lobby after the version pin"
+import json, urllib.request
+body = json.load(urllib.request.urlopen("http://127.0.0.1:22640/api/lobby", timeout=2))
+if body.get("serverName") != "TEST SERVER WILL SHUTDOWN":
+    raise SystemExit(body.get("serverName"))
+if body.get("map") != "RDPort_JungleLaw_2v2_CONQ":
+    raise SystemExit(body.get("map"))
+PY
+rm -f "$hold"
+kill -TERM "$restart_pid" 2>/dev/null || true
+i=0
+while [ "$i" -lt 50 ]; do
+  if ! kill -0 "$restart_pid" 2>/dev/null; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+wait "$restart_pid" 2>/dev/null || true
+restart_pid=
+stop_webui
+printf 'ok workshop restart keeps the lobby readable\n'
+
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"
 fi

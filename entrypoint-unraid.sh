@@ -821,6 +821,16 @@ if [ "$write_config" = "true" ]; then
   if [ "$ai_kept" -eq 0 ]; then
     chmod 600 "${SETTINGS_DIR}/params_for_ai.json"
   fi
+  # Save and restart keeps the page process. That process does not run again,
+  # so a Workshop version rewrite must restore the modes the page can read.
+  if [ "$web_ui" = true ]; then
+    if [ -f "${SETTINGS_DIR}/variables.ini" ] && [ ! -L "${SETTINGS_DIR}/variables.ini" ]; then
+      chmod 644 "${SETTINGS_DIR}/variables.ini"
+    fi
+    if [ -f "${SETTINGS_DIR}/params_for_ai.json" ] && [ ! -L "${SETTINGS_DIR}/params_for_ai.json" ]; then
+      chmod 644 "${SETTINGS_DIR}/params_for_ai.json"
+    fi
+  fi
   if [ -n "$workshop_cache_lines" ]; then
     cache_dest="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
     if [ -d "$cache_dest" ] && [ ! -L "$cache_dest" ]; then
