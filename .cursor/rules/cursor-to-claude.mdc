@@ -10,15 +10,44 @@ Cursor can hand a task to the user's Claude subscription with `sh scripts/ask_cl
 ```yaml
 enabled: true
 default_model: sonnet
-limits:                       # per chat; past a limit, treat the task as "ask"
+
+limits: # per chat; past a limit, treat the task as "ask"
   sonnet_calls: 6
   opus_calls: 1
+
 tasks:
-  stuck_bug:         { when: auto, model: sonnet, mode: review, after_failed_attempts: 1, max_per_chat: 2, max_turns: 25 }
-  pre_commit_review: { when: auto, model: sonnet, mode: review, max_turns: 25 }
-  plan_second_look:  { when: auto, model: sonnet, mode: review, max_turns: 15 }
-  slop_review:       { when: auto, model: opus,   mode: review, parallel: true, max_turns: 60 }
-  implement_plan:    { when: off,  model: sonnet, mode: edit,   max_turns: 40 }
+  stuck_bug:
+    when: auto
+    model: sonnet
+    mode: review
+    after_failed_attempts: 1
+    max_per_chat: 2
+    max_turns: 25
+
+  pre_commit_review:
+    when: auto
+    model: sonnet
+    mode: review
+    max_turns: 25
+
+  plan_second_look:
+    when: auto
+    model: sonnet
+    mode: review
+    max_turns: 15
+
+  slop_review:
+    when: auto
+    model: opus
+    mode: review
+    parallel: true
+    max_turns: 60
+
+  implement_plan:
+    when: off
+    model: sonnet
+    mode: edit
+    max_turns: 40
 ```
 
 `when`: `auto` calls without asking; `ask` asks one yes/no question ("Have Claude check too?") and waits; `suggest` mentions it in the summary only; `off` never calls.
