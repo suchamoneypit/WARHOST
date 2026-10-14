@@ -425,7 +425,7 @@ The dedicated key belongs in the Unraid form, which stores it for that container
 
 Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their server launch arguments. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image. It stays the container's main process. Save and restart runs that start again so the saved lobby and Workshop versions load.
 
-`.github/workflows/rebuild-image.yml` checks Eugen's image once a day. The workflow also runs when the Dockerfile, `entrypoint-unraid.sh`, `webui/`, or `.github/workflows/rebuild-image.yml` changes, and a push of those paths publishes `:latest` from `main` or `:dev` from `dev`. In Unraid, update each server container. A failed build leaves the previous image in place. A failed visibility step can come after the new image was pushed. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
+`.github/workflows/rebuild-image.yml` checks Eugen's image once a day. The workflow also runs when the Dockerfile, `entrypoint-unraid.sh`, `webui/`, or `.github/workflows/rebuild-image.yml` changes, and a push of those paths publishes `:latest` from `main` or `:dev` from `dev`. In Unraid, update each server container. A failed build leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
 
 Change the entrypoint only if Eugen renames `entrypoint2.sh` or the settings filenames. A normal game patch does not require an edit here.
 

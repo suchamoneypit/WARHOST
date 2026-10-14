@@ -23,6 +23,8 @@ On 2026-10-10, [Actions run 38092461247](https://github.com/suchamoneypit/WARHOS
 
 Both GitHub workflows (`Check repository`, `Rebuild WARNO image`) completed successfully for commit `848a5a4`. The workflow file is now named `Rebuild WARHOST image`. The repository is public with Issues enabled. The GitHub repository is `WARHOST`. `https://github.com/suchamoneypit/WARNO-Dedicated-Server-Unraid` returned HTTP 301 to that name on 2026-10-09.
 
+On 2026-10-13, anonymous manifest reads of `ghcr.io/suchamoneypit/warhost:latest` and `:dev` each returned HTTP 200. [Actions run 38494130558](https://github.com/suchamoneypit/WARHOST/actions/runs/38494130558) for commit `6e589ec` pushed `:dev`, then failed in "Make GHCR package public" with the public annotation "Process completed with exit code 1." The step log is not readable without signing in. The packages REST reference, read the same day, has no endpoint that sets package visibility.
+
 ## DepotDownloader measurements
 
 Measured on 2026-10-10 with DepotDownloader 3.4.0 and no Steam account:

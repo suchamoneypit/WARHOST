@@ -71,7 +71,7 @@ Before merging `dev` into `main`, set `<Repository>` in `templates/warhost.xml` 
 1. In the GitHub repository settings, enable Issues.
 2. Under Actions, allow GitHub Actions, and set workflow permissions to read and write.
 3. Run the **Rebuild WARHOST image** workflow.
-4. Open the package `warhost` and set its visibility to Public if the workflow did not. Unraid cannot pull a private package.
+4. Open the package `warhost` and set its visibility to Public. Unraid cannot pull a private package.
 
 Then install the template and confirm the container stays up, the key is only in that server's settings files, and the preset Hesse map is the running scenario. Community Apps reads `main`. A first submission needs a public repository, the MIT `LICENSE` at the root, `ca_profile.xml` with a non-empty Profile, and `templates/warhost.xml`. Open [https://ca.unraid.net/submit](https://ca.unraid.net/submit), run Validate, then Scan, and submit when the scan is clean. The help pages are [submission help](https://ca.unraid.net/submit/help), [repository XML](https://ca.unraid.net/submit/help/repository-xml), and [repository information XML](https://ca.unraid.net/submit/help/repository-info-xml).
 

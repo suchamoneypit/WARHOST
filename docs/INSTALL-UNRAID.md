@@ -232,7 +232,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
   https://ghcr.io/v2/suchamoneypit/warhost/manifests/latest
 ```
 
-The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. The template ReadMe is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE. A red **Rebuild WARHOST image** run is a failed build, which leaves the previous image, or a failed visibility step after the new image was pushed. Open an issue.
+The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. The template ReadMe is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE. A red **Rebuild WARHOST image** run is a failed build, which leaves the previous image. Open an issue.
 
 ## Not yet verified
 
