@@ -45,6 +45,8 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-13 Community Applications is the main install route: the README and install guide lead with Apps, search WARHOST, Install; the flash-drive copy stays for `dev`.
 - 2026-10-13 Shared agent files for Cursor and Claude Code: `CLAUDE.md`, `.claude/agents/`, and `.claude/skills/` serve both tools; one `reviewer`; `claude -p` via `scripts/ask_claude.sh`.
 - 2026-10-13 Claude handoff effort is set per task: `effort` is `low` through `max`; routine calls use `medium`, and `/slop-review` uses `high`.
+- 2026-10-13 The image workflow does not set package visibility: set `warhost` to Public in the package settings; the rebuild only publishes the image.
+- 2026-10-13 Save and restart leaves the lobby readable: a Workshop version pin sets `variables.ini` back to mode `644`, and `TIME_WAIT` does not count as the page port being in use.
 
 ## 2026-10-09 — Wrap Eugen's image
 
@@ -291,3 +293,15 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** Each task in `.cursor/rules/cursor-to-claude.mdc` has `effort`: `low`, `medium`, `high`, `xhigh`, or `max`. `scripts/ask_claude.sh` passes it as `claude --effort`. Routine Sonnet tasks use `medium`. `/slop-review` uses `high`. Omitting `--effort` leaves Claude Code's own default.
 
 **Rationale:** The model name does not set how long Claude thinks. `claude --help` on this machine lists those five levels. The installed Claude Code model catalog marks Medium as recommended for Opus 5.5 and Sonnet 5.5, and says Opus Max can consume 3.5× or more usage than Medium. The handoff names the level so a call is not Max unless the settings say so.
+
+## 2026-10-13 — The image workflow does not set package visibility
+
+**Decision:** `rebuild-image.yml` publishes the image and leaves package visibility to the package settings. Set `warhost` to Public there. Unraid pulls anonymously.
+
+**Rationale:** The old step ran `gh api --method PUT /user/packages/container/warhost/visibility` with `GITHUB_TOKEN`. The packages REST reference lists get, list, delete, and restore, and no visibility update ([REST API endpoints for packages](https://docs.github.com/en/rest/packages/packages), read 2026-10-13). A new container package stays private until that change is made in the package settings ([Working with the Container registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)). `continue-on-error: true` had been on the step since it was added, so [run 31](https://github.com/suchamoneypit/WARHOST/actions/runs/38433376974) and [run 32](https://github.com/suchamoneypit/WARHOST/actions/runs/38433786247) reported the step as success. Removing that flag in `6e589ec` made [run 33](https://github.com/suchamoneypit/WARHOST/actions/runs/38494130558) fail after Build and push. The public annotation is only exit code 1; the step log needs a signed-in session. Anonymous manifest reads of `:latest` and `:dev` returned HTTP 200 the same day.
+
+## 2026-10-13 — Save and restart leaves the lobby readable
+
+**Decision:** When WebUI is on, a start that writes `variables.ini` or `params_for_ai.json` sets those regular files to mode `644` after the mode `600` write, including the Save and restart that keeps the existing page. `login.ini` stays mode `600`. The page-port probe sets `SO_REUSEADDR`, so a `TIME_WAIT` socket is not already in use. A listening socket still is.
+
+**Rationale:** On 2026-10-13 the operator log showed `PermissionError` on `/server/settings/variables.ini` after Save and restart pinned a Workshop id. The page HTML still returned 200, and every field stayed blank because `/api/lobby` sent no response. The kept page process had already dropped to `warhost-web` and did not run the startup chmod again. A following container restart found the page port in `TIME_WAIT` and skipped starting the page; the dedicated server still started. The next restart, after that minute, started the page and the fields returned.

@@ -176,7 +176,6 @@ note_workshop_mod_list() {
     fi
     return 0
   fi
-  printf '%s\n' "Clients compare each Workshop id/version with Version in that mod's Config.ini. The client message \"At least one mod version doesnt match\" does not appear in this log."
   case $map in
     RDPort_*) ;;
     *)
@@ -193,7 +192,7 @@ note_workshop_mod_list() {
     pair=${rest%%-*}
     case $pair in
       3811913066/0|3811913066/15)
-        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That value fails for the Red Dragon pack. Config.ini Version was 27 on 2026-10-10. Save that mod again in the WebUI so the next start reads the current Version. warno-server still starts and logs nothing about the rejected join."
+        printf '%s\n' "warning: Workshop Mod List contains ${pair}. That pin is behind the Red Dragon pack. Save that mod again in the WebUI so the next start reads the current Version. warno-server still starts and logs nothing about the rejected join."
         ;;
     esac
     case $rest in
@@ -335,12 +334,12 @@ publish_staged_file() {
   src=$1
   dest=$2
   if [ -L "$dest" ]; then
-    rm -f "$dest" || die "Could not replace ${dest}."
+    rm -f "$dest" || die "Could not replace ${dest}. Check that the settings folder is writable, then start the container again."
   fi
   if [ -d "$dest" ]; then
-    die "${dest} is a directory, so it was not replaced."
+    die "${dest} is a directory. Move it aside, then start the container again."
   fi
-  mv "$src" "$dest" || die "Could not replace ${dest}."
+  mv "$src" "$dest" || die "Could not replace ${dest}. Check that the settings folder is writable, then start the container again."
 }
 
 # mktemp -d is atomic when this shell has it. The mkdir loop is the fallback.
@@ -397,10 +396,10 @@ prepare_server_runtime() {
 
 note_next_container() {
   if [ -n "$NEXT_PORT" ]; then
-    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name."
+    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different server name in the WebUI."
     return 0
   fi
-  printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name."
+  printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different server name in the WebUI."
 }
 
 WORKSHOP_APP_ID=1611600
@@ -527,7 +526,7 @@ EOF
     return 0
   fi
   if fetch_workshop_version "$ws_id"; then
-    printf '%s\n' "Workshop item ${ws_id} is Version ${workshop_version}, read from its Config.ini. The rest of the item was not downloaded, and Config.ini has been deleted."
+    printf '%s\n' "Workshop item ${ws_id} is Version ${workshop_version}, read from its Config.ini."
     remember_workshop_version "$ws_id" "${steam_time:-0}" "$workshop_version"
     return 0
   fi
@@ -636,7 +635,7 @@ replace_mod_list_line() {
     case "$bare_line" in
       "ModList = "*)
         if [ "$replaced" -eq 1 ]; then
-          die "variables.ini repeats ModList."
+          die "variables.ini has ModList more than once. Leave one ModList line and start the container again."
         fi
         printf 'ModList = %s\n' "$new_list"
         replaced=1
@@ -647,7 +646,7 @@ replace_mod_list_line() {
     esac
   done < "$src" > "$dest"
   if [ "$replaced" -eq 0 ]; then
-    die "variables.ini lost its ModList line."
+    die "variables.ini lost its ModList line, so the start stopped. Save from the WebUI, or delete variables.ini to seed a new lobby."
   fi
 }
 
@@ -657,14 +656,14 @@ case "$UPSTREAM_ENTRYPOINT" in
 esac
 
 if [ ! -f "$UPSTREAM_ENTRYPOINT" ]; then
-  die "Official WARNO entrypoint was not found at $UPSTREAM_ENTRYPOINT."
+  die "Eugen's start script was not found at $UPSTREAM_ENTRYPOINT. Update the container. If it still stops, open a GitHub issue."
 fi
 
 server_root=$(CDPATH= cd -- "$(dirname "$UPSTREAM_ENTRYPOINT")" && pwd)
 SETTINGS_DIR="${server_root}/settings"
 
-: "${EXPOSEDIP:?Set Public WAN IP.}"
-: "${EXPOSEDPORT:?Set the game port.}"
+[ -n "${EXPOSEDIP:-}" ] || die "Set Public WAN IP."
+[ -n "${EXPOSEDPORT:-}" ] || die "Set the game port."
 require_single_line "Public WAN IP" "$EXPOSEDIP"
 require_single_line "Game port" "$EXPOSEDPORT"
 case "$EXPOSEDIP" in
@@ -684,7 +683,7 @@ case "$write_config" in
   *) die "Write Config From Form must be true or false." ;;
 esac
 
-# WEB UI HOOK — delete this block to remove the WebUI.
+# WebUI. Remove this block to drop the page.
 web_ui=$(printf '%s' "${WEB_UI:-false}" | tr '[:upper:]' '[:lower:]')
 case "$web_ui" in
   true|yes|1) web_ui=true ;;
@@ -695,8 +694,8 @@ note_ignored_lobby_env
 unset SERVER_NAME MAP NB_MAX_PLAYER NB_MIN_PLAYER MAX_TEAM_SIZE COMBAT_RULE MOD_LIST MOD_TAG_LIST
 
 if [ "$write_config" = "true" ]; then
-  : "${EUGEN_LOGIN:?Set your Eugen login.}"
-  : "${EUGEN_DEDICATED_KEY:?Set your Eugen dedicated key.}"
+  [ -n "${EUGEN_LOGIN:-}" ] || die "Set your Eugen login."
+  [ -n "${EUGEN_DEDICATED_KEY:-}" ] || die "Set your Eugen dedicated key."
   require_single_line "Eugen login" "$EUGEN_LOGIN"
   require_single_line "Eugen dedicated key" "$EUGEN_DEDICATED_KEY"
 
@@ -723,11 +722,11 @@ if [ "$write_config" = "true" ]; then
   if [ -L "$lobby_file" ] || [ ! -e "$lobby_file" ]; then
     lobby_kept=0
   elif [ -d "$lobby_file" ]; then
-    die "${lobby_file} is a directory, so it was not replaced."
+    die "${lobby_file} is a directory. Move it aside, then start the container again."
   elif [ -f "$lobby_file" ]; then
     lobby_kept=1
   else
-    die "${lobby_file} is not a regular file, so it was not replaced."
+    die "${lobby_file} is not a regular file. Move it aside, then start the container again."
   fi
 
   ai_file="${SETTINGS_DIR}/params_for_ai.json"
@@ -735,11 +734,11 @@ if [ "$write_config" = "true" ]; then
   if [ -L "$ai_file" ] || [ ! -e "$ai_file" ]; then
     ai_kept=0
   elif [ -d "$ai_file" ]; then
-    die "${ai_file} is a directory, so it was not replaced."
+    die "${ai_file} is a directory. Move it aside, then start the container again."
   elif [ -f "$ai_file" ]; then
     ai_kept=1
   else
-    die "${ai_file} is not a regular file, so it was not replaced."
+    die "${ai_file} is not a regular file. Move it aside, then start the container again."
   fi
 
   lobby_name="WARHOST - default server name"
@@ -754,14 +753,14 @@ if [ "$write_config" = "true" ]; then
     lobby_map=$ini_value
     read_ini_key "$lobby_file" "ModList"
     if [ "$ini_repeat" -eq 1 ]; then
-      die "variables.ini repeats ModList."
+      die "variables.ini has ModList more than once. Leave one ModList line and start the container again."
     fi
     lobby_mods=$ini_value
     lobby_mods_original=$ini_value
     read_ini_key "$lobby_file" "ModTagList"
     lobby_tags=$ini_value
     if ! mod_list_ok "$lobby_mods"; then
-      die "Workshop mod list must be empty, none, or Workshop ids such as 3811913066. Add /version only to pin a number, such as 3811913066/27. Join mods with a hyphen, such as 3811913066-3474588989."
+      die "Workshop mod list must be empty or Workshop ids such as 3811913066. Add /version only to pin a number, such as 3811913066/27. Join mods with a hyphen, such as 3811913066-3474588989."
     fi
     if [ -n "$lobby_mods" ]; then
       resolve_workshop_list "$lobby_mods"
@@ -769,17 +768,17 @@ if [ "$write_config" = "true" ]; then
     fi
   fi
 
-  stage_dir=$(make_private_stage_dir) || die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
+  stage_dir=$(make_private_stage_dir) || die "Could not prepare a private folder under ${SETTINGS_DIR}. Check that the Settings Folder exists and is writable, then start the container again."
   trap 'on_stage_exit' EXIT
   trap 'on_stage_signal' HUP INT TERM
   if [ -z "$stage_dir" ] || [ -L "$stage_dir" ] || [ ! -d "$stage_dir" ]; then
-    die "Could not create a private settings staging directory under ${SETTINGS_DIR}."
+    die "Could not prepare a private folder under ${SETTINGS_DIR}. Check that the Settings Folder exists and is writable, then start the container again."
   fi
   case "$stage_dir" in
     "${SETTINGS_DIR}/.warhost-stage."*) ;;
-    *) die "Could not create a private settings staging directory under ${SETTINGS_DIR}." ;;
+    *) die "Could not prepare a private folder under ${SETTINGS_DIR}. Check that the Settings Folder exists and is writable, then start the container again." ;;
   esac
-  chmod 700 "$stage_dir" || die "Could not restrict the settings staging directory."
+  chmod 700 "$stage_dir" || die "Could not prepare a private folder under ${SETTINGS_DIR}. Check that the Settings Folder exists and is writable, then start the container again."
 
   tmp_login="${stage_dir}/login.ini"
   tmp_variables="${stage_dir}/variables.ini"
@@ -822,6 +821,16 @@ if [ "$write_config" = "true" ]; then
   if [ "$ai_kept" -eq 0 ]; then
     chmod 600 "${SETTINGS_DIR}/params_for_ai.json"
   fi
+  # Save and restart keeps the page process. That process does not run again,
+  # so a Workshop version rewrite must restore the modes the page can read.
+  if [ "$web_ui" = true ]; then
+    if [ -f "${SETTINGS_DIR}/variables.ini" ] && [ ! -L "${SETTINGS_DIR}/variables.ini" ]; then
+      chmod 644 "${SETTINGS_DIR}/variables.ini"
+    fi
+    if [ -f "${SETTINGS_DIR}/params_for_ai.json" ] && [ ! -L "${SETTINGS_DIR}/params_for_ai.json" ]; then
+      chmod 644 "${SETTINGS_DIR}/params_for_ai.json"
+    fi
+  fi
   if [ -n "$workshop_cache_lines" ]; then
     cache_dest="${SETTINGS_DIR}/${WORKSHOP_CACHE_FILE}"
     if [ -d "$cache_dest" ] && [ ! -L "$cache_dest" ]; then
@@ -847,18 +856,18 @@ if [ "$write_config" = "true" ]; then
   fi
 else
   if [ ! -f "${SETTINGS_DIR}/login.ini" ] || [ ! -f "${SETTINGS_DIR}/variables.ini" ] || [ ! -f "${SETTINGS_DIR}/params_for_ai.json" ]; then
-    die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}."
+    die "Write Config From Form is false, and login.ini, variables.ini, or params_for_ai.json is missing from ${SETTINGS_DIR}. Set Write Config From Form to true, or put the missing file in that folder."
   fi
   prepare_server_runtime
   if ! chmod 600 "${SETTINGS_DIR}/login.ini"; then
-    die "Could not restrict permissions on ${SETTINGS_DIR}/login.ini."
+    die "Could not restrict permissions on ${SETTINGS_DIR}/login.ini. Check that the settings folder is writable, then start the container again."
   fi
   printf 'Left existing WARNO settings in place.\n'
 fi
 
 note_next_container
 
-# WEB UI HOOK — delete this block to remove the WebUI.
+# WebUI. Remove this block to drop the page.
 if [ "$web_ui" = true ]; then
   entry_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
   webui_launch="${entry_dir}/webui/launch.sh"
@@ -866,10 +875,10 @@ if [ "$web_ui" = true ]; then
     export SETTINGS_DIR
     # fd 9 is the settings lock. The page must not inherit it.
     if ! "$webui_launch" 9>&-; then
-      printf '%s\n' "warning: web UI did not start. The game server will still start."
+      printf '%s\n' "warning: WebUI did not start. See .warhost-webui.log in the settings folder. The game server will still start."
     fi
   else
-    printf '%s\n' "warning: web UI launcher was not found. The game server will still start."
+    printf '%s\n' "warning: WebUI launcher was not found. Update the container. The game server will still start."
   fi
 else
   web_port=$((EXPOSEDPORT + 1000))
@@ -895,16 +904,16 @@ write_supervisor_pid() {
   pid_file="${SETTINGS_DIR}/.warhost-supervisor.pid"
   if [ -L "$pid_file" ]; then
     rm -f "$pid_file" || {
-      printf '%s\n' "warning: ${pid_file} is a symlink, so the WebUI cannot restart this server."
+      printf '%s\n' "warning: ${pid_file} is in the way, so Save and restart cannot work. Remove that path and start the container again."
       return 0
     }
   fi
   if [ -d "$pid_file" ]; then
-    printf '%s\n' "warning: ${pid_file} is a directory, so the WebUI cannot restart this server."
+    printf '%s\n' "warning: ${pid_file} is in the way, so Save and restart cannot work. Remove that path and start the container again."
     return 0
   fi
   if ! printf '%s\n' "$$" > "$pid_file"; then
-    printf '%s\n' "warning: could not record the server process, so the WebUI cannot restart this server."
+    printf '%s\n' "warning: could not record the server process, so Save and restart cannot work. Check that the settings folder is writable."
   fi
 }
 
@@ -972,7 +981,7 @@ supervise_upstream() {
     if [ "$stop_requested" -eq 1 ] || [ "$restart_requested" -eq 1 ]; then
       kill_tries=$((kill_tries + 1))
       if [ "$kill_tries" -gt 80 ]; then
-        die "The dedicated server did not exit after the restart signal."
+        die "The dedicated server did not exit after Save and restart. Restart the container in Unraid."
       fi
       if [ "$kill_tries" -gt 40 ]; then
         if [ "$upstream_group" -eq 1 ]; then
@@ -999,7 +1008,7 @@ supervise_upstream() {
       sleep 0.1 || true
     done
     if local_port_taken "$EXPOSEDPORT"; then
-      die "The game port was still in use after the restart signal, so the dedicated server did not start again."
+      die "Game port ${EXPOSEDPORT} was still in use after Save and restart, so the dedicated server did not start again. Restart the container in Unraid."
     fi
     printf '%s\n' "Restarting the dedicated server to load variables.ini."
     WARHOST_WEBUI_KEEP=1 exec "$ENTRY_SELF" "$@"

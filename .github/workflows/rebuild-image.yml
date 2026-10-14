@@ -93,11 +93,3 @@ jobs:
           tags: ghcr.io/suchamoneypit/warhost:${{ github.ref_name == 'dev' && 'dev' || 'latest' }}
           build-args: |
             UPSTREAM_DIGEST=${{ steps.upstream.outputs.digest }}
-
-      - name: Make GHCR package public
-        if: steps.plan.outputs.build == 'true'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api --method PUT /user/packages/container/warhost/visibility -f visibility=public

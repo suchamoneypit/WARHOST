@@ -377,7 +377,7 @@
         {
           "name": "Highway to Oslo",
           "id": "_2x2_Oslo_Conquest",
-          "size": "Conquest",
+          "size": "1v1 Conquest",
           "players": 2,
           "team": 1,
           "rule": 2
@@ -385,7 +385,7 @@
         {
           "name": "Highway to Oslo",
           "id": "_2x2_Oslo_Destruction",
-          "size": "Destruction",
+          "size": "1v1 Destruction",
           "players": 2,
           "team": 1,
           "rule": 1
@@ -393,7 +393,7 @@
         {
           "name": "Highway to Oslo",
           "id": "_2x2_Oslo_ConquestNS",
-          "size": "Conquest, no sidespawn",
+          "size": "1v1 Conquest, no sidespawn",
           "players": 2,
           "team": 1,
           "rule": 2
@@ -401,7 +401,7 @@
         {
           "name": "Highway to Oslo",
           "id": "_2x2_Oslo_DestructionNS",
-          "size": "Destruction, no sidespawn",
+          "size": "1v1 Destruction, no sidespawn",
           "players": 2,
           "team": 1,
           "rule": 1
@@ -417,7 +417,7 @@
         {
           "name": "Ramstein Air Base",
           "id": "_2x2_Ramstein_Conquest",
-          "size": "Conquest",
+          "size": "3v3 Conquest",
           "players": 6,
           "team": 3,
           "rule": 2
@@ -425,7 +425,7 @@
         {
           "name": "Ramstein Air Base",
           "id": "_2x2_Ramstein_Destruction",
-          "size": "Destruction",
+          "size": "3v3 Destruction",
           "players": 6,
           "team": 3,
           "rule": 1
@@ -441,7 +441,7 @@
         {
           "name": "Two Hills",
           "id": "_2x3_TwoHills_Conquest",
-          "size": "Conquest",
+          "size": "2v2 Conquest",
           "players": 4,
           "team": 2,
           "rule": 2
@@ -449,7 +449,7 @@
         {
           "name": "Two Hills",
           "id": "_2x3_TwoHills_Destruction",
-          "size": "Destruction",
+          "size": "2v2 Destruction",
           "players": 4,
           "team": 2,
           "rule": 1
@@ -457,7 +457,7 @@
         {
           "name": "Two Hills",
           "id": "_2x3_TwoHills_Conquest_6P",
-          "size": "Conquest, file suffix `_6P`",
+          "size": "3v3 Conquest",
           "players": 6,
           "team": 3,
           "rule": 2
@@ -465,7 +465,7 @@
         {
           "name": "Two Hills",
           "id": "_2x3_TwoHills_Destruction_6P",
-          "size": "Destruction, file suffix `_6P`",
+          "size": "3v3 Destruction",
           "players": 6,
           "team": 3,
           "rule": 1

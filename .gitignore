@@ -12,5 +12,6 @@ appdata/
 .claude/settings.local.json
 *.code-workspace
 webui/run/
+__pycache__/
 webui/__pycache__/
 webui/previews/

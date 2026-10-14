@@ -11,11 +11,9 @@
   <Project>https://github.com/suchamoneypit/WARHOST</Project>
   <Overview>
     <![CDATA[
-WARHOST runs Eugen's official WARNO dedicated server. This form writes login.ini. The WebUI writes the lobby, including the server name, map, and workshop mods.
+WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Change the name, map, and mods in the WebUI.
 
-WARNO was a game made in France, but WARHOST was created in the United States.
-
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers). The first start seeds a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Open the WebUI to change that. Save and restart on that page loads the save. If the page cannot restart the container, restart it in Unraid. Map and mod IDs are in the project README. Each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled. The Docker WebUI button is http://[IP]:[PORT:11400]/; do not forward that port. This template installs ghcr.io/suchamoneypit/warhost:dev. Lobby settings are edited in the WebUI.]]>
+Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The WebUI listens on the game port plus 1000 (11400 when the game port is 10400). Do not forward that port.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
@@ -27,21 +25,19 @@ Request a login and key from eugsupport@eugensystems.com (one pair runs five ser
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
-  <Requires>A Eugen Systems WARNO dedicated-server login and key. Email eugsupport@eugensystems.com, or reuse a dedicated key from another Eugen game.</Requires>
+  <Requires>A Eugen Systems WARNO dedicated-server login and key. Email eugsupport@eugensystems.com, or reuse a dedicated key from another Eugen game. One pair runs five servers.</Requires>
   <Description>
     <![CDATA[
-WARHOST runs Eugen's official WARNO dedicated server. This form writes login.ini. The WebUI writes the lobby, including the server name, map, and workshop mods.
+WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Change the name, map, and mods in the WebUI.
 
-WARNO was a game made in France, but WARHOST was created in the United States.
-
-Request a login and key from eugsupport@eugensystems.com (one pair runs five servers). The first start seeds a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Open the WebUI to change that. Save and restart on that page loads the save. If the page cannot restart the container, restart it in Unraid. Map and mod IDs are in the project README. Each server's game port must be forwarded to this Unraid server as TCP and UDP. The next container uses that port plus 1, and its settings folder uses that new port, for example /mnt/user/appdata/warno/10401/settings. The image is built FROM eugensystems/warno:latest and its license is left unlabeled. The Docker WebUI button is http://[IP]:[PORT:11400]/; do not forward that port. This template installs ghcr.io/suchamoneypit/warhost:dev. Lobby settings are edited in the WebUI.]]>
+Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The WebUI listens on the game port plus 1000 (11400 when the game port is 10400). Do not forward that port.]]>
   </Description>
 
-  <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. Use /mnt/user/appdata/warno/10400/settings. The next container uses this path with the port number plus 1, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>
+  <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. The next container uses this path with its own game port, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>
   <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers." Type="Variable" Display="always" Required="true" Mask="false"></Config>
-  <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Key from the same reply. Shown in clear text on this form so servers can be told apart." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Key from the same reply. Paste the whole key. The log shows only the last 4 characters." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Public address players connect to. Not a hostname, and not this Unraid server's LAN address." Type="Variable" Display="always" Required="true" Mask="false"></Config>
-  <Config Name="WebUI" Target="WEB_UI" Default="true" Mode="" Description="false leaves the Docker WebUI button with nothing listening. true serves that page at the game port plus 1000, so 10400 uses 11400. Do not forward that port. The log names the port. Saving writes variables.ini. Save and restart loads it." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
-  <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="Forward this number to the Unraid host as TCP and UDP. The next container uses this number plus 1. Players join by the server name set in the WebUI." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
-  <Config Name="Write Config From Form" Target="WRITE_CONFIG" Default="true" Mode="" Description="true rewrites login.ini each start, seeds variables.ini when missing, and seeds params_for_ai.json only when missing or a symlink. false leaves the files and sets login.ini to mode 600." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="WebUI" Target="WEB_UI" Default="true" Mode="" Description="true serves the lobby page at the game port plus 1000, so 10400 uses 11400. Do not forward that port. Set the server name, map, and mods there. false leaves the WebUI button with nothing listening." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="This port must be free on the Unraid host. Forward it as TCP and UDP. The next container uses this number plus 1. Players join by the server name in the WebUI." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
+  <Config Name="Write Config From Form" Target="WRITE_CONFIG" Default="true" Mode="" Description="true rewrites login.ini each start, fills in missing lobby files, and refreshes a bare Workshop id to id/Version. false leaves the file contents in place and sets login.ini to mode 600." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
 </Container>

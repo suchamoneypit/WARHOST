@@ -248,7 +248,7 @@ grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not n
 if grep -qE '^(ModList|ModTagList) =' "${settings}/variables.ini"; then
   fail "default run wrote a workshop mod line"
 fi
-grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
+grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different server name in the WebUI.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
 if grep -qE 'warning: (Map|Workshop Mod List)' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the map or the mod list"
 fi
@@ -502,7 +502,9 @@ expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
 if grep -qE 'warning: Workshop Mod List contains 3811913066/0|warning: Map' "${WORKDIR}/stdout.txt"; then
   fail "another mod's version 0 raised a Red Dragon warning"
 fi
-grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt" || fail "a set mod list omitted the version hint"
+if grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt"; then
+  fail "a set mod list printed the version lecture"
+fi
 
 # Fake Steam: wget answers the details call from details/<id>.json and
 # DepotDownloader copies items/<id>.ini to Config.ini. Both log every call.
@@ -606,7 +608,7 @@ expect_ok "reads Version from Config.ini for a bare workshop id" \
 grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "bare id was not written as id/version"
 grep -qx 'NbMaxPlayer = 8' "${server}/settings/variables.ini" || fail "a hand-edited player count was replaced"
 grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "mod tags were not kept"
-grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini. The rest of the item was not downloaded, and Config.ini has been deleted.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
+grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
 grep -qx 'Kept variables.ini for WARHOST - default server name on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
 [ "$(call_count downloader.calls)" = 1 ] || fail "bare id did not download exactly once"
 printf 'Config.ini\n' | cmp -s - "${FAKE_STEAM}/filelist.last" || fail "the download asked for more than Config.ini"
@@ -903,7 +905,7 @@ expect_ok "keeps hand-edited files when write config is false" \
   EXPOSEDPORT=10401
 grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "hand-edited login.ini was replaced"
 grep -qx 'Left existing WARNO settings in place.' "${WORKDIR}/stdout.txt" || fail "write-config false did not say it left files alone"
-grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
+grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different server name in the WebUI.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
 
 make_server
 expect_fail "refuses write-config false when settings files are missing" \
@@ -1117,7 +1119,7 @@ expect_fail "refuses to replace params_for_ai.json when that path is a directory
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400
-grep -q 'params_for_ai.json is a directory, so it was not replaced' "${WORKDIR}/stderr.txt" || fail "a directory named params_for_ai.json did not stop the start"
+grep -q 'params_for_ai.json is a directory. Move it aside, then start the container again.' "${WORKDIR}/stderr.txt" || fail "a directory named params_for_ai.json did not stop the start"
 if grep -R -F 'host-key-value' "${server}/settings" >/dev/null 2>&1; then
   fail "a directory named params_for_ai.json received the dedicated key"
 fi
@@ -1406,7 +1408,7 @@ expect_ok "a failed lobby page still starts the server" \
   EXPOSEDPORT=21402 \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not reach the upstream entrypoint"
-grep -q 'web UI did not start' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not warn"
+grep -q 'WebUI did not start' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not warn"
 if [ -f "${server}/settings/.warhost-webui.pid" ]; then
   fail "failed lobby page left a listener"
 fi
@@ -1492,6 +1494,107 @@ if [ "$(wc -l < "$count" | tr -d ' ')" -ne 2 ]; then
 fi
 rm -f "$hold"
 printf 'ok webui restart runs the dedicated server again\n'
+
+make_server
+mkdir -p "${server}/settings" "${WORKDIR}/no-wget"
+cat > "${server}/settings/variables.ini" << 'EOF'
+ServerName = TEST SERVER WILL SHUTDOWN
+NbMaxPlayer = 4
+NbMinPlayer = 2
+MaxTeamSize = 2
+GameType = 2
+CombatRule = 2
+Map = RDPort_JungleLaw_2v2_CONQ
+ModList = 3811913066/27
+ModTagList = Maps-Scenarios
+InitMoney = 3000
+TimeLimit = 0
+ScoreLimit = 4000
+Upkeep = 7
+EOF
+printf '{ "0": [], "1": [] }\n' > "${server}/settings/params_for_ai.json"
+printf '3811913066 1791628993 27\n' > "${server}/settings/warhost-workshop-versions.txt"
+chmod 644 "${server}/settings/variables.ini" "${server}/settings/params_for_ai.json"
+cat > "${WORKDIR}/no-wget/wget" << 'EOF'
+#!/bin/sh
+exit 1
+EOF
+chmod 755 "${WORKDIR}/no-wget/wget"
+hold="${WORKDIR}/keep-hold"
+: > "$hold"
+cat > "${server}/entrypoint2.sh" << EOF
+#!/bin/sh
+printf '%s\n' reached-upstream
+while [ -f "$hold" ]; do
+  sleep 0.05
+done
+exit 0
+EOF
+chmod 755 "${server}/entrypoint2.sh"
+: > "${WORKDIR}/keep-out.txt"
+: > "${WORKDIR}/keep-err.txt"
+env -i PATH="${WORKDIR}/no-wget:${PATH}" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21640 \
+  WEB_UI=true \
+  sh "$ENTRY" >"${WORKDIR}/keep-out.txt" 2>"${WORKDIR}/keep-err.txt" &
+restart_pid=$!
+i=0
+while [ "$i" -lt 80 ]; do
+  if grep -q 'WebUI listening on port 22640.' "${WORKDIR}/keep-out.txt"; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+grep -q 'WebUI listening on port 22640.' "${WORKDIR}/keep-out.txt" || fail "kept page did not start"
+python3 - "${server}/settings/variables.ini" << 'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text().replace("ModList = 3811913066/27", "ModList = 3811913066", 1)
+path.write_text(text)
+PY
+chmod 644 "${server}/settings/variables.ini"
+kill -USR1 "$restart_pid" || fail "could not signal the kept page restart"
+i=0
+while [ "$i" -lt 80 ]; do
+  if grep -q 'WebUI still listening on port 22640.' "${WORKDIR}/keep-out.txt"; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+grep -q 'WebUI still listening on port 22640.' "${WORKDIR}/keep-out.txt" || fail "workshop restart did not keep the page"
+grep -q 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "workshop restart did not pin the version"
+kept_mode=$(stat -c '%a' "${server}/settings/variables.ini")
+[ "$kept_mode" = "644" ] || fail "workshop restart left variables.ini mode ${kept_mode}"
+login_mode=$(stat -c '%a' "${server}/settings/login.ini")
+[ "$login_mode" = "600" ] || fail "workshop restart left login.ini mode ${login_mode}"
+python3 - << 'PY' || fail "kept page could not read the lobby after the version pin"
+import json, urllib.request
+body = json.load(urllib.request.urlopen("http://127.0.0.1:22640/api/lobby", timeout=2))
+if body.get("serverName") != "TEST SERVER WILL SHUTDOWN":
+    raise SystemExit(body.get("serverName"))
+if body.get("map") != "RDPort_JungleLaw_2v2_CONQ":
+    raise SystemExit(body.get("map"))
+PY
+rm -f "$hold"
+kill -TERM "$restart_pid" 2>/dev/null || true
+i=0
+while [ "$i" -lt 50 ]; do
+  if ! kill -0 "$restart_pid" 2>/dev/null; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+wait "$restart_pid" 2>/dev/null || true
+restart_pid=
+stop_webui
+printf 'ok workshop restart keeps the lobby readable\n'
 
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"
