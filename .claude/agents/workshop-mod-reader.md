@@ -3,6 +3,7 @@ name: workshop-mod-reader
 description: Reads the local WARNO Steam Workshop folder and reports each mod's Config.ini Version, tags, and scenario IDs, plus what differs from README.md. Use when the user runs /workshop-mods, or asks to refresh workshop mod versions or scenario IDs from the subscribed PC. Read-only. Does not edit files.
 model: inherit
 readonly: true
+tools: Read, Grep, Glob, Bash
 ---
 
 You read subscribed WARNO workshop mods from the local Steam library. Read-only: do not edit files, do not copy mod files into the repo, and do not start the server.

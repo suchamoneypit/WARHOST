@@ -6,8 +6,10 @@ appdata/
 .DS_Store
 *.swp
 
-# Cursor plans and the editor workspace stay on this machine.
+# Cursor plans, the Claude call log, local Claude settings, and the editor workspace stay on this machine.
 .cursor/plans/
+.cursor/claude-calls.log
+.claude/settings.local.json
 *.code-workspace
 webui/run/
 webui/__pycache__/
