@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Cursor to Claude
 
-Cursor can hand a task to the user's Claude subscription with `sh scripts/ask_claude.sh`. Claude Code never reads this file. Edit the settings below to change how often that happens.
+Cursor can hand a task to the user's Claude subscription with `sh scripts/ask_claude.sh`. Claude Code never reads this file. Edit the settings below to change how often that happens and how hard each call thinks.
 
 ```yaml
 enabled: true
@@ -19,6 +19,7 @@ tasks:
   stuck_bug:
     when: auto
     model: sonnet
+    effort: medium
     mode: review
     after_failed_attempts: 1
     max_per_chat: 2
@@ -27,18 +28,21 @@ tasks:
   pre_commit_review:
     when: auto
     model: sonnet
+    effort: medium
     mode: review
     max_turns: 25
 
   plan_second_look:
     when: auto
     model: sonnet
+    effort: medium
     mode: review
     max_turns: 15
 
   slop_review:
     when: auto
     model: opus
+    effort: high
     mode: review
     parallel: true
     max_turns: 60
@@ -46,11 +50,14 @@ tasks:
   implement_plan:
     when: off
     model: sonnet
+    effort: medium
     mode: edit
     max_turns: 40
 ```
 
 `when`: `auto` calls without asking; `ask` asks one yes/no question ("Have Claude check too?") and waits; `suggest` mentions it in the summary only; `off` never calls.
+
+`effort`: `low`, `medium`, `high`, `xhigh`, or `max`, passed as `--effort`. Higher thinks longer. `max` uses the subscription limit much faster than `medium`.
 
 ## When each task fires
 
@@ -62,7 +69,7 @@ tasks:
 
 ## How to call
 
-- Run `sh scripts/ask_claude.sh --task <name> --mode <mode> --model <model> --max-turns <n> "<prompt>"` from the repository root with `full_network` permission. Add `--out /tmp/warhost-<task>.md` and run it in the background when the task is parallel.
+- Run `sh scripts/ask_claude.sh --task <name> --mode <mode> --model <model> --effort <level> --max-turns <n> "<prompt>"` from the repository root with `full_network` permission. Add `--out /tmp/warhost-<task>.md` and run it in the background when the task is parallel.
 - The prompt names paths and the claim to check. Do not paste file contents; Claude reads the repo itself.
 - Bring back only Claude's report. Weigh it like a subagent result: a finding without `file:line` is unverified.
 - Do not edit files while an `edit` call runs. Its changes arrive as their own diff; review them with `git diff` before continuing.

@@ -19,8 +19,8 @@ import time
 
 root = pathlib.Path(sys.argv[1])
 usage = (
-    "usage: sh scripts/ask_claude.sh --task NAME --mode review|edit [--model M] [--max-turns N]\n"
-    "                                [--out FILE] [--allow-dirty] PROMPT\n"
+    "usage: sh scripts/ask_claude.sh --task NAME --mode review|edit [--model M] [--effort LEVEL]\n"
+    "                                [--max-turns N] [--out FILE] [--allow-dirty] PROMPT\n"
     "\n"
     "review: read-only tools, never edits.\n"
     "edit:   may edit files; refuses on a dirty tree unless --allow-dirty.\n"
@@ -60,7 +60,11 @@ def die(message, code=1):
 
 
 args = sys.argv[2:]
-opts = {"task": None, "mode": None, "model": "sonnet", "max-turns": "20", "out": None}
+EFFORTS = ("low", "medium", "high", "xhigh", "max")
+opts = {
+    "task": None, "mode": None, "model": "sonnet", "effort": None,
+    "max-turns": "20", "out": None,
+}
 allow_dirty = False
 prompt = None
 index = 0
@@ -90,6 +94,8 @@ if opts["mode"] not in APPEND:
     die(f"--mode must be review or edit\n{usage}", 2)
 if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", opts["model"]):
     die("--model must be an alias such as sonnet or opus, or a full model name", 2)
+if opts["effort"] is not None and opts["effort"] not in EFFORTS:
+    die("--effort must be low, medium, high, xhigh, or max", 2)
 if not opts["max-turns"].isdigit() or int(opts["max-turns"]) < 1:
     die("--max-turns must be a positive number", 2)
 if not prompt:
@@ -110,9 +116,10 @@ if opts["mode"] == "edit" and not allow_dirty:
         die("edit mode needs a clean tree so Claude's changes are their own diff. Commit or stash first, or pass --allow-dirty.")
 
 tools = EDIT_TOOLS if opts["mode"] == "edit" else READ_TOOLS
-command = [
-    claude, "-p",
-    "--model", opts["model"],
+command = [claude, "-p", "--model", opts["model"]]
+if opts["effort"]:
+    command += ["--effort", opts["effort"]]
+command += [
     "--max-turns", opts["max-turns"],
     "--output-format", "json",
     "--permission-mode", "acceptEdits" if opts["mode"] == "edit" else "dontAsk",
@@ -138,7 +145,8 @@ input_tokens = sum(usage_data.get(k) or 0 for k in
                    ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
 log_line = " ".join([
     datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-    f"task={opts['task']}", f"model={opts['model']}", f"mode={opts['mode']}",
+    f"task={opts['task']}", f"model={opts['model']}",
+    f"effort={opts['effort'] or '-'}", f"mode={opts['mode']}",
     f"status={status}", f"seconds={seconds}", f"turns={data.get('num_turns', 0)}",
     f"input_tokens={input_tokens}", f"output_tokens={usage_data.get('output_tokens') or 0}",
     f"session={data.get('session_id', '-')}",
@@ -154,8 +162,9 @@ if proc.returncode != 0 or data.get("is_error") or not result:
 
 if opts["out"]:
     pathlib.Path(opts["out"]).write_text(result + "\n", encoding="utf-8")
-    print(f"ask_claude: wrote {opts['out']} ({status}, {seconds}s, session {data.get('session_id', '-')})")
+    shown = f"{opts['model']} effort={opts['effort'] or 'default'}"
+    print(f"ask_claude: wrote {opts['out']} ({shown}, {status}, {seconds}s, session {data.get('session_id', '-')})")
 else:
     print(result)
-    print(f"\n[claude {opts['model']} {status}, {seconds}s, session {data.get('session_id', '-')}]")
+    print(f"\n[claude {opts['model']} effort={opts['effort'] or 'default'} {status}, {seconds}s, session {data.get('session_id', '-')}]")
 PY

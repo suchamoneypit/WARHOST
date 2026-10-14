@@ -41,14 +41,14 @@ This repository is worked on with two tools: Cursor's Agent and Claude Code (the
 
 ## Cursor calling Claude
 
-`.cursor/rules/cursor-to-claude.mdc` has a settings block. Each task has `when` (`auto`, `ask`, `suggest`, `off`), a model, a mode, and a turn limit, and per-chat limits cap Sonnet and Opus calls. The defaults:
+`.cursor/rules/cursor-to-claude.mdc` has a settings block. Each task has `when` (`auto`, `ask`, `suggest`, `off`), a model, an effort (`low`, `medium`, `high`, `xhigh`, `max`), a mode, and a turn limit, and per-chat limits cap Sonnet and Opus calls. Routine Sonnet calls use `medium`. The Opus slop review uses `high`. The defaults:
 
 - A bug whose first fix fails goes to Sonnet for a root-cause read, at most twice per chat.
 - `/review-and-verify` and each new plan get a Sonnet second look.
 - `/slop-review` runs Opus in the background, independent of Cursor's own pass, and the two reports are merged.
 - Claude implementing a whole plan is off; do that in the Claude Code panel.
 
-Each call appends one line to `.cursor/claude-calls.log` (gitignored) with the task, model, duration, turns, tokens, and session id. `claude --resume <session id>` opens that call in Claude Code to continue it. A call starts with about 11k tokens of Claude's own context before it reads a file.
+Each call appends one line to `.cursor/claude-calls.log` (gitignored) with the task, model, effort, duration, turns, tokens, and session id. `claude --resume <session id>` opens that call in Claude Code to continue it. A call starts with about 11k tokens of Claude's own context before it reads a file.
 
 One-time setup: run `claude install` from the extension's binary so `~/.local/bin/claude` exists (the wrapper falls back to the extension's copy when it does not), and open Claude Code once in this folder and accept the trust prompt so `.claude/settings.json` allow rules apply.
 

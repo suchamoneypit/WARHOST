@@ -12,10 +12,10 @@ The project says openly that AI tools built it. That is not a defect. Do not rec
 
 ## Second opinion (Cursor only)
 
-When this runs in Cursor and `.cursor/rules/cursor-to-claude.mdc` sets `slop_review` to `auto`, start the Claude call before doing anything else, in the background, with the model and turn limit from that file:
+When this runs in Cursor and `.cursor/rules/cursor-to-claude.mdc` sets `slop_review` to `auto`, start the Claude call before doing anything else, in the background, with the model, effort, and turn limit from that file:
 
 ```sh
-sh scripts/ask_claude.sh --task slop_review --mode review --model opus --max-turns 60 --out /tmp/warhost-slop-claude.md "/slop-review"
+sh scripts/ask_claude.sh --task slop_review --mode review --model opus --effort high --max-turns 60 --out /tmp/warhost-slop-claude.md "/slop-review"
 ```
 
 Do not tell Claude anything about your own findings. When your report is written, read `/tmp/warhost-slop-claude.md` and merge: findings both reviews raised come first, then each finding is marked `[both]`, `[cursor]`, or `[claude]`, keeping one ID per finding. If the Claude call failed or is still running after your report, say so in the first line and give your report alone. When this runs in Claude Code, skip this section.

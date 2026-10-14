@@ -44,6 +44,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-12 The map checklist is Workshop Maps: the left checklist heading is Workshop Maps.
 - 2026-10-13 Community Applications is the main install route: the README and install guide lead with Apps, search WARHOST, Install; the flash-drive copy stays for `dev`.
 - 2026-10-13 Shared agent files for Cursor and Claude Code: `CLAUDE.md`, `.claude/agents/`, and `.claude/skills/` serve both tools; one `reviewer`; `claude -p` via `scripts/ask_claude.sh`.
+- 2026-10-13 Claude handoff effort is set per task: `effort` is `low` through `max`; routine calls use `medium`, and `/slop-review` uses `high`.
 
 ## 2026-10-09 — Wrap Eugen's image
 
@@ -284,3 +285,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** `CLAUDE.md` is the one always-on instruction file. Cursor loads it as a rule and Claude Code reads it natively, so `.cursor/rules/agent-workflow.mdc` and `.cursor/rules/warno-project.mdc` are removed. Subagents live in `.claude/agents/` and commands in `.claude/skills/`, which both tools load. `.cursor/commands/` keeps only the Cursor-only `/webui` and `/ask-claude`. `docs-consistency`, `unraid-template-reviewer`, and `verifier` are one `reviewer`, run once per batch before a commit. Cursor hands work to Claude through `scripts/ask_claude.sh`; how often is set in `.cursor/rules/cursor-to-claude.mdc`. Claude Code never commits: `.claude/settings.json` denies commit, push, merge, rebase, hard reset, and tag. Superseded entries moved to `docs/DECISIONS-ARCHIVE.md`, and dated observations moved from `docs/ARCHITECTURE.md` to `docs/EVIDENCE.md`. Older entries that name `.cursor/agents/` or `.cursor/commands/` files refer to the same files now under `.claude/`. `CLAUDE.md` holds both workflow and WARNO facts, which replaces the generic and WARNO-specific rule split.
 
 **Rationale:** The maintainer uses a Cursor subscription and a Claude subscription. Cursor's [rules](https://cursor.com/docs/rules.md), [subagents](https://cursor.com/docs/subagents.md), and [skills](https://cursor.com/docs/skills.md) pages say it loads `CLAUDE.md`, `.claude/agents/`, and `.claude/skills/`, so one copy serves both tools and nothing loads twice. Three reviewers each reread the same diff in a fresh context; one reviewer with the same checklist reads it once. Agents read all of this file for each feature; the index above and `docs/PROJECT-MAP.md` replace that read. `claude -p` spends the Claude subscription on reviews and stuck bugs, and the wrapper keeps those calls read-only unless edit mode is chosen on a clean tree.
+
+## 2026-10-13 — Claude handoff effort is set per task
+
+**Decision:** Each task in `.cursor/rules/cursor-to-claude.mdc` has `effort`: `low`, `medium`, `high`, `xhigh`, or `max`. `scripts/ask_claude.sh` passes it as `claude --effort`. Routine Sonnet tasks use `medium`. `/slop-review` uses `high`. Omitting `--effort` leaves Claude Code's own default.
+
+**Rationale:** The model name does not set how long Claude thinks. `claude --help` on this machine lists those five levels. The installed Claude Code model catalog marks Medium as recommended for Opus 5.5 and Sonnet 5.5, and says Opus Max can consume 3.5× or more usage than Medium. The handoff names the level so a call is not Max unless the settings say so.
