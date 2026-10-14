@@ -11,25 +11,25 @@ warn() {
 }
 
 if [ -n "${WARHOST_WEBUI_FAIL:-}" ]; then
-  warn "warning: web UI did not start."
+  warn "warning: WebUI did not start."
   exit 1
 fi
 
 if [ -z "${SETTINGS_DIR:-}" ] || [ -z "${EXPOSEDPORT:-}" ]; then
-  warn "warning: web UI did not start. Settings directory or game port is missing."
+  warn "warning: WebUI did not start. Settings directory or game port is missing."
   exit 1
 fi
 
 case "$EXPOSEDPORT" in
   ''|*[!0-9]*)
-    warn "warning: web UI did not start. Game port is not a number."
+    warn "warning: WebUI did not start. Game port is not a number."
     exit 1
     ;;
 esac
 
 web_port=$((EXPOSEDPORT + 1000))
 if [ "$web_port" -gt 65535 ]; then
-  warn "warning: web UI did not start. Game port plus 1000 is not a port."
+  warn "warning: WebUI did not start. Game port plus 1000 is not a port."
   exit 1
 fi
 
@@ -38,7 +38,7 @@ export WARHOST_WEB_PORT="$web_port"
 export WARHOST_WEBUI_DIR="$here"
 
 if ! command -v python3 >/dev/null 2>&1; then
-  warn "warning: web UI did not start. python3 is missing."
+  warn "warning: WebUI did not start. python3 is missing."
   exit 1
 fi
 
@@ -91,12 +91,12 @@ while [ "$i" -lt 50 ]; do
     exit 0
   fi
   if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then
-    warn "warning: web UI did not start."
+    warn "warning: WebUI did not start."
     exit 1
   fi
   i=$((i + 1))
   sleep 0.05
 done
 
-warn "warning: web UI did not start."
+warn "warning: WebUI did not start."
 exit 1

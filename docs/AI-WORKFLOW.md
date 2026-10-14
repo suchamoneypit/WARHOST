@@ -60,6 +60,21 @@ One-time setup: run `claude install` from the extension's binary so `~/.local/bi
 - Keep Claude Code on Sonnet by default. Use Opus for `/slop-review` or a hard bug; it uses the Pro limit much faster.
 - When behavior changes, update `docs/ARCHITECTURE.md` and add a `docs/DECISIONS.md` entry and index line in the same change, so the next agent does not have to rediscover it.
 
+## Clean slate on Unraid
+
+`/unraid-script` prints a third command, `sh scripts/print_template_fetch.sh --clean --branch main --branch dev`. It stops and removes the `WARHOST` and `WARHOST-dev` containers, drops those names from `/var/lib/docker/unraid-autostart`, deletes the user-template files and the two private files under `/boot/config/plugins/community.applications/private/suchamoneypit/`, and removes each container's settings folder `/mnt/user/appdata/warno/<port>/settings`. That folder holds the login and key. A folder still mounted by another container is left in place. The image is removed only when no container is still using it.
+
+## Publishing the image
+
+Before merging `dev` into `main`, set `<Repository>` in `templates/warhost.xml` back to `ghcr.io/suchamoneypit/warhost:latest`. The publish procedure is the `/publish` command, and it does that. A fork repeats these steps once the files are on `main`:
+
+1. In the GitHub repository settings, enable Issues.
+2. Under Actions, allow GitHub Actions, and set workflow permissions to read and write.
+3. Run the **Rebuild WARHOST image** workflow.
+4. Open the package `warhost` and set its visibility to Public if the workflow did not. Unraid cannot pull a private package.
+
+Then install the template and confirm the container stays up, the key is only in that server's settings files, and the preset Hesse map is the running scenario. Community Apps reads `main`. A first submission needs a public repository, the MIT `LICENSE` at the root, `ca_profile.xml` with a non-empty Profile, and `templates/warhost.xml`. Open [https://ca.unraid.net/submit](https://ca.unraid.net/submit), run Validate, then Scan, and submit when the scan is clean. The help pages are [submission help](https://ca.unraid.net/submit/help), [repository XML](https://ca.unraid.net/submit/help/repository-xml), and [repository information XML](https://ca.unraid.net/submit/help/repository-info-xml).
+
 ## Reusing this setup
 
 Generic, ready to copy into another game-server template repository: `.cursor/rules/unraid-template.mdc`, `.claude/agents/reviewer.md` (replace its project specifics), the skills except `credential-review`, `workshop-mods`, and `map-previews` (replace the project-specifics section of `slop-review`), `scripts/ask_claude.sh`, `.cursor/rules/cursor-to-claude.mdc`, `docs/UNRAID-TEMPLATE-GUIDE.md`, and `scripts/print_template_fetch.sh`. `CLAUDE.md` mixes the workflow with WARNO facts; keep its structure and replace the facts.

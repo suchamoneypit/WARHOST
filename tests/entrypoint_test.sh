@@ -248,7 +248,7 @@ grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not n
 if grep -qE '^(ModList|ModTagList) =' "${settings}/variables.ini"; then
   fail "default run wrote a workshop mod line"
 fi
-grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
+grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different server name in the WebUI.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
 if grep -qE 'warning: (Map|Workshop Mod List)' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the map or the mod list"
 fi
@@ -502,7 +502,9 @@ expect_ok "does not treat another mod's version 0 as the Red Dragon failure" \
 if grep -qE 'warning: Workshop Mod List contains 3811913066/0|warning: Map' "${WORKDIR}/stdout.txt"; then
   fail "another mod's version 0 raised a Red Dragon warning"
 fi
-grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt" || fail "a set mod list omitted the version hint"
+if grep -q 'At least one mod version doesnt match' "${WORKDIR}/stdout.txt"; then
+  fail "a set mod list printed the version lecture"
+fi
 
 # Fake Steam: wget answers the details call from details/<id>.json and
 # DepotDownloader copies items/<id>.ini to Config.ini. Both log every call.
@@ -606,7 +608,7 @@ expect_ok "reads Version from Config.ini for a bare workshop id" \
 grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "bare id was not written as id/version"
 grep -qx 'NbMaxPlayer = 8' "${server}/settings/variables.ini" || fail "a hand-edited player count was replaced"
 grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "mod tags were not kept"
-grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini. The rest of the item was not downloaded, and Config.ini has been deleted.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
+grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
 grep -qx 'Kept variables.ini for WARHOST - default server name on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
 [ "$(call_count downloader.calls)" = 1 ] || fail "bare id did not download exactly once"
 printf 'Config.ini\n' | cmp -s - "${FAKE_STEAM}/filelist.last" || fail "the download asked for more than Config.ini"
@@ -903,7 +905,7 @@ expect_ok "keeps hand-edited files when write config is false" \
   EXPOSEDPORT=10401
 grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "hand-edited login.ini was replaced"
 grep -qx 'Left existing WARNO settings in place.' "${WORKDIR}/stdout.txt" || fail "write-config false did not say it left files alone"
-grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different Server Name in the WebUI. One login and key runs five servers. Players join by Server Name.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
+grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different server name in the WebUI.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
 
 make_server
 expect_fail "refuses write-config false when settings files are missing" \
@@ -1117,7 +1119,7 @@ expect_fail "refuses to replace params_for_ai.json when that path is a directory
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400
-grep -q 'params_for_ai.json is a directory, so it was not replaced' "${WORKDIR}/stderr.txt" || fail "a directory named params_for_ai.json did not stop the start"
+grep -q 'params_for_ai.json is a directory. Move it aside, then start the container again.' "${WORKDIR}/stderr.txt" || fail "a directory named params_for_ai.json did not stop the start"
 if grep -R -F 'host-key-value' "${server}/settings" >/dev/null 2>&1; then
   fail "a directory named params_for_ai.json received the dedicated key"
 fi
@@ -1406,7 +1408,7 @@ expect_ok "a failed lobby page still starts the server" \
   EXPOSEDPORT=21402 \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not reach the upstream entrypoint"
-grep -q 'web UI did not start' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not warn"
+grep -q 'WebUI did not start' "${WORKDIR}/stdout.txt" || fail "failed lobby page did not warn"
 if [ -f "${server}/settings/.warhost-webui.pid" ]; then
   fail "failed lobby page left a listener"
 fi
