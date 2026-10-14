@@ -39,7 +39,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-11 Player limits stay editable: choosing a map fills the player counts; they stay editable within Eugen's limits.
 - 2026-10-11 Map packs and other workshop mods are separate checklists: map packs on the left, full conversions and other mods on the right, one `ModList`.
 - 2026-10-12 Map pictures stay out of the published image: previews come from a local install into gitignored `webui/previews/`.
-- 2026-10-12 Release notes say what changed: release bodies are summaries from `scripts/release_notes.py`.
+- 2026-10-12 Release notes say what a host would notice: written summaries in `scripts/release_notes.py` for `v0.90` through `v1.13`. A tag with no summary does not publish.
 - 2026-10-12 PvP and PvE setup: PvE writes `CoopVsAI` and AI counts; `params_for_ai.json` is seeded only when missing.
 - 2026-10-12 The map checklist is Workshop Maps: the left checklist heading is Workshop Maps.
 - 2026-10-13 Community Applications is the main install route: the README and install guide lead with Apps, search WARHOST, Install; the flash-drive copy stays for `dev`.
@@ -258,9 +258,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-12 — Release notes say what changed
 
-**Decision:** Each GitHub Release body is a short summary of that version, then the compare link. `scripts/release_notes.py` holds the written summary for `v0.90` through `v1.11`. A later tag lists the commit subjects since the previous version tag and leaves out wording-only subjects. `.github/workflows/release.yml` publishes that text. `python3 scripts/release_notes.py --apply` writes the `v0.90` through `v1.11` summaries onto the releases already on GitHub.
+**Decision:** Each GitHub Release body is what a host would notice in that version, then the compare link. `scripts/release_notes.py` holds that summary for `v0.90` through `v1.13`. A version with no change to the server, the Unraid form, or the WebUI says so in one line. A tag with no written summary fails the release job before the tag is pushed. `.github/workflows/release.yml` publishes that text. `python3 scripts/release_notes.py --apply` writes these summaries onto the releases already on GitHub.
 
-**Rationale:** `gh release create --generate-notes` wrote only the compare link. On 2026-10-12 the twelve releases from `v0.90` through `v1.11` were that link, except a one-line note added by hand on `v1.02`. This repository publishes by pushing `main`, and those generated notes listed none of the commits. The commit subjects are already one-sentence summaries. The earlier tags mix those with wording commits, so their pages use a written summary.
+**Rationale:** `gh release create --generate-notes` wrote only the compare link. On 2026-10-12 the twelve releases from `v0.90` through `v1.11` were that link, except a one-line note added by hand on `v1.02`. This repository publishes by pushing `main`, and those generated notes listed none of the commits. The earlier tags mix host changes with wording commits, so their pages use a written summary. On 2026-10-13 the `v1.12` and `v1.13` pages were the commit subjects, including a test file and agent setup. A later tag does not list commit subjects.
 
 ## 2026-10-12 — PvP and PvE setup
 
