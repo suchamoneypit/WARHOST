@@ -448,8 +448,8 @@ Repository files are MIT ([LICENSE](LICENSE)). The image is built from Eugen's `
 
 ## Made with AI tools
 
-This project was built with AI coding assistants (mainly [Cursor](https://cursor.com)). Humans directed the work, reviewed what shipped, and remain responsible for it. Treat the template like any other community Docker or Unraid project: verify on your own server, and open an issue if something is wrong. Notes for working on the agent setup in this repository are in [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md).
+This project was built with AI coding assistants (mainly [Cursor](https://cursor.com)). Humans directed the work, reviewed what shipped, and remain responsible for it. Treat the template like any other community Docker or Unraid project: verify on your own server, and post in the support thread if something is wrong. Notes for working on the agent setup in this repository are in [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md).
 
 ## Support
 
-Questions and problems go to [GitHub issues](https://github.com/suchamoneypit/WARHOST/issues). Leave the Eugen key out of the issue.
+Questions and problems go to the [Unraid forum thread](https://forums.unraid.net/topic/200981-support-warhost-game-server-for-warno/). Leave the Eugen key out of the post.

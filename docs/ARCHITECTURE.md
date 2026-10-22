@@ -108,7 +108,7 @@ Eugen's Docker Hub page documents `login.ini`, `variables.ini`, `params_for_ai.j
 - License: GitHub detects the MIT `LICENSE` ([licensing a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository)), and the GitHub API reports `license.spdx_id` `MIT`. The Docker Hub API for `eugensystems/warno` states no license.
 - Community Apps: [submit](https://ca.unraid.net/submit), [help](https://ca.unraid.net/submit/help), [repository XML](https://ca.unraid.net/submit/help/repository-xml), [repository info XML](https://ca.unraid.net/submit/help/repository-info-xml), [XML field reference](https://ca.unraid.net/submit/help/xml-field-reference), [builders](https://ca.unraid.net/submit/help/builders), [starter repository](https://github.com/unraid/unraid-community-apps-starter), [template schema thread](https://forums.unraid.net/topic/38619-docker-template-xml-schema/)
 - Map textures: Eugen's map guide names Overview as the lobby texture and Preview as the top-down texture ([complete map modding guide](https://steamcommunity.com/sharedfiles/filedetails/?id=3352892580)).
-- Support: <https://github.com/suchamoneypit/WARHOST/issues>
+- Support: <https://forums.unraid.net/topic/200981-support-warhost-game-server-for-warno/>
 
 ## Unverified
 

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CommunityApplications>
   <Profile>
-    WARHOST runs a WARNO dedicated server on Unraid, one server per container. The form takes your Eugen login and dedicated key. You set the lobby in the WebUI. Built with AI coding assistants; humans reviewed what shipped. Support is through GitHub issues on this repository.
+    WARHOST runs a WARNO dedicated server on Unraid, one server per container. The form takes your Eugen login and dedicated key. You set the lobby in the WebUI. Built with AI coding assistants; humans reviewed what shipped. Support is on the Unraid forum thread for this app.
   </Profile>
   <Icon>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/icon.png</Icon>
   <WebPage>https://github.com/suchamoneypit/WARHOST</WebPage>
-  <Forum>https://github.com/suchamoneypit/WARHOST/issues</Forum>
+  <Forum>https://forums.unraid.net/topic/200981-support-warhost-game-server-for-warno/</Forum>
 </CommunityApplications>

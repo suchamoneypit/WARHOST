@@ -82,6 +82,11 @@ WRITTEN = {
         "- Map packs are listed under Steam Workshop Maps."
     ),
     "v1.13": "- No change to the server, the Unraid form, or the WebUI.",
+    "v1.14": (
+        "- Save and restart still shows the lobby after it pins a Workshop id. A page port left in TIME_WAIT does not keep the page from starting.\n"
+        "- The Docker log and the Unraid form descriptions are shorter.\n"
+        "- Support opens the Unraid forum thread."
+    ),
 }
 
 REQUIRED = {
@@ -99,6 +104,7 @@ REQUIRED = {
     "v1.11": "No change to the server, the Unraid form, or the WebUI.",
     "v1.12": "PvE",
     "v1.13": "No change to the server, the Unraid form, or the WebUI.",
+    "v1.14": "forum thread",
 }
 
 
