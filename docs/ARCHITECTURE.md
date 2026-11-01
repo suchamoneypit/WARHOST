@@ -60,7 +60,7 @@ The page listens on the Game Port plus 1000 and replaces `variables.ini` on save
 
 - Workshop Maps is the map-pack checklist. Full conversions and other mods, beside it, lists Galactic Divide and A World in Flames from the catalog `mods` array. Checking a pack shows its maps. A label adds `by` and the catalog author when one is set.
 - A save writes checked catalog ids as bare ids, keeps a checked id that is not in the catalog, derives `ModTagList` from the checked mods, and rejects a modded map whose pack is unchecked.
-- Choosing a map fills `NbMaxPlayer`, `NbMinPlayer`, and `MaxTeamSize` from the scenario (`players`, `team`, and a minimum of 2 when `players` is at least 2). PvP keeps those three editable; PvE hides them and writes `CoopVsAI`, the human and AI counts, and `DeltaMaxTeamSize`.
+- Choosing a map fills `NbMaxPlayer` and `MaxTeamSize` from the scenario (`players` and `team`) and sets `NbMinPlayer` to `players`. PvP keeps those three editable; PvE hides them and writes `CoopVsAI`, the human and AI counts, and `DeltaMaxTeamSize`.
 - A catalog map offers only its own combat rule.
 - The Scenic view and Tactical zones slots show Overview and Preview from `webui/previews/` when `index.json` names that map. One pair per battlefield is shared by every scenario ID with that stem. `scripts/extract_map_previews.py` fills that folder from a local WARNO install; it is gitignored and not in the image, so the published page shows the text labels.
 

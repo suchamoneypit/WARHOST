@@ -62,7 +62,12 @@
   h2 { font-size: 1rem; margin: 0 0 8px; }
   #detail-name { margin: 0; line-height: 1.1; }
   #detail-meta, #detail-id { margin: 0; line-height: 1.15; }
-  #modded h2 { margin-top: 16px; }
+  #modded h2 {
+    margin: 0 -12px 8px;
+    padding: 8px 12px;
+    background: var(--header);
+    border-bottom: 1px solid var(--line);
+  }
   label { display: block; margin: 10px 0 4px; }
   .filters { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px; }
   .filters label { margin-top: 0; }
@@ -86,6 +91,9 @@
     flex-direction: column;
     flex: 1 1 0;
     min-height: 0;
+    margin: 16px -12px 0;
+    padding: 0 12px;
+    border-top: 3px solid var(--accent-strong);
   }
   #modded .list { flex: 1 1 0; min-height: 8rem; }
   .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
@@ -232,7 +240,7 @@
       <label for="timeLimit">Time limit</label>
       <select id="timeLimit"></select>
       <div id="pvp-slots">
-      <p class="hint">Picking a map fills these from that map's usual lobby. They stay editable: a 2v2 map can use 8 and 4, or a 1v1 with max 2, team size 1, and minimum 2. The lobby is not locked to the size in the scenario ID.</p>
+      <p class="hint">These match the map. You can change them.</p>
       <label for="players">Max players</label>
       <input id="players" type="number" min="1" max="20" step="1" inputmode="numeric">
       <label for="team">Team size</label>
@@ -253,16 +261,16 @@
         <div id="deck-rows"></div>
         <button id="add-deck" type="button">Add deck</button>
       </div>
+      <div class="actions">
+        <button id="save" type="button">Save</button>
+        <button id="restart" type="button">Save and restart</button>
+      </div>
       <div id="confirm-box" class="confirm" hidden>
         <p id="confirm-text"></p>
         <div class="actions">
           <button id="confirm-yes" type="button">Restart</button>
           <button id="confirm-no" type="button">Cancel</button>
         </div>
-      </div>
-      <div class="actions">
-        <button id="save" type="button">Save</button>
-        <button id="restart" type="button">Save and restart</button>
       </div>
     </section>
   </div>
@@ -619,8 +627,7 @@ function showSetup() {
 function presetLimits(scenario) {
   const players = Number(scenario.players);
   const team = Number(scenario.team);
-  const minPlayers = players >= 2 ? 2 : players;
-  return { players: players, team: team, minPlayers: minPlayers };
+  return { players: players, team: team, minPlayers: players };
 }
 
 function previewStem(id) {
@@ -832,7 +839,9 @@ function restartStatus(result) {
 function showRestartConfirm(error) {
   pendingRestart = error.confirmUnchanged ? "unchanged" : "changed";
   document.getElementById("confirm-text").textContent = error.message;
-  document.getElementById("confirm-box").hidden = false;
+  const box = document.getElementById("confirm-box");
+  box.hidden = false;
+  box.scrollIntoView({ block: "nearest" });
 }
 
 async function runRestart(confirmUnchanged, confirmRestart) {
