@@ -330,6 +330,11 @@ grep -qx 'dedicated_key="host-key-value"' "${settings}/login.ini" || fail "save 
 
 curl -fsS "${base}/" > "${WORKDIR}/page.html" || fail "lobby page did not load"
 curl -fsS "${base}/api/lobby" > "${WORKDIR}/state.json" || fail "lobby state did not load"
+grep -q '"gamePort": "38521"' "${WORKDIR}/state.json" || fail "lobby state omitted the game port"
+grep -q '"webPort": "39521"' "${WORKDIR}/state.json" || fail "lobby state omitted the WebUI port"
+grep -q 'id="ports"' "${WORKDIR}/page.html" || fail "page is missing the port line"
+grep -q 'function showPorts' "${WORKDIR}/page.html" || fail "page does not label its ports"
+grep -q 'WARHOST WebUI, ' "${WORKDIR}/page.html" || fail "page does not put the ports in the tab title"
 if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WORKDIR}/page.log" >/dev/null; then
   fail "lobby page exposed the dedicated key"
 fi

@@ -10,7 +10,7 @@ Unraid form (templates/warhost.xml)
        checks the Game Port and locks the settings folder
        writes login.ini; seeds variables.ini and params_for_ai.json when missing
        resolves bare Workshop ids in ModList to id/Version (DepotDownloader, Config.ini only)
-       starts webui/launch.sh when WEB_UI=true (fail-open, page on Game Port + 1000)
+       starts webui/launch.sh when WEB_UI=true (fail-open, page on WEB_PORT, or Game Port + 1000 when unset)
        runs /server/entrypoint2.sh (Eugen) in its own session
   <- SIGUSR1 from the WebUI's Save and restart: the wrapper re-execs itself
 ```
@@ -19,7 +19,7 @@ Unraid form (templates/warhost.xml)
 
 | Path | Role |
 | --- | --- |
-| `templates/warhost.xml` | Unraid template: seven form fields, host networking, `<Repository>` `:latest` on `main` and `:dev` on `dev` |
+| `templates/warhost.xml` | Unraid template: eight form fields, host networking, `<Repository>` `:latest` on `main` and `:dev` on `dev` |
 | `ca_profile.xml`, `icon.png` | Community Apps profile and icon |
 | `Dockerfile` | `FROM eugensystems/warno:latest`, pinned DepotDownloader, copies the wrapper and `webui/` |
 | `entrypoint-unraid.sh` | The wrapper (about 1,000 lines): validation, settings writes, port check, Workshop versions, WebUI hook, restart supervisor |

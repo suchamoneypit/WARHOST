@@ -42,7 +42,7 @@ Sources checked on 2026-10-09:
 Pick one and document it in the Overview, the README, and the port field descriptions.
 
 - **Bridge** (Unraid default). Add a `Type="Port"` Config per protocol. Players reach the host port; Docker maps it to the container port. Two instances can map different host ports to the same container port.
-- **Host**. The container shares Unraid's network stack. Do not add `Type="Port"` entries; Unraid shows no port mapping, and the game's own listen-port setting decides the port. The port must be free on the Unraid host itself, and every extra instance needs a different port. Use host only when the upstream vendor asks for it or the game needs it.
+- **Host**. The container shares Unraid's network stack. Do not add `Type="Port"` entries; Unraid shows no port mapping, and the game's own listen-port setting decides the port. The port must be free on the Unraid host itself, and every extra instance needs a different port. Use host only when the upstream vendor asks for it or the game needs it. `[PORT:n]` in `<WebUI>` is not remapped, so a second container's Docker button stays on the template URL until Advanced View → WebUI is edited.
 - **Custom (macvlan/ipvlan)** gives the container its own LAN IP. It avoids host port conflicts but adds network setup for the user. Not recommended as a template default.
 
 Whatever the mode, the README must state the exact ports and protocols to forward on the router, and that forwarding goes to the Unraid server's LAN IP. Say separately whether the server needs outbound access to a vendor master server or auth service, because a container can start cleanly and still be invisible to players.
@@ -73,7 +73,7 @@ Route 1 is the simplest for a one-off test. Route 2 behaves like the eventual CA
 
 ## Multiple instances
 
-Add a second container from the same template and change the container name, the port, and the host path. Do not use Unraid's **Reinstall** action for a second instance; that replaces the existing container.
+Add a second container from the same template and change the container name, the port, the host path, and, on host networking, the Advanced View WebUI port. Do not use Unraid's **Reinstall** action for a second instance; that replaces the existing container.
 
 ## Publishing the image
 

@@ -394,12 +394,78 @@ prepare_server_runtime() {
   fi
 }
 
-note_next_container() {
-  if [ -n "$NEXT_PORT" ]; then
-    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different server name in the WebUI."
+# Prints the port the page should bind, or nothing when that port is unusable.
+# Keep the acceptance rules identical to webui/launch.sh.
+page_port() {
+  if [ -n "${WEB_PORT:-}" ]; then
+    case "$WEB_PORT" in
+      *[!0-9]*) return 0 ;;
+    esac
+    if [ "$WEB_PORT" -ge 1 ] && [ "$WEB_PORT" -le 65535 ] && [ "$WEB_PORT" -ne "$EXPOSEDPORT" ]; then
+      printf '%s\n' "$WEB_PORT"
+    fi
     return 0
   fi
-  printf '%s\n' "Next container on this host: a free Game Port, its own settings folder, and a different server name in the WebUI."
+  sum=$((EXPOSEDPORT + 1000))
+  if [ "$sum" -le 65535 ]; then
+    printf '%s\n' "$sum"
+  fi
+}
+
+# Prints one warning when the page port cannot be used, or nothing when it can.
+# Keep the sentences identical to webui/launch.sh.
+web_port_problem() {
+  if [ -z "${WEB_PORT:-}" ]; then
+    sum=$((EXPOSEDPORT + 1000))
+    if [ "$sum" -gt 65535 ]; then
+      printf '%s\n' "warning: WebUI did not start. Game port plus 1000 is not a port."
+    fi
+    return 0
+  fi
+  case "$WEB_PORT" in
+    *[!0-9]*)
+      printf '%s\n' "warning: WebUI did not start. WebUI Port is not a whole number."
+      return 0
+      ;;
+  esac
+  if [ "$WEB_PORT" -lt 1 ] || [ "$WEB_PORT" -gt 65535 ]; then
+    printf '%s\n' "warning: WebUI did not start. WebUI Port must be from 1 to 65535."
+    return 0
+  fi
+  if [ "$WEB_PORT" -eq "$EXPOSEDPORT" ]; then
+    printf '%s\n' "warning: WebUI did not start. WebUI Port is the same as Game Port."
+    return 0
+  fi
+}
+
+warn_default_web_port() {
+  page=$1
+  if [ "$page" != 11400 ] || [ "$EXPOSEDPORT" = 10400 ]; then
+    return 0
+  fi
+  suggested=$((EXPOSEDPORT + 1000))
+  if [ "$suggested" -le 65535 ]; then
+    printf '%s\n' "warning: WebUI Port is still 11400 while Game Port is ${EXPOSEDPORT}. Set WebUI Port to ${suggested}. In Advanced View, set WebUI to http://[IP]:[PORT:${suggested}]/ so the Docker button opens this page."
+    return 0
+  fi
+  printf '%s\n' "warning: WebUI Port is still 11400 while Game Port is ${EXPOSEDPORT}. Game port plus 1000 is not a port. Set WebUI Port to a free port, and in Advanced View set WebUI to http://[IP]:[PORT:<that port>]/ so the Docker button opens this page."
+}
+
+note_next_container() {
+  page=$(page_port)
+  next_web=
+  if [ -n "$page" ] && [ "$page" -lt 65535 ]; then
+    next_web=$((page + 1))
+  fi
+  if [ -n "$NEXT_PORT" ] && [ -n "$next_web" ]; then
+    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, WebUI Port ${next_web}, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:${next_web}]/ so the Docker button opens that page."
+    return 0
+  fi
+  if [ -n "$NEXT_PORT" ]; then
+    printf '%s\n' "Next container on this host: Game Port ${NEXT_PORT}, a free WebUI Port, settings folder /mnt/user/appdata/warno/${NEXT_PORT}/settings, and a different server name in the WebUI. In Advanced View, set WebUI to that WebUI Port so the Docker button opens that page."
+    return 0
+  fi
+  printf '%s\n' "Next container on this host: a free Game Port, a free WebUI Port, its own settings folder, and a different server name in the WebUI. In Advanced View, set WebUI to that WebUI Port so the Docker button opens that page."
 }
 
 WORKSHOP_APP_ID=1611600
@@ -868,21 +934,27 @@ fi
 note_next_container
 
 # WebUI. Remove this block to drop the page.
-if [ "$web_ui" = true ]; then
-  entry_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
-  webui_launch="${entry_dir}/webui/launch.sh"
-  if [ -x "$webui_launch" ]; then
-    export SETTINGS_DIR
-    # fd 9 is the settings lock. The page must not inherit it.
-    if ! "$webui_launch" 9>&-; then
-      printf '%s\n' "warning: WebUI did not start. See .warhost-webui.log in the settings folder. The game server will still start."
-    fi
-  else
-    printf '%s\n' "warning: WebUI launcher was not found. Update the container. The game server will still start."
-  fi
+web_problem=$(web_port_problem)
+if [ -n "$web_problem" ]; then
+  printf '%s\n' "$web_problem"
 else
-  web_port=$((EXPOSEDPORT + 1000))
-  if [ "$web_port" -le 65535 ]; then
+  web_port=$(page_port)
+  if [ -n "$web_port" ]; then
+    warn_default_web_port "$web_port"
+  fi
+  if [ "$web_ui" = true ]; then
+    entry_dir=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+    webui_launch="${entry_dir}/webui/launch.sh"
+    if [ -x "$webui_launch" ]; then
+      export SETTINGS_DIR
+      # fd 9 is the settings lock. The page must not inherit it.
+      if ! "$webui_launch" 9>&-; then
+        printf '%s\n' "warning: WebUI did not start. See .warhost-webui.log in the settings folder. The game server will still start."
+      fi
+    else
+      printf '%s\n' "warning: WebUI launcher was not found. Update the container. The game server will still start."
+    fi
+  elif [ -n "$web_port" ]; then
     if local_port_taken "$web_port"; then
       printf 'WebUI is off. Port %s is already in use.\n' "$web_port"
     else

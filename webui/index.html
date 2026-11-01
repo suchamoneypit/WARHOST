@@ -33,6 +33,8 @@
   header, main { box-sizing: border-box; padding: 16px; }
   header { flex: none; background: var(--header); color: var(--text); border-bottom: 3px solid var(--accent-strong); }
   h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  #ports { margin: 0 0 8px; }
+  #ports:empty { display: none; }
   .note, .hint, #detail-meta, #detail-id { color: var(--muted); }
   .note { margin: 0; max-width: 70rem; }
   main { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
@@ -147,6 +149,7 @@
 <body>
 <header>
   <h1>WARHOST WebUI</h1>
+  <p id="ports" class="note"></p>
   <p class="note">Save leaves the current match running; Save and restart applies by restarting the dedicated server; if this page cannot restart the container, restart it in Unraid.</p>
 </header>
 <main>
@@ -752,7 +755,22 @@ function render() {
   markSelected();
 }
 
+function showPorts(state) {
+  const parts = [];
+  if (state.gamePort) parts.push("Game port " + state.gamePort);
+  if (state.webPort) parts.push("WebUI port " + state.webPort);
+  const line = parts.length ? parts.join(". ") + "." : "";
+  document.getElementById("ports").textContent = line;
+  if (!parts.length) {
+    document.title = "WARHOST WebUI";
+    return;
+  }
+  const tabParts = parts.map((part) => part.startsWith("Game ") ? "game " + part.slice(5) : part);
+  document.title = "WARHOST WebUI, " + tabParts.join(", ") + ".";
+}
+
 function applyState(state) {
+  showPorts(state);
   modList = state.modList || "";
   modTags = state.modTags || "";
   document.getElementById("serverName").value = state.serverName || "";
