@@ -75,6 +75,18 @@ if template is not None:
         fail("EUGEN_DEDICATED_KEY must be a Config with Mask=false")
     if not settings_target:
         fail("settings Config target must be /server/settings")
+    targets = [(config.attrib.get("Target") or "") for config in configs]
+    if "EXPOSEDPORT" not in targets or "WEB_PORT" not in targets:
+        fail("template is missing Game Port or WebUI Port")
+    elif targets.index("WEB_PORT") != targets.index("EXPOSEDPORT") + 1:
+        fail("WEB_PORT must be the Config immediately after EXPOSEDPORT")
+    else:
+        web_port = configs[targets.index("WEB_PORT")]
+        if web_port.attrib.get("Type") != "Variable":
+            fail("WEB_PORT must be a Variable")
+    webui = (template.findtext("WebUI") or "").strip()
+    if webui != "http://[IP]:[PORT:11400]/":
+        fail("template WebUI must stay http://[IP]:[PORT:11400]/")
     repository = (template.findtext("Repository") or "").strip()
     latest_image = "ghcr.io/suchamoneypit/warhost:latest"
     dev_image = "ghcr.io/suchamoneypit/warhost:dev"

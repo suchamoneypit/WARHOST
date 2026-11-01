@@ -14,15 +14,16 @@ Eugen's image, at manifest digest `sha256:fb498aa82d7b15e3978bac51240e1243be3e19
 
 ## Template and form
 
-Community Applications lists the template from `main`, and an Unraid install has run with the container staying up, the key only in the settings files, and Hesse as the running map (both maintainer reports, 2026-10-13). The flash-drive copy from `scripts/print_template_fetch.sh` is the route for `dev`. `templates/warhost.xml` is `<Container version="2">` with `<Name>` `WARHOST`, `<Network>host</Network>`, and no port mapping. `<ExtraSearchTerms>` is `WARNO WARNO server dedicated server game server mods modded`. `<ReadMe>` and `<License>` are the raw `README.md` and `LICENSE` URLs on `main`. `<WebUI>` is `http://[IP]:[PORT:11400]/`. On host networking Unraid's `getControlURL` ([DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php)) leaves `[PORT:11400]` as 11400, so that button matches the container on Game Port `10400`. Another container's page is on its own Game Port plus 1000.
+Community Applications lists the template from `main`, and an Unraid install has run with the container staying up, the key only in the settings files, and Hesse as the running map (both maintainer reports, 2026-10-13). The flash-drive copy from `scripts/print_template_fetch.sh` is the route for `dev`. `templates/warhost.xml` is `<Container version="2">` with `<Name>` `WARHOST`, `<Network>host</Network>`, and no port mapping. `<ExtraSearchTerms>` is `WARNO WARNO server dedicated server game server mods modded`. `<ReadMe>` and `<License>` are the raw `README.md` and `LICENSE` URLs on `main`. `<WebUI>` is `http://[IP]:[PORT:11400]/`. On host networking Unraid's `getControlURL` ([DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php), re-read 2026-10-31) replaces `[PORT:11400]` only when Docker has a NAT mapping for private port 11400. Host mode sets `$c['Ports']['host']` and does not read `PortBindings`, so the button stays on 11400. `xmlToCommand` in [Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php), re-read the same day, writes that URL into the label `net.unraid.docker.webui` and, on host networking, turns a `Type="Port"` config into an environment variable instead of `-p`. The button changes when the operator edits the Advanced View WebUI box (`contWebUI` in [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php)) and Applies. The page itself listens on `WEB_PORT` when that variable is set, and on the Game Port plus 1000 when it is unset.
 
-The form has seven fields:
+The form has eight fields:
 
 - Settings Folder, container path `/server/settings`, default host folder `/mnt/user/appdata/warno/10400/settings`.
 - Eugen Login (`EUGEN_LOGIN`) and Eugen Dedicated Key (`EUGEN_DEDICATED_KEY`), both `Mask="false"`.
 - Public WAN IP (`EXPOSEDIP`), empty. The install guide points at <https://www.whatismyip.com/>.
 - WebUI (`WEB_UI`), `Display="always"`, default `true`, after Public WAN IP. An unset `WEB_UI` still means off in the wrapper.
 - Game Port (`EXPOSEDPORT`), default `10400`.
+- WebUI Port (`WEB_PORT`), `Display="always"`, default `11400`, immediately after Game Port. An unset `WEB_PORT` still means the Game Port plus 1000, which is what a container saved before this field does.
 - Write Config From Form (`WRITE_CONFIG`), `Display="advanced"`, default `true`.
 
 Unraid's `templateDisplayConfig` ([CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php)) prints each field description under its input and appends `Display="advanced"` fields to Show more settings. Unraid fills the Add Container form from the template XML and only rewrites the `/config` and `/unraid` path defaults. In the Overview, `[` and `]` become tags, `<br>` becomes a newline, `strip_tags` runs, and the basic view turns newlines into line breaks. Field descriptions are one or two sentences; base-game scenario IDs and the named workshop mods are in `README.md`.
@@ -56,11 +57,11 @@ With `WEB_UI=true`, after the write the wrapper runs `webui/launch.sh` if it is 
 
 ## WebUI
 
-The page listens on the Game Port plus 1000 and replaces `variables.ini` on save. A PvE setup save also replaces `params_for_ai.json`; a PvP save does not. Save leaves the match running.
+The page listens on `WEB_PORT` when that variable is set, and on the Game Port plus 1000 when it is unset. A value that is not a port from 1 to 65535, or that equals the Game Port, skips the page and the game still starts. `11400` with a Game Port other than `10400` warns and still tries that port. `/api/lobby` returns `gamePort` and `webPort`. The heading stays `WARHOST WebUI`. A line under it and the browser tab name those two ports. A save response uses the same state, so the line stays. The page replaces `variables.ini` on save. A PvE setup save also replaces `params_for_ai.json`; a PvP save does not. Save leaves the match running.
 
 - Workshop Maps is the map-pack checklist. Full conversions and other mods, beside it, lists Galactic Divide and A World in Flames from the catalog `mods` array. Checking a pack shows its maps. A label adds `by` and the catalog author when one is set.
 - A save writes checked catalog ids as bare ids, keeps a checked id that is not in the catalog, derives `ModTagList` from the checked mods, and rejects a modded map whose pack is unchecked.
-- Choosing a map fills `NbMaxPlayer`, `NbMinPlayer`, and `MaxTeamSize` from the scenario (`players`, `team`, and a minimum of 2 when `players` is at least 2). PvP keeps those three editable; PvE hides them and writes `CoopVsAI`, the human and AI counts, and `DeltaMaxTeamSize`.
+- Choosing a map fills `NbMaxPlayer` and `MaxTeamSize` from the scenario (`players` and `team`) and sets `NbMinPlayer` to `players`. PvP keeps those three editable; PvE hides them and writes `CoopVsAI`, the human and AI counts, and `DeltaMaxTeamSize`.
 - A catalog map offers only its own combat rule.
 - The Scenic view and Tactical zones slots show Overview and Preview from `webui/previews/` when `index.json` names that map. One pair per battlefield is shared by every scenario ID with that stem. `scripts/extract_map_previews.py` fills that folder from a local WARNO install; it is gitignored and not in the image, so the published page shows the text labels.
 
@@ -75,7 +76,7 @@ Save and restart. The wrapper stays the container's PID 1. It starts `/server/en
 | Wrapper entrypoint | `/server/entrypoint-unraid.sh` |
 | Upstream entrypoint | `/server/entrypoint2.sh` |
 
-A second server is another container from the same template with its own name, a Game Port one higher than the previous one, its own server name set in the WebUI, and its own settings folder, for example `/mnt/user/appdata/warno/10401/settings`. The wrapper takes an exclusive `flock` on `warhost.lock` in that folder and holds it across `exec` until the server exits; if `flock` is missing it warns and continues. One login and key pair starts at most five servers ([Obtaining access key](https://hub.docker.com/r/eugensystems/warno)). The image is one shared copy, and there is no game-library volume.
+A second server is another container from the same template with its own name, a Game Port one higher than the previous one, a WebUI Port one higher than the previous one, its own server name set in the WebUI, and its own settings folder, for example `/mnt/user/appdata/warno/10401/settings`. The Docker button for that container opens its page after Advanced View WebUI uses that WebUI Port. The wrapper takes an exclusive `flock` on `warhost.lock` in that folder and holds it across `exec` until the server exits; if `flock` is missing it warns and continues. One login and key pair starts at most five servers ([Obtaining access key](https://hub.docker.com/r/eugensystems/warno)). The image is one shared copy, and there is no game-library volume.
 
 ## Networking
 
@@ -130,7 +131,7 @@ When each source was last read. Re-fetch before relying on a value that may have
 
 - Docker Hub page and registry `full_description` for `eugensystems/warno` (`last_updated` 2026-09-17): 2026-10-09, `variables.ini` keys re-read 2026-10-10.
 - `eugensystems/warno:latest` registry config, digest, and layers: 2026-10-09.
-- Unraid webgui `master` `CreateDocker.php` and `DockerClient.php`: 2026-10-09; `getControlURL` re-read 2026-10-11. `Helpers.php`: 2026-10-10.
+- Unraid webgui `master` `CreateDocker.php` and `DockerClient.php`: 2026-10-09; `getControlURL` and the host-mode port list re-read 2026-10-31. `Helpers.php` `xmlToCommand`: 2026-10-10, re-read 2026-10-31.
 - DepotDownloader 3.4.0 release and source: 2026-10-10.
 - Community Apps help pages, the GitHub license API, and the starter repository: 2026-10-09. The linked `Squidly271/community.applications` README URL returned HTTP 404 that day; the Unraid org copy of that plugin has no root README.
 - Workshop `Config.ini` and `Scenarios/` in the local Steam library: 2026-10-09 and 2026-10-10. Workshop creator names: 2026-10-11.

@@ -65,11 +65,15 @@ The template on `main` installs `ghcr.io/suchamoneypit/warhost:latest`. The temp
 </tr>
 <tr>
 <td nowrap>WebUI</td>
-<td><code>true</code> serves the lobby page at the game port plus 1000, so <code>10400</code> uses <code>http://&lt;unraid&gt;:11400/</code>. Do not forward that port. Set the server name, map, and mods there. <code>false</code> leaves the WebUI button with nothing listening. The Docker WebUI button opens 11400, which is the first server only.</td>
+<td><code>true</code> serves the lobby page on WebUI Port. Set the server name, map, and mods there. <code>false</code> leaves the Docker button with nothing listening.</td>
 </tr>
 <tr>
 <td nowrap>Game Port</td>
-<td><code>10400</code> for the first server. This port must be free on the Unraid host. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Players join by the server name set in the WebUI.</td>
+<td><code>10400</code> for the first server. This port must be free on the Unraid host. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Set WebUI Port to this number plus 1000. Players join by the server name set in the WebUI.</td>
+</tr>
+<tr>
+<td nowrap>WebUI Port</td>
+<td><code>11400</code> for the first server. The next container uses this number plus 1. Do not forward it. The Docker button ignores this field. In Advanced View, change <code>11400</code> in the WebUI box to this number.</td>
 </tr>
 <tr>
 <td nowrap>Write Config From Form (Show more settings)</td>
@@ -86,7 +90,7 @@ A container saved from an earlier template can still show Server Name, Map, play
 
 The WebUI map list uses a scenario ID from the [lists below](#scenario-ids). Base-game maps need no workshop mod. A workshop map needs its pack checked under Steam Workshop Maps on that page, from the [workshop mods](#workshop-mods) table. When the startup log warns about the map or the mod list, the [troubleshooting table](docs/INSTALL-UNRAID.md#troubleshooting) in the install guide says what to change.
 
-The size in the ID is the usual lobby. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. The usual settings are Max Players 2 and Team Size 1 for 1v1, 4 and 2 for 2v2, 6 and 3 for 3v3, 8 and 4 for 4v4, and 20 and 10 for 10v10. Choosing a map in the WebUI fills Max players (`NbMaxPlayer`), Team size (`MaxTeamSize`), and Minimum players (`NbMinPlayer`) from that map. Minimum players is 2 when the usual lobby has at least two players. PvE hides those three; PvP keeps them editable, and a save writes what they show, so a 2v2 map can be saved as 8 and 4 or as a 1v1 (max 2, team size 1, minimum 2). A count already in `variables.ini` is what the page shows until the map is changed.
+The size in the ID is the usual lobby. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page does not tie player count to that size. The usual settings are Max Players 2 and Team Size 1 for 1v1, 4 and 2 for 2v2, 6 and 3 for 3v3, 8 and 4 for 4v4, and 20 and 10 for 10v10. Choosing a map in the WebUI fills Max players (`NbMaxPlayer`) and Team size (`MaxTeamSize`) from that map, and sets Minimum players (`NbMinPlayer`) to the same count as Max players. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page says the server starts its launch countdown when that many players have joined, and that the minimum should not be higher than the maximum. A 10v10 therefore fills 20, 10, and 20. PvE hides those three; PvP keeps them editable, and a save writes what they show, so a 2v2 map can still be saved as 8 and 4 or as a 1v1 (max 2, team size 1, minimum 2). A count already in `variables.ini` is what the page shows until the map is changed.
 
 #### Workshop mods
 
@@ -378,12 +382,14 @@ Leave the WebUI workshop checklist clear. These are the Map Base Id values from 
 
 Each server is its own container. Add another one from this same template. Do not use Unraid's reinstall action. Reinstall replaces the container you already have.
 
-The container name, Game Port, and Settings Folder are unique. The server name is set in that container's WebUI, and it has to differ from the other servers. The directory before `/settings` is that container's Game Port. The next container adds 1 to that port, in both the Game Port field and that directory.
+The container name, Game Port, WebUI Port, and Settings Folder are unique. The server name is set in that container's WebUI, and it has to differ from the other servers. The directory before `/settings` is that container's Game Port. The next container adds 1 to the Game Port and to the WebUI Port. In Advanced View, change `11400` in the WebUI box to that container's WebUI Port so the Docker button opens its page.
 
 | Field | First server | Second server |
 | --- | --- | --- |
 | Name | `WARHOST` | `WARHOST2` |
 | Game Port | `10400` | `10401` |
+| WebUI Port | `11400` | `11401` |
+| Advanced View WebUI | `http://[IP]:[PORT:11400]/` | `http://[IP]:[PORT:11401]/` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
 | Server name in the WebUI | `WARHOST - default server name` until you change it | a different name |
 
@@ -407,9 +413,11 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 ## WebUI
 
-The page listens on the game port plus 1000. Game port `10400` is `http://<unraid>:11400/`. The next server, on `10401`, is `http://<unraid>:11401/`. Do not forward the page port. On host networking the Docker WebUI button opens 11400, so it matches the first server only. When the page is up, the log says `WebUI listening on port 11400.`
+The page listens on WebUI Port. The first server is `http://<unraid>:11400/`. The next server, with WebUI Port `11401`, is `http://<unraid>:11401/`. Do not forward that port. A container from before this field still listens on the game port plus 1000. The heading and the browser tab name the game port and the WebUI port, so an open page says which server it is. When the page is up, the log says `WebUI listening on port 11400.`
 
-`false` leaves nothing listening. The log says `WebUI is off. Nothing is listening on port 11400.` If that port is already taken, it says `WebUI is off. Port 11400 is already in use.` With WebUI left on, a taken page port logs `warning: WebUI port 11400 is already in use. The game server will still start.` The Docker button still opens that port.
+The Docker button reads the Advanced View WebUI box, `http://[IP]:[PORT:11400]/`. On host networking that number stays 11400 until you change it there and Apply. Set it to the same number as WebUI Port.
+
+`false` leaves nothing listening. The log says `WebUI is off. Nothing is listening on port 11400.` If that port is already taken, it says `WebUI is off. Port 11400 is already in use.` With WebUI left on, a taken page port logs `warning: WebUI port 11400 is already in use. The game server will still start.` The Docker button still opens the port in the Advanced View box.
 
 - **Map and mods.** Steam Workshop Maps lists the named map packs. Full conversions, such as Galactic Divide and A World in Flames, are a second checklist. Checking a pack shows its maps. An id already in `variables.ini` that is not in either list stays as a checkbox labeled with that id. Search matches the map name and scenario ID. For a map in the list, the combat-rules menu offers only that scenario's rule.
 - **PvP and PvE.** PvP keeps Max players, Team size, and Minimum players, and does not write `params_for_ai.json`. PvE hides those three. Humans play as one side and the AI count fills the other. A PvE save writes `CoopVsAI` (`1` or `2`), sets minimum players to the human count, max players to the two counts added together, and team size to the larger count. It also writes at least one AI deck: a name, a deck code, and a difficulty from 1 to 6. Switching back to PvP sets `CoopVsAI` to `0` and leaves the deck file.

@@ -36,7 +36,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-11 WebUI credits the workshop author on the checklist: checklist labels add `by` and the Workshop creator from the catalog.
 - 2026-10-11 A catalog map keeps its combat rule: only the scenario's own combat rule is offered and saved.
 - 2026-10-11 Save and restart re-execs the wrapper: `SIGUSR1` makes the PID-1 wrapper re-exec itself; no Docker socket.
-- 2026-10-11 Player limits stay editable: choosing a map fills the player counts; they stay editable within Eugen's limits.
+- 2026-10-11 Player limits stay editable: choosing a map fills the player counts; they stay editable within Eugen's limits. The minimum of 2 was replaced on 2026-10-31.
 - 2026-10-11 Map packs and other workshop mods are separate checklists: map packs on the left, full conversions and other mods on the right, one `ModList`.
 - 2026-10-12 Map pictures stay out of the published image: previews come from a local install into gitignored `webui/previews/`.
 - 2026-10-12 Release notes say what a host would notice: written summaries in `scripts/release_notes.py` for `v0.90` through `v1.13`. A tag with no summary does not publish.
@@ -47,6 +47,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-13 Claude handoff effort is set per task: `effort` is `low` through `max`; routine calls use `medium`, and `/slop-review` uses `high`.
 - 2026-10-13 The image workflow does not set package visibility: set `warhost` to Public in the package settings; the rebuild only publishes the image.
 - 2026-10-13 Save and restart leaves the lobby readable: a Workshop version pin sets `variables.ini` back to mode `644`, and `TIME_WAIT` does not count as the page port being in use.
+- 2026-10-14 The publish writes the next release summary before merging: `v1.14` notes the lobby staying readable; `/publish` refuses to merge when that summary is missing.
+- 2026-10-31 Choosing a map fills a full minimum: minimum players matches the map's player count; the three counts stay editable.
+- 2026-10-31 Each server has a WebUI Port: the page listens on `WEB_PORT`, the Docker button is the Advanced View WebUI box, and the open page names both ports.
 
 ## 2026-10-09 — Wrap Eugen's image
 
@@ -242,7 +245,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-11 — Player limits stay editable
 
-**Decision:** The WebUI shows Max players (`NbMaxPlayer`), Team size (`MaxTeamSize`), and Minimum players (`NbMinPlayer`). Choosing a map fills them from that scenario: `players`, `team`, and a minimum of 2 when `players` is at least 2, otherwise the scenario's player count. The controls are not locked. A save writes the posted values when they are present, from 1 to 20 for max players and from 1 to that max for team size and minimum players. Omitting them on a catalog map still writes the scenario preset, which is what older saves did. The seed in `entrypoint-unraid.sh` stays `NbMaxPlayer` 4, `NbMinPlayer` 2, `MaxTeamSize` 2. Those fields stay off the Docker form. This replaces the earlier rule that a save set the usual player counts from the map alone.
+**Decision:** The WebUI shows Max players (`NbMaxPlayer`), Team size (`MaxTeamSize`), and Minimum players (`NbMinPlayer`). Choosing a map fills them from that scenario: `players`, `team`, and a minimum of 2 when `players` is at least 2, otherwise the scenario's player count. The controls are not locked. A save writes the posted values when they are present, from 1 to 20 for max players and from 1 to that max for team size and minimum players. Omitting them on a catalog map still writes the scenario preset, which is what older saves did. The seed in `entrypoint-unraid.sh` stays `NbMaxPlayer` 4, `NbMinPlayer` 2, `MaxTeamSize` 2. Those fields stay off the Docker form. This replaces the earlier rule that a save set the usual player counts from the map alone. The 2026-10-31 entry replaces that minimum of 2 with the scenario's player count.
 
 **Rationale:** Hosts run a larger lobby on a smaller map, such as 8 and 4 on a 2v2 scenario, and a smaller lobby, such as max 2, team size 1, and minimum 2 for a 1v1 on that same map. Eugen's `variables.ini` page, already cited in `docs/ARCHITECTURE.md`, does not tie `NbMaxPlayer` or `MaxTeamSize` to the size token in the scenario ID. `NbMinPlayer` is the minimum key already written by the seed. Whether an 8-player lobby opens on a 2v2 scenario is still untested on a running server.
 
@@ -305,3 +308,21 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** When WebUI is on, a start that writes `variables.ini` or `params_for_ai.json` sets those regular files to mode `644` after the mode `600` write, including the Save and restart that keeps the existing page. `login.ini` stays mode `600`. The page-port probe sets `SO_REUSEADDR`, so a `TIME_WAIT` socket is not already in use. A listening socket still is.
 
 **Rationale:** On 2026-10-13 the operator log showed `PermissionError` on `/server/settings/variables.ini` after Save and restart pinned a Workshop id. The page HTML still returned 200, and every field stayed blank because `/api/lobby` sent no response. The kept page process had already dropped to `warhost-web` and did not run the startup chmod again. A following container restart found the page port in `TIME_WAIT` and skipped starting the page; the dedicated server still started. The next restart, after that minute, started the page and the fields returned.
+
+## 2026-10-14 — The publish writes the next release summary before merging
+
+**Decision:** The version a push to `main` will tag already has a summary in `scripts/release_notes.py`. `/publish` runs `python3 scripts/next_version.py` and `python3 scripts/release_notes.py --tag v<that>` and does not merge while that command exits 1. The summary is committed with the `:latest` template change. `v1.14` says Save and restart still shows the lobby after a Workshop version pin, and that a page port left in `TIME_WAIT` does not keep the page from starting. The Docker log and the Unraid form descriptions in that same publish are shorter.
+
+**Rationale:** On 2026-10-14 [Actions run 38515026308](https://github.com/suchamoneypit/WARHOST/actions/runs/38515026308) failed in "Tag and publish GitHub Release" on `56166ae`. Decide version had chosen `v1.14`. The summaries stopped at `v1.13`, so `scripts/release_notes.py` exited 1 before `git tag`. `sh scripts/check_repo.sh` only self-tests summaries that already exist, and `.claude/skills/publish/SKILL.md` never asked for the next one. The ubuntu-latest notice on that run is not the failure. The same gap will fail the next push to `main` until the summary is in the commit being tagged.
+
+## 2026-10-31 — Choosing a map fills a full minimum
+
+**Decision:** Choosing a map sets Max players to the scenario `players`, Team size to `team`, and Minimum players to that same `players` count. A 10v10 fills 20, 10, and 20. The three fields stay editable, and a save writes the posted numbers, including a lower minimum. Omitting minimum players on a catalog map writes that player count. The Hesse seed stays `NbMinPlayer` 2 until a map is chosen.
+
+**Rationale:** The earlier fill left minimum players at 2 for every map with at least two slots, so a 10v10 kept 2. Eugen's [variables.ini](https://hub.docker.com/r/eugensystems/warno) page, read 2026-10-31, says `NbMinPlayer` is how many players are needed to start a game and that the server starts its launch countdown when that number is reached. It also says the minimum should not be higher than `NbMaxPlayer`. Hosts can still type a smaller minimum.
+
+## 2026-10-31 — Each server has a WebUI Port
+
+**Decision:** The template field WebUI Port (`WEB_PORT`) sits directly under Game Port, default `11400`. The page listens on that port. When `WEB_PORT` is unset, it listens on the Game Port plus 1000, which is a container saved before this field. A port that is not a whole number from 1 to 65535, or that equals the Game Port, skips the page and the game still starts. `11400` with any other Game Port warns and still tries `11400`. `<WebUI>` stays `http://[IP]:[PORT:11400]/`. On host networking that button stays on 11400 until Advanced View → WebUI uses this container's WebUI Port. The heading stays `WARHOST WebUI`. A line under it reads `Game port 10400. WebUI port 11400.` The browser tab reads `WARHOST WebUI, game port 10400, WebUI port 11400.` The 2026-10-11 entry "The form field is WebUI" recorded the heading alone. The 2026-10-09 entry "Several servers on one host" still names the next Game Port.
+
+**Rationale:** The page port already followed the Game Port. The Docker button did not. `getControlURL` in [DockerClient.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php), read 2026-10-31, rewrites `[PORT:n]` only for a NAT mapping, and host mode never builds one. `xmlToCommand` in [Helpers.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/Helpers.php), read the same day, copies `<WebUI>` into `net.unraid.docker.webui` and does not publish a port on host networking. The Advanced View box `contWebUI` in [CreateDocker.php](https://github.com/unraid/webgui/blob/master/emhttp/plugins/dynamix.docker.manager/include/CreateDocker.php) is the button. A form variable cannot move it. Two open pages both titled WARHOST WebUI look the same, and a new server name is still `WARHOST - default server name` until someone edits it, so the ports are the label.

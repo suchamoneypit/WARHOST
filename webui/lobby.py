@@ -400,7 +400,7 @@ def _base_save(payload, existing, catalog):
         use_file = False
         base_players = int(scenario["players"])
         base_team = int(scenario["team"])
-        base_min = 2 if base_players >= 2 else base_players
+        base_min = base_players
         pack = _pack_id(group)
         if pack and pack not in set(posted_ids):
             raise LobbyError("That map needs its workshop mod in Workshop Mod List.")

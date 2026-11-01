@@ -13,7 +13,7 @@
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Change the name, map, and mods in the WebUI.
 
-Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The WebUI listens on the game port plus 1000 (11400 when the game port is 10400). Do not forward that port.]]>
+Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The lobby page uses WebUI Port, 11400 when Game Port is 10400. Each added container needs the next WebUI Port. Do not forward it. The Docker button follows the Advanced View WebUI box and stays on 11400 until that box is changed.]]>
   </Overview>
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
@@ -30,14 +30,15 @@ Request a login and key from eugsupport@eugensystems.com. One pair runs five ser
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Change the name, map, and mods in the WebUI.
 
-Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The WebUI listens on the game port plus 1000 (11400 when the game port is 10400). Do not forward that port.]]>
+Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The lobby page uses WebUI Port, 11400 when Game Port is 10400. Each added container needs the next WebUI Port. Do not forward it. The Docker button follows the Advanced View WebUI box and stays on 11400 until that box is changed.]]>
   </Description>
 
   <Config Name="Settings Folder" Target="/server/settings" Default="/mnt/user/appdata/warno/10400/settings" Mode="rw" Description="Ini files for this container only. The next container uses this path with its own game port, for example /mnt/user/appdata/warno/10401/settings." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/warno/10400/settings</Config>
   <Config Name="Eugen Login" Target="EUGEN_LOGIN" Default="" Mode="" Description="Login from Eugen's reply, exactly as written. Not your Steam name; this login and the key are a matching pair good for five containers." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Eugen Dedicated Key" Target="EUGEN_DEDICATED_KEY" Default="" Mode="" Description="Key from the same reply. Paste the whole key. The log shows only the last 4 characters." Type="Variable" Display="always" Required="true" Mask="false"></Config>
   <Config Name="Public WAN IP" Target="EXPOSEDIP" Default="" Mode="" Description="Public address players connect to. Not a hostname, and not this Unraid server's LAN address." Type="Variable" Display="always" Required="true" Mask="false"></Config>
-  <Config Name="WebUI" Target="WEB_UI" Default="true" Mode="" Description="true serves the lobby page at the game port plus 1000, so 10400 uses 11400. Do not forward that port. Set the server name, map, and mods there. false leaves the WebUI button with nothing listening." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
-  <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="This port must be free on the Unraid host. Forward it as TCP and UDP. The next container uses this number plus 1. Players join by the server name in the WebUI." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
+  <Config Name="WebUI" Target="WEB_UI" Default="true" Mode="" Description="true serves the lobby page on WebUI Port. Set the server name, map, and mods there. false leaves the Docker button with nothing listening." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  <Config Name="Game Port" Target="EXPOSEDPORT" Default="10400" Mode="" Description="This port must be free on the Unraid host. Forward it as TCP and UDP. The next container uses this number plus 1. Set WebUI Port to this number plus 1000. Players join by the server name in the WebUI." Type="Variable" Display="always" Required="true" Mask="false">10400</Config>
+  <Config Name="WebUI Port" Target="WEB_PORT" Default="11400" Mode="" Description="Lobby page for this container. First server: 11400. The next uses this number plus 1. Do not forward it. The Docker button ignores this field. In Advanced View, change 11400 in the WebUI box to this number." Type="Variable" Display="always" Required="true" Mask="false">11400</Config>
   <Config Name="Write Config From Form" Target="WRITE_CONFIG" Default="true" Mode="" Description="true rewrites login.ini each start, fills in missing lobby files, and refreshes a bare Workshop id to id/Version. false leaves the file contents in place and sets login.ini to mode 600." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
 </Container>

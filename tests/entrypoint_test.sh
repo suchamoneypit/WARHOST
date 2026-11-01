@@ -248,7 +248,7 @@ grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not n
 if grep -qE '^(ModList|ModTagList) =' "${settings}/variables.ini"; then
   fail "default run wrote a workshop mod line"
 fi
-grep -qx 'Next container on this host: Game Port 10401, settings folder /mnt/user/appdata/warno/10401/settings, and a different server name in the WebUI.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
+grep -Fqx 'Next container on this host: Game Port 10401, WebUI Port 11401, settings folder /mnt/user/appdata/warno/10401/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:11401]/ so the Docker button opens that page.' "${WORKDIR}/stdout.txt" || fail "default log did not name the next port"
 if grep -qE 'warning: (Map|Workshop Mod List)' "${WORKDIR}/stdout.txt"; then
   fail "default log warned about the map or the mod list"
 fi
@@ -905,7 +905,7 @@ expect_ok "keeps hand-edited files when write config is false" \
   EXPOSEDPORT=10401
 grep -qx 'preserved-login' "${server}/settings/login.ini" || fail "hand-edited login.ini was replaced"
 grep -qx 'Left existing WARNO settings in place.' "${WORKDIR}/stdout.txt" || fail "write-config false did not say it left files alone"
-grep -qx 'Next container on this host: Game Port 10402, settings folder /mnt/user/appdata/warno/10402/settings, and a different server name in the WebUI.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
+grep -Fqx 'Next container on this host: Game Port 10402, WebUI Port 11402, settings folder /mnt/user/appdata/warno/10402/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:11402]/ so the Docker button opens that page.' "${WORKDIR}/stdout.txt" || fail "write-config false did not name the next port"
 
 make_server
 expect_fail "refuses write-config false when settings files are missing" \
@@ -1338,6 +1338,91 @@ expect_ok "lobby page off names a taken page port" \
   EXPOSEDPORT=21400 \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'WebUI is off. Port 22400 is already in use.' "${WORKDIR}/stdout.txt" || fail "lobby page off did not name the taken page port"
+
+make_server
+expect_ok "WebUI Port names the page when it is set" \
+  WEB_UI=true \
+  WEB_PORT=24111 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=22111 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'WebUI listening on port 24111.' "${WORKDIR}/stdout.txt" || fail "WebUI Port did not choose the listening port"
+if grep -q 'WebUI listening on port 23111.' "${WORKDIR}/stdout.txt"; then
+  fail "WebUI Port fell back to the game port plus 1000"
+fi
+grep -Fqx 'Next container on this host: Game Port 22112, WebUI Port 24112, settings folder /mnt/user/appdata/warno/22112/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:24112]/ so the Docker button opens that page.' "${WORKDIR}/stdout.txt" || fail "WebUI Port did not name the next page port"
+stop_webui
+
+make_server
+expect_ok "WebUI Port equal to the game port does not start the page" \
+  WEB_UI=true \
+  WEB_PORT=22112 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=22112 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "same WebUI Port did not reach the upstream entrypoint"
+grep -qx 'warning: WebUI did not start. WebUI Port is the same as Game Port.' "${WORKDIR}/stdout.txt" || fail "same WebUI Port did not warn"
+if grep -q 'WebUI listening' "${WORKDIR}/stdout.txt"; then
+  fail "same WebUI Port still said it was listening"
+fi
+
+make_server
+expect_ok "a non-numeric WebUI Port does not start the page" \
+  WEB_UI=true \
+  WEB_PORT=nope \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=22113 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "bad WebUI Port did not reach the upstream entrypoint"
+grep -qx 'warning: WebUI did not start. WebUI Port is not a whole number.' "${WORKDIR}/stdout.txt" || fail "bad WebUI Port did not warn"
+if grep -q 'WebUI listening' "${WORKDIR}/stdout.txt"; then
+  fail "bad WebUI Port still said it was listening"
+fi
+
+make_server
+expect_ok "WebUI off names the WebUI Port" \
+  WEB_UI=false \
+  WEB_PORT=23113 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=22114 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'WebUI is off. Nothing is listening on port 23113.' "${WORKDIR}/stdout.txt" || fail "WebUI off did not name WebUI Port"
+
+make_server
+web_default="${WORKDIR}/web-default-11400"
+mkdir -p "$web_default"
+printf '%s\n' \
+  '  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode' \
+  '   0: 00000000:2C88 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1 1 0000000000000000 100 0 0 10 0' \
+  > "${web_default}/tcp"
+expect_ok "default WebUI Port on a later game port warns and skips the taken page" \
+  WEB_UI=true \
+  WEB_PORT=11400 \
+  WARHOST_PORT_TABLE="$web_default" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10401 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "default WebUI Port did not reach the upstream entrypoint"
+grep -Fqx 'warning: WebUI Port is still 11400 while Game Port is 10401. Set WebUI Port to 11401. In Advanced View, set WebUI to http://[IP]:[PORT:11401]/ so the Docker button opens this page.' "${WORKDIR}/stdout.txt" || fail "default WebUI Port did not warn"
+grep -q 'WebUI port 11400 is already in use' "${WORKDIR}/stdout.txt" "${WORKDIR}/stderr.txt" || fail "default WebUI Port did not name the taken page"
+if grep -q 'WebUI listening' "${WORKDIR}/stdout.txt"; then
+  fail "default WebUI Port still said it was listening"
+fi
 
 make_server
 expect_ok "lobby page seeds variables.ini and starts beside the server" \

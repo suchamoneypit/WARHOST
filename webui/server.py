@@ -97,6 +97,7 @@ def public_state(existing):
         "team": num("MaxTeamSize", "2"),
         "minPlayers": num("NbMinPlayer", "2"),
         "gamePort": os.environ.get("EXPOSEDPORT", ""),
+        "webPort": os.environ.get("WARHOST_WEB_PORT", ""),
         "modList": values.get("ModList", ""),
         "modTags": values.get("ModTagList", ""),
     }

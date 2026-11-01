@@ -330,6 +330,11 @@ grep -qx 'dedicated_key="host-key-value"' "${settings}/login.ini" || fail "save 
 
 curl -fsS "${base}/" > "${WORKDIR}/page.html" || fail "lobby page did not load"
 curl -fsS "${base}/api/lobby" > "${WORKDIR}/state.json" || fail "lobby state did not load"
+grep -q '"gamePort": "38521"' "${WORKDIR}/state.json" || fail "lobby state omitted the game port"
+grep -q '"webPort": "39521"' "${WORKDIR}/state.json" || fail "lobby state omitted the WebUI port"
+grep -q 'id="ports"' "${WORKDIR}/page.html" || fail "page is missing the port line"
+grep -q 'function showPorts' "${WORKDIR}/page.html" || fail "page does not label its ports"
+grep -q 'WARHOST WebUI, ' "${WORKDIR}/page.html" || fail "page does not put the ports in the tab title"
 if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WORKDIR}/page.log" >/dev/null; then
   fail "lobby page exposed the dedicated key"
 fi
@@ -431,6 +436,9 @@ capture_code "${WORKDIR}/body.txt" \
 [ "$code" = "200" ] || fail "destruction save returned ${code}"
 grep -qx 'CombatRule = 1' "${settings}/variables.ini" || fail "destruction save did not write the combat rule"
 grep -qx 'Map = _2x3_Death_Row_2vs2_DEST' "${settings}/variables.ini" || fail "destruction save did not write the map"
+grep -qx 'NbMaxPlayer = 4' "${settings}/variables.ini" || fail "destruction save did not fill max players"
+grep -qx 'MaxTeamSize = 2' "${settings}/variables.ini" || fail "destruction save did not fill team size"
+grep -qx 'NbMinPlayer = 4' "${settings}/variables.ini" || fail "destruction save did not fill minimum players from the map"
 
 capture_code "${WORKDIR}/body.txt" \
   -H 'X-WARHOST-Request: 1' \
@@ -569,6 +577,16 @@ grep -qx 'CoopVsAI = 0' "${settings}/variables.ini" || fail "PvP did not turn Pv
 grep -qx 'DeltaMaxTeamSize = 0' "${settings}/variables.ini" || fail "PvP did not restore equal teams"
 grep -qx 'NbMaxPlayer = 6' "${settings}/variables.ini" || fail "PvP changed the saved player count"
 [ "$(cksum "${settings}/params_for_ai.json")" = "$deck_sum" ] || fail "PvP save replaced the deck file"
+
+capture_code "${WORKDIR}/body.txt" \
+  -H 'X-WARHOST-Request: 1' \
+  -H 'Content-Type: application/json' \
+  --data '{"action":"save","serverName":"Saved Lobby","map":"_3x3_Airport_10vs10_CONQ","gameType":0,"combatRule":2,"initMoney":1500,"timeLimit":2400,"scoreLimit":2000,"incomeRate":3,"upkeep":0,"mods":[]}' \
+  "${base}/api/lobby"
+[ "$code" = "200" ] || fail "10v10 save returned ${code}"
+grep -qx 'NbMaxPlayer = 20' "${settings}/variables.ini" || fail "10v10 save did not write 20 slots"
+grep -qx 'MaxTeamSize = 10' "${settings}/variables.ini" || fail "10v10 save did not write team size 10"
+grep -qx 'NbMinPlayer = 20' "${settings}/variables.ini" || fail "10v10 save left the old minimum"
 
 printf 'ok lobby page saves and rejects\n'
 

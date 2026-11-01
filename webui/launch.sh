@@ -27,10 +27,31 @@ case "$EXPOSEDPORT" in
     ;;
 esac
 
-web_port=$((EXPOSEDPORT + 1000))
-if [ "$web_port" -gt 65535 ]; then
-  warn "warning: WebUI did not start. Game port plus 1000 is not a port."
-  exit 1
+# Keep these checks identical to web_port_problem in entrypoint-unraid.sh.
+# A bad port must not bind, and must not stop the game server.
+web_port=
+if [ -z "${WEB_PORT:-}" ]; then
+  web_port=$((EXPOSEDPORT + 1000))
+  if [ "$web_port" -gt 65535 ]; then
+    warn "warning: WebUI did not start. Game port plus 1000 is not a port."
+    exit 0
+  fi
+else
+  case "$WEB_PORT" in
+    *[!0-9]*)
+      warn "warning: WebUI did not start. WebUI Port is not a whole number."
+      exit 0
+      ;;
+  esac
+  if [ "$WEB_PORT" -lt 1 ] || [ "$WEB_PORT" -gt 65535 ]; then
+    warn "warning: WebUI did not start. WebUI Port must be from 1 to 65535."
+    exit 0
+  fi
+  if [ "$WEB_PORT" -eq "$EXPOSEDPORT" ]; then
+    warn "warning: WebUI did not start. WebUI Port is the same as Game Port."
+    exit 0
+  fi
+  web_port=$WEB_PORT
 fi
 
 here=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
