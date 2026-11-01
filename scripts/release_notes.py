@@ -87,6 +87,11 @@ WRITTEN = {
         "- The Docker log and the Unraid form descriptions are shorter.\n"
         "- Support opens the Unraid forum thread."
     ),
+    "v1.15": (
+        "- Choosing a map sets minimum players to that map's player count. A 10v10 fills 20, so the countdown does not start at 2. Those counts stay editable.\n"
+        "- WebUI Port is on the Docker form under Game Port. The first server stays 11400. Each added container needs the next WebUI Port.\n"
+        "- The Docker button stays on 11400 until Advanced View WebUI is changed to that port. The open page names the game port and the WebUI port."
+    ),
 }
 
 REQUIRED = {
@@ -105,6 +110,7 @@ REQUIRED = {
     "v1.12": "PvE",
     "v1.13": "No change to the server, the Unraid form, or the WebUI.",
     "v1.14": "forum thread",
+    "v1.15": "WebUI Port",
 }
 
 
