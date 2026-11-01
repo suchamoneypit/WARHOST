@@ -371,6 +371,10 @@ echo "version numbering ok"
 
 python3 scripts/list_workshop_mods.py --self-test
 python3 scripts/release_notes.py --self-test
+if ! grep -q 'scripts/release_notes.py --tag' .claude/skills/publish/SKILL.md; then
+  echo "publish skill does not require the next release summary before main" >&2
+  exit 1
+fi
 python3 scripts/extract_map_previews.py --self-test
 
 sh tests/entrypoint_test.sh

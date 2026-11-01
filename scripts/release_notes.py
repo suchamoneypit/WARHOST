@@ -202,6 +202,9 @@ def self_test():
     if previous_version_tag("v1.13", tags) != "v1.12":
         print("self-test previous tag for v1.13", file=sys.stderr)
         return 1
+    if previous_version_tag("v1.14", tags) != "v1.13":
+        print("self-test previous tag for v1.14", file=sys.stderr)
+        return 1
     if previous_version_tag("v0.90", tags) is not None:
         print("self-test v0.90 should be the first tag", file=sys.stderr)
         return 1
