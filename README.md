@@ -409,6 +409,12 @@ The wrapper writes those files in a private `.warhost-stage.*` folder first, the
 
 The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same size (`DeltaMaxTeamSize = 0`) until a PvE setup save says otherwise. The first `params_for_ai.json` has no decks. RCON is not configured.
 
+## Logs
+
+The Docker log shows the wrapper's startup lines, then a short status line when the lobby or the match changes, and that same line again every 5 minutes. `status: lobby, 1 players and AI, minimum 2, maximum 4` is a lobby. When the count reaches the minimum, the line adds `minimum 2 reached, warmup 60s`. That warmup number is the one saved in `variables.ini`. `status: match in progress, GameState 3, 4 players and AI, maximum 4` is a match. `GameState` `0` is the lobby. Any other number is printed as written. The count is players and computer players together, so a PvE lobby can look full before a human joins. `warning: dedicated server status is stale` means the server has not updated its status for about 30 seconds.
+
+The same lines are appended to `.warhost-status.log` in the settings folder. That file stays when the container is recreated. It rotates at 1 MB and keeps one previous file. The dedicated server also rewrites `.warhost-status` in that folder with the raw snapshot. A quiet server adds a line every 5 minutes, on the order of 1 KB an hour.
+
 Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start still rewrites `login.ini`, leaves an existing `variables.ini` and an existing `params_for_ai.json` in place, and refreshes bare Workshop ids in `variables.ini`. While it is `false`, the three files stay as edited, `login.ini` is set to mode `600`, and no Workshop id is looked up on Steam. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
 
 ## WebUI
@@ -431,7 +437,7 @@ The dedicated key belongs in the Unraid form, which stores it for that container
 
 ## Updates
 
-Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their server launch arguments. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image. It stays the container's main process. Save and restart runs that start again so the saved lobby and Workshop versions load.
+Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their listen, IP, or matchmaking arguments. The wrapper appends `-statusfile` so the log can report the lobby. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image. It stays the container's main process. Save and restart runs that start again so the saved lobby and Workshop versions load.
 
 `.github/workflows/rebuild-image.yml` checks Eugen's image once a day. The workflow also runs when the Dockerfile, `entrypoint-unraid.sh`, `webui/`, or `.github/workflows/rebuild-image.yml` changes, and a push of those paths publishes `:latest` from `main` or `:dev` from `dev`. In Unraid, update each server container. A failed build leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
 

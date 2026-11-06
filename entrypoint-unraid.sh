@@ -1,6 +1,7 @@
 #!/bin/sh
 # Write login.ini from the Unraid form, seed or refresh variables.ini, then start Eugen's entrypoint.
-# entrypoint2.sh owns the server arguments. This script does not copy them.
+# entrypoint2.sh owns the listen, IP, and matchmaking arguments. This script does not copy them.
+# It appends -statusfile so the dedicated server writes .warhost-status.
 set -eu
 
 UPSTREAM_ENTRYPOINT="${UPSTREAM_ENTRYPOINT:-/server/entrypoint2.sh}"
@@ -996,6 +997,246 @@ clear_supervisor_pid() {
   fi
 }
 
+# Positive whole number, or the default. A bad test seam must not stop the server.
+status_interval() {
+  raw=$1
+  fallback=$2
+  if is_number "$raw" && [ "$raw" -ge 1 ]; then
+    printf '%s\n' "$raw"
+    return 0
+  fi
+  printf '%s\n' "$fallback"
+}
+
+# Use a caller's -statusfile when one was passed. Otherwise watch .warhost-status
+# and pass that path. A symlink at our path is removed. A directory skips the flag.
+configure_status_report() {
+  status_snapshot="${SETTINGS_DIR}/.warhost-status"
+  status_history="${SETTINGS_DIR}/.warhost-status.log"
+  status_extra=
+  status_enabled=1
+  status_caller=0
+  status_caller_path=
+  status_expect_path=0
+  for status_arg in "$@"; do
+    if [ "$status_expect_path" -eq 1 ]; then
+      status_caller_path=$status_arg
+      status_expect_path=0
+      continue
+    fi
+    case "$status_arg" in
+      -statusfile)
+        status_caller=1
+        status_expect_path=1
+        ;;
+      -statusfile=*)
+        status_caller=1
+        status_caller_path=${status_arg#-statusfile=}
+        ;;
+    esac
+  done
+  if [ "$status_caller" -eq 1 ]; then
+    if [ -z "$status_caller_path" ]; then
+      printf '%s\n' "warning: -statusfile needs a path, so lobby status is not reported."
+      status_enabled=0
+      return 0
+    fi
+    case "$status_caller_path" in
+      /*) status_snapshot=$status_caller_path ;;
+      *) status_snapshot="${SETTINGS_DIR}/${status_caller_path}" ;;
+    esac
+    return 0
+  fi
+  if [ -L "$status_snapshot" ]; then
+    if ! rm -f "$status_snapshot" || [ -L "$status_snapshot" ]; then
+      printf '%s\n' "warning: ${status_snapshot} is a symlink and could not be removed, so lobby status is not reported. Remove that path and start the container again."
+      status_enabled=0
+      return 0
+    fi
+  fi
+  if [ -d "$status_snapshot" ]; then
+    printf '%s\n' "warning: ${status_snapshot} is a directory, so lobby status is not reported. Remove that path and start the container again."
+    status_enabled=0
+    return 0
+  fi
+  status_extra="-statusfile=${status_snapshot}"
+}
+
+load_status_limits() {
+  status_max=
+  status_min=
+  status_warmup=
+  lobby_ini="${SETTINGS_DIR}/variables.ini"
+  if [ ! -f "$lobby_ini" ] || [ -L "$lobby_ini" ]; then
+    return 0
+  fi
+  read_ini_key "$lobby_ini" "NbMaxPlayer"
+  if [ "$ini_found" -eq 1 ] && is_number "$ini_value"; then
+    status_max=$ini_value
+  fi
+  read_ini_key "$lobby_ini" "NbMinPlayer"
+  if [ "$ini_found" -eq 1 ] && is_number "$ini_value"; then
+    status_min=$ini_value
+  fi
+  read_ini_key "$lobby_ini" "WarmupCountdown"
+  if [ "$ini_found" -eq 1 ] && is_number "$ini_value"; then
+    status_warmup=$ini_value
+  fi
+}
+
+# Only Timestamp, GameState, and NbPlayersAndIA, each empty or digits.
+# A symlink is not opened.
+parse_status_snapshot() {
+  status_timestamp=
+  status_game=
+  status_players=
+  if [ -z "${status_snapshot:-}" ] || [ -L "$status_snapshot" ] || [ ! -f "$status_snapshot" ]; then
+    return 0
+  fi
+  status_cr=$(printf '\r')
+  while IFS= read -r status_line || [ -n "$status_line" ]; do
+    status_line=${status_line%"$status_cr"}
+    case "$status_line" in
+      *=*) ;;
+      *) continue ;;
+    esac
+    status_key=${status_line%%=*}
+    status_value=${status_line#*=}
+    status_key=${status_key%" "}
+    status_value=${status_value#" "}
+    case "$status_key" in
+      Timestamp|GameState|NbPlayersAndIA) ;;
+      *) continue ;;
+    esac
+    case "$status_value" in
+      ''|*[!0-9]*) continue ;;
+    esac
+    case "$status_key" in
+      Timestamp) status_timestamp=$status_value ;;
+      GameState) status_game=$status_value ;;
+      NbPlayersAndIA) status_players=$status_value ;;
+    esac
+  done < "$status_snapshot" || true
+  return 0
+}
+
+status_summary() {
+  status_stale_now=0
+  status_line=
+  parse_status_snapshot
+  if is_number "${status_timestamp:-}" && is_number "${status_now:-}"; then
+    if [ $((status_now - status_timestamp)) -gt 30 ]; then
+      status_stale_now=1
+    fi
+  fi
+  if [ "$status_stale_now" -eq 1 ]; then
+    status_line='warning: dedicated server status is stale'
+    return 0
+  fi
+  if [ -z "$status_game" ] || [ -z "$status_players" ]; then
+    status_line='status: dedicated server has not reported yet'
+    return 0
+  fi
+  if [ "$status_game" -eq 0 ]; then
+    if [ -n "$status_min" ] && [ "$status_players" -ge "$status_min" ]; then
+      status_line="status: lobby, ${status_players} players and AI, minimum ${status_min} reached"
+      if [ -n "$status_warmup" ]; then
+        status_line="${status_line}, warmup ${status_warmup}s"
+      fi
+    else
+      status_line="status: lobby, ${status_players} players and AI"
+      if [ -n "$status_min" ]; then
+        status_line="${status_line}, minimum ${status_min}"
+      fi
+      if [ -n "$status_max" ]; then
+        status_line="${status_line}, maximum ${status_max}"
+      fi
+    fi
+    return 0
+  fi
+  status_line="status: match in progress, GameState ${status_game}, ${status_players} players and AI"
+  if [ -n "$status_max" ]; then
+    status_line="${status_line}, maximum ${status_max}"
+  fi
+}
+
+append_status_history() {
+  history_line=$1
+  if [ -L "$status_history" ]; then
+    return 0
+  fi
+  if [ -d "$status_history" ]; then
+    if [ "$status_history_warned" -eq 0 ]; then
+      printf '%s\n' "warning: ${status_history} is a directory, so status history was not saved."
+      status_history_warned=1
+    fi
+    return 0
+  fi
+  if [ -f "$status_history" ]; then
+    history_size=$(stat -c '%s' "$status_history" 2>/dev/null || printf '0')
+    case "$history_size" in
+      ''|*[!0-9]*) history_size=0 ;;
+    esac
+    if [ "$history_size" -ge 1048576 ]; then
+      history_old="${status_history}.1"
+      if [ -L "$history_old" ]; then
+        rm -f "$history_old" || return 0
+      fi
+      if [ -d "$history_old" ]; then
+        if [ "$status_history_warned" -eq 0 ]; then
+          printf '%s\n' "warning: ${history_old} is a directory, so status history was not rotated."
+          status_history_warned=1
+        fi
+        return 0
+      fi
+      mv "$status_history" "$history_old" || return 0
+    fi
+  fi
+  printf '%s\n' "$history_line" >> "$status_history" || true
+}
+
+write_status_line() {
+  printf '%s\n' "$1"
+  append_status_history "$1"
+  status_last=$1
+  status_since_print=0
+}
+
+emit_status() {
+  status_now=$(date +%s 2>/dev/null || true)
+  status_summary
+  if [ "$status_stale_now" -eq 1 ]; then
+    if [ "$status_stale_latched" -eq 0 ]; then
+      status_stale_latched=1
+      write_status_line "$status_line"
+    fi
+    return 0
+  fi
+  status_stale_latched=0
+  if [ "$status_line" != "$status_last" ] || [ "$status_since_print" -ge "$status_heartbeat_ticks" ]; then
+    write_status_line "$status_line"
+  fi
+}
+
+launch_upstream() {
+  if command -v setsid >/dev/null 2>&1; then
+    upstream_group=1
+    if [ -n "$status_extra" ]; then
+      setsid "$UPSTREAM_ENTRYPOINT" "$@" "$status_extra" &
+    else
+      setsid "$UPSTREAM_ENTRYPOINT" "$@" &
+    fi
+  else
+    upstream_group=0
+    if [ -n "$status_extra" ]; then
+      "$UPSTREAM_ENTRYPOINT" "$@" "$status_extra" &
+    else
+      "$UPSTREAM_ENTRYPOINT" "$@" &
+    fi
+  fi
+  upstream_pid=$!
+}
+
 upstream_pid=
 upstream_group=0
 stop_requested=0
@@ -1036,14 +1277,19 @@ supervise_upstream() {
     printf '%s\n' "Restarting the dedicated server to load variables.ini."
     WARHOST_WEBUI_KEEP=1 exec "$ENTRY_SELF" "$@"
   fi
-  if command -v setsid >/dev/null 2>&1; then
-    setsid "$UPSTREAM_ENTRYPOINT" "$@" &
-    upstream_group=1
-  else
-    "$UPSTREAM_ENTRYPOINT" "$@" &
-    upstream_group=0
-  fi
-  upstream_pid=$!
+  configure_status_report "$@"
+  load_status_limits
+  status_poll_seconds=$(status_interval "${WARHOST_STATUS_POLL:-}" 15)
+  status_heartbeat_seconds=$(status_interval "${WARHOST_STATUS_HEARTBEAT:-}" 300)
+  # The loop sleeps 0.05s, so 20 passes are about one second.
+  status_poll_ticks=$((status_poll_seconds * 20))
+  status_heartbeat_ticks=$((status_heartbeat_seconds * 20))
+  status_wait=0
+  status_since_print=0
+  status_last=
+  status_stale_latched=0
+  status_history_warned=0
+  launch_upstream "$@"
   kill_tries=0
   while :; do
     state=$(process_state "$upstream_pid" || true)
@@ -1064,6 +1310,15 @@ supervise_upstream() {
       else
         kill_upstream
       fi
+    fi
+    if [ "$status_enabled" -eq 1 ] && [ "$stop_requested" -eq 0 ] && [ "$restart_requested" -eq 0 ]; then
+      if [ "$status_wait" -le 0 ]; then
+        emit_status
+        status_wait=$status_poll_ticks
+      else
+        status_wait=$((status_wait - 1))
+      fi
+      status_since_print=$((status_since_print + 1))
     fi
     sleep 0.05 || true
   done
