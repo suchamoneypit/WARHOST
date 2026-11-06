@@ -45,7 +45,13 @@ jobs:
         run: |
           set -eu
           notes="${RUNNER_TEMP:-/tmp}/warhost-release-notes.txt"
-          python3 scripts/release_notes.py --tag "${TAG}" --to "${GITHUB_SHA}" >"${notes}"
+          err="${RUNNER_TEMP:-/tmp}/warhost-release-notes.err"
+          if ! python3 scripts/release_notes.py --tag "${TAG}" --to "${GITHUB_SHA}" >"${notes}" 2>"${err}"; then
+            detail=$(cat "${err}")
+            echo "::error title=Missing release summary::${detail}"
+            echo "${detail}" >&2
+            exit 1
+          fi
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             existing="$(git rev-parse "${TAG}^{}")"
             if [ "$existing" != "$GITHUB_SHA" ]; then

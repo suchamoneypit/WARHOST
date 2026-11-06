@@ -21,7 +21,7 @@ Unraid form (templates/warhost.xml)
 | --- | --- |
 | `templates/warhost.xml` | Unraid template: eight form fields, host networking, `<Repository>` `:latest` on `main` and `:dev` on `dev` |
 | `ca_profile.xml`, `icon.png` | Community Apps profile and icon |
-| `Dockerfile` | `FROM eugensystems/warno:latest`, pinned DepotDownloader, copies the wrapper and `webui/` |
+| `Dockerfile` | `FROM eugensystems/warno:latest`, installs `python3`, pinned DepotDownloader, copies the wrapper and `webui/` |
 | `entrypoint-unraid.sh` | The wrapper (about 1,000 lines): validation, settings writes, port check, Workshop versions, WebUI hook, restart supervisor |
 | `webui/server.py` | WebUI HTTP server; signals the wrapper for Save and restart |
 | `webui/lobby.py` | Validates a save and replaces `variables.ini` (and `params_for_ai.json` for PvE). Never reads `login.ini` |

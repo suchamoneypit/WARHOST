@@ -8,11 +8,15 @@ LABEL org.opencontainers.image.source="https://github.com/suchamoneypit/WARHOST"
       warno.upstream.digest="${UPSTREAM_DIGEST}"
 
 # DepotDownloader (GPL-2.0, https://github.com/SteamRE/DepotDownloader) fetches only
-# Config.ini for a bare Workshop id at start. wget, sha256sum, and python3 come from
-# Eugen's image. Workshop files are never stored in the image.
+# Config.ini for a bare Workshop id at start. Eugen's image supplies wget and
+# sha256sum. It does not supply python3, which the WebUI and this unpack need.
+# Workshop files are never stored in the image.
 ARG DEPOTDOWNLOADER_VERSION=3.4.0
 ARG DEPOTDOWNLOADER_SHA256=a999dec66b4850fc961bd50366696d23c2d0fad7b18790e6a5647b2f19097a53
-RUN wget -q -O /tmp/depotdownloader.zip "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_${DEPOTDOWNLOADER_VERSION}/DepotDownloader-linux-x64.zip" \
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 \
+ && rm -rf /var/lib/apt/lists/* \
+ && wget -q -O /tmp/depotdownloader.zip "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_${DEPOTDOWNLOADER_VERSION}/DepotDownloader-linux-x64.zip" \
  && printf '%s  %s\n' "$DEPOTDOWNLOADER_SHA256" /tmp/depotdownloader.zip | sha256sum -c - \
  && python3 -m zipfile -e /tmp/depotdownloader.zip /opt/depotdownloader \
  && chmod 755 /opt/depotdownloader/DepotDownloader \
