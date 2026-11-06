@@ -667,7 +667,7 @@ mod_list_ok() {
 
 write_seed_variables() {
   cat > "$1" << 'EOF'
-ServerName = WARHOST - default server name
+ServerName = WARHOST - Default Server Name
 NbMaxPlayer = 4
 NbMinPlayer = 2
 MaxTeamSize = 2
@@ -807,7 +807,7 @@ if [ "$write_config" = "true" ]; then
     die "${ai_file} is not a regular file. Move it aside, then start the container again."
   fi
 
-  lobby_name="WARHOST - default server name"
+  lobby_name="WARHOST - Default Server Name"
   lobby_map="_2x2_Hesse_2vs2_CONQ"
   lobby_mods=
   lobby_mods_original=

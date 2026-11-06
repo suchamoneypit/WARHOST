@@ -334,7 +334,14 @@ grep -q '"gamePort": "38521"' "${WORKDIR}/state.json" || fail "lobby state omitt
 grep -q '"webPort": "39521"' "${WORKDIR}/state.json" || fail "lobby state omitted the WebUI port"
 grep -q 'id="ports"' "${WORKDIR}/page.html" || fail "page is missing the port line"
 grep -q 'function showPorts' "${WORKDIR}/page.html" || fail "page does not label its ports"
+grep -q '(must be port forwarded TCP/UDP)' "${WORKDIR}/page.html" || fail "page does not say to forward the game port"
 grep -q 'WARHOST WebUI, ' "${WORKDIR}/page.html" || fail "page does not put the ports in the tab title"
+grep -q 'Player and team settings' "${WORKDIR}/page.html" || fail "page is missing the player settings heading"
+grep -q 'Map and lobby settings' "${WORKDIR}/page.html" || fail "page is missing the map settings heading"
+grep -q 'class="save-note"' "${WORKDIR}/page.html" || fail "save explanation is not with the save buttons"
+grep -q 'applied on the next restart or match' "${WORKDIR}/page.html" || fail "save note does not say when a save applies"
+grep -q 'immediately restarts the server to apply the new settings' "${WORKDIR}/page.html" || fail "save note does not describe Save and restart"
+grep -q 'side-nato' "${WORKDIR}/page.html" || fail "opposition does not mark NATO"
 if grep -F 'host-key-value' "${WORKDIR}/page.html" "${WORKDIR}/state.json" "${WORKDIR}/page.log" >/dev/null; then
   fail "lobby page exposed the dedicated key"
 fi
