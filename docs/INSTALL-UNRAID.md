@@ -39,7 +39,7 @@ The server also needs **outbound** internet. Eugen's start script in the image c
 
 The map is a scenario ID, not a map name. Eugen's page lists base-game IDs such as `_2x2_Hesse_2vs2_CONQ`; those need no mod, so leave the WebUI workshop checklist clear for them. Steam Workshop Maps lists map packs; Full conversions and other mods, on the right, lists Galactic Divide, A World in Flames, and any id already in `variables.ini` that is not in either list. For a Workshop map pack, the IDs are inside the mod's files, and the Workshop page does not publish them.
 
-The first start seeds the base-game map Hesse 2v2, `_2x2_Hesse_2vs2_CONQ`, with no workshop mods and the server name `WARHOST - default server name`. For the Red Dragon map pack, check `3811913066` in the WebUI and choose `RDPort_JungleLaw_2v2_CONQ`. Scenario IDs and workshop mods are in `README.md`. The procedure below finds IDs for a mod that is not listed there.
+The first start seeds the base-game map Hesse 2v2, `_2x2_Hesse_2vs2_CONQ`, with no workshop mods and the server name `WARHOST - Default Server Name`. For the Red Dragon map pack, check `3811913066` in the WebUI and choose `RDPort_JungleLaw_2v2_CONQ`. Scenario IDs and workshop mods are in `README.md`. The procedure below finds IDs for a mod that is not listed there.
 
 To find scenario IDs yourself, on any PC where Steam has downloaded the mod (subscribe in Steam, let it download):
 
@@ -136,7 +136,7 @@ Work through these in order. Each one proves something different.
 On the **Docker** tab the container shows as started. Click its icon → **Logs**. With a new settings folder the preset looks like this:
 
 ```text
-Wrote WARNO settings for WARHOST - default server name on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 XXXX.
+Wrote WARNO settings for WARHOST - Default Server Name on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 XXXX.
 Next container on this host: Game Port 10401, WebUI Port 11401, settings folder /mnt/user/appdata/warno/10401/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:11401]/ so the Docker button opens that page.
 WebUI listening on port 11400.
 ```
@@ -188,7 +188,7 @@ The container name, Game Port, WebUI Port, and Settings Folder are unique. Set a
 | WebUI Port | `11400` | `11401` |
 | Advanced View WebUI | `http://[IP]:[PORT:11400]/` | `http://[IP]:[PORT:11401]/` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
-| Server name in the WebUI | `WARHOST - default server name` until you change it | a different name |
+| Server name in the WebUI | `WARHOST - Default Server Name` until you change it | a different name |
 
 The map and workshop mods also belong to each container, so one server can run the Red Dragon example while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by Server Name. They are not given a port to type.
 
@@ -220,7 +220,7 @@ On start, the log names the next port and its settings folder. If the settings f
 | Hand edits to `variables.ini` disappear after a restart | A bare Workshop id was rewritten as `id/Version`, or a WebUI save replaced the file | Other lines stay. Set Write Config From Form to `false` to skip the version refresh. `false` leaves all three files and sets `login.ini` to mode `600`. |
 | A WebUI save is not loaded yet | Save replaces `variables.ini` and leaves the current match running | Use Save and restart on that page. If it says the page cannot restart the container, restart that container in Unraid. |
 | The browser says the Unraid address refused to connect when the Docker WebUI button is opened | Nothing is listening on WebUI Port. WebUI is `false`, or the container is an image from before the page was published | Set **WebUI** to `true` and Apply. The log must say `WebUI listening on port` followed by WebUI Port. For the first server that is `11400`. If that line is absent and the log also never says `WebUI is off`, update the container. |
-| The Docker WebUI button opens the first server's page | Advanced View WebUI is still `http://[IP]:[PORT:11400]/`. Host networking leaves that number as 11400 | Set **WebUI Port** to the game port plus 1000. Turn on **Advanced View**, change `11400` in the WebUI box to that same number, and Apply. The page heading and the browser tab name the game port and the WebUI port. |
+| The Docker WebUI button opens the first server's page | Advanced View WebUI is still `http://[IP]:[PORT:11400]/`. Host networking leaves that number as 11400 | Set **WebUI Port** to the game port plus 1000. Turn on **Advanced View**, change `11400` in the WebUI box to that same number, and Apply. Under the heading, the page lists the game port and the WebUI port as a pair, and the browser tab names both. |
 | The WebUI opens and every field is blank. `.warhost-webui.log` contains `PermissionError` and `variables.ini` | An image from before this fix left that file root-only after Save and restart pinned a Workshop version. The dedicated server still has the lobby | Update the container. Until that image is running, restart the container in Unraid after the page has been closed for about a minute. |
 | Log ends with `This settings folder is already used by a running container` | Two containers share one settings folder | The log names this Game Port's folder. If that folder is the one in use, it also names the folder for the port plus 1. Use the path that is not already taken. Do not copy WARNO or a Workshop folder into it. |
 | A sixth container on the same login and key fails to come online | Eugen documents a limit of five servers per login and key pair; the exact error has not been observed. This wrapper does not count running servers | Stop one, or request another login and key pair. |

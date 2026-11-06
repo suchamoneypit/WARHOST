@@ -33,12 +33,17 @@
   header, main { box-sizing: border-box; padding: 16px; }
   header { flex: none; background: var(--header); color: var(--text); border-bottom: 3px solid var(--accent-strong); }
   h1 { font-size: 1.25rem; margin: 0 0 8px; }
-  #ports { margin: 0 0 8px; }
-  #ports:empty { display: none; }
+  .ports { display: flex; flex-wrap: wrap; gap: 6px 52px; margin: 0; }
+  .ports:empty { display: none; }
+  .port { display: inline-flex; align-items: baseline; gap: 8px; }
+  .port-label, .port-hint { color: var(--muted); }
+  .port b { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.03em; }
+  .port-hint { font-size: 0.9rem; }
   .note, .hint, #detail-meta, #detail-id { color: var(--muted); }
   .note { margin: 0; max-width: 70rem; }
   main { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-  #status { flex: none; min-height: 1.4em; margin: 8px 0 0; }
+  #status { flex: none; min-height: 0; margin: 0; }
+  #status:not(:empty) { min-height: 1.4em; margin: 0 0 8px; }
   .layout {
     flex: 1 1 auto;
     min-height: 0;
@@ -64,15 +69,33 @@
   h2 { font-size: 1rem; margin: 0 0 8px; }
   #detail-name { margin: 0; line-height: 1.1; }
   #detail-meta, #detail-id { margin: 0; line-height: 1.15; }
-  #modded h2 {
+  .section-band {
+    margin: 32px -12px 0;
+    padding: 0 12px 4px;
+    border-top: 3px solid var(--accent-strong);
+  }
+  .section-band > h2 {
     margin: 0 -12px 8px;
     padding: 8px 12px;
     background: var(--header);
     border-bottom: 1px solid var(--line);
   }
   label { display: block; margin: 10px 0 4px; }
-  .filters { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px; }
+  .filters { display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px; align-items: end; }
   .filters label { margin-top: 0; }
+  .filters input[type="text"],
+  .filters select {
+    height: 2.375rem;
+  }
+  .filters select {
+    appearance: none;
+    background-color: var(--input);
+    background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+    background-position: calc(100% - 16px) calc(50% - 1px), calc(100% - 11px) calc(50% - 1px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 1.8rem;
+  }
   input, select, button { font: inherit; color: var(--text); }
   input[type="text"], input[type="number"], select {
     width: 100%;
@@ -93,12 +116,30 @@
     flex-direction: column;
     flex: 1 1 0;
     min-height: 0;
-    margin: 16px -12px 0;
-    padding: 0 12px;
-    border-top: 3px solid var(--accent-strong);
   }
   #modded .list { flex: 1 1 0; min-height: 8rem; }
   .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .lobby-band { margin-top: -12px; }
+  .lobby-band > h2:first-child { margin-bottom: 16px; }
+  .lobby-band #detail-name {
+    margin: 20px 0 2px;
+    padding: 0;
+    background: none;
+    border: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
   .shot {
     min-height: 8rem;
     border: 1px dashed var(--line);
@@ -126,7 +167,74 @@
   .mods input { width: auto; }
   .mod-author { color: var(--muted); }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-  .confirm { margin-top: 12px; padding: 12px; border: 1px solid var(--accent-strong); background: var(--header); }
+  .save-block { margin-top: 20px; display: grid; gap: 12px; }
+  .save-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 16px; }
+  .save-row .actions { margin-top: 0; }
+  .save-note {
+    flex: 1 1 18rem;
+    margin: 0;
+    padding: 2px 0 2px 10px;
+    border-left: 3px solid var(--accent-strong);
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .confirm { margin: 0; padding: 12px; border: 1px solid var(--accent-strong); background: var(--header); }
+  .faction-select { position: relative; }
+  .faction-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .faction-button {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    background: var(--input);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 6px 1.8rem 6px 8px;
+    cursor: pointer;
+    position: relative;
+  }
+  .faction-button::after {
+    content: "";
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--text);
+    transform: translateY(-30%);
+  }
+  .faction-menu {
+    position: absolute;
+    z-index: 3;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--input);
+    border: 1px solid var(--line);
+    padding: 4px 0;
+  }
+  .faction-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+  .faction-option[aria-selected="true"],
+  .faction-option:hover { background: var(--selected); }
+  .side-nato { color: #5eb3ff; font-weight: 700; }
+  .side-pact { color: #ff4d4d; font-weight: 700; }
   button {
     padding: 8px 12px;
     background: var(--accent);
@@ -149,8 +257,7 @@
 <body>
 <header>
   <h1>WARHOST WebUI</h1>
-  <p id="ports" class="note"></p>
-  <p class="note">Save leaves the current match running; Save and restart applies by restarting the dedicated server; if this page cannot restart the container, restart it in Unraid.</p>
+  <p id="ports" class="ports"></p>
 </header>
 <main>
   <p id="status" role="status"></p>
@@ -199,7 +306,7 @@
         </table>
       </div>
       <div id="mod-notes"></div>
-      <div id="modded" hidden>
+      <div id="modded" class="section-band" hidden>
         <h2 id="modded-title">Modded maps</h2>
         <div id="pack-wrap">
           <label for="pack">Workshop mod</label>
@@ -214,7 +321,9 @@
       </div>
     </section>
     <section>
-      <label for="setup">Setup</label>
+      <div class="section-band lobby-band">
+      <h2>Map and lobby settings</h2>
+      <label class="sr-only" for="setup">Setup</label>
       <select id="setup">
         <option value="pvp">PvP</option>
         <option value="pve">PvE setup</option>
@@ -232,8 +341,12 @@
       <select id="upkeep"></select>
       <label for="combatRule">Combat rules</label>
       <select id="combatRule"></select>
-      <label for="gameType">Opposition</label>
-      <select id="gameType"></select>
+      <label for="gameType-button">Opposition</label>
+      <div class="faction-select">
+        <select id="gameType" class="faction-native" tabindex="-1" aria-hidden="true"></select>
+        <button type="button" id="gameType-button" class="faction-button" aria-haspopup="listbox" aria-expanded="false" aria-controls="gameType-menu"><span class="faction-value"></span></button>
+        <div id="gameType-menu" class="faction-menu" role="listbox" hidden></div>
+      </div>
       <label for="initMoney">Starting resources</label>
       <select id="initMoney"></select>
       <label for="incomeRate">Income rate factor</label>
@@ -242,8 +355,9 @@
       <select id="scoreLimit"></select>
       <label for="timeLimit">Time limit</label>
       <select id="timeLimit"></select>
-      <div id="pvp-slots">
-      <p class="hint">These match the map. You can change them.</p>
+      </div>
+      <div id="pvp-slots" class="section-band">
+      <h2>Player and team settings</h2>
       <label for="players">Max players</label>
       <input id="players" type="number" min="1" max="20" step="1" inputmode="numeric">
       <label for="team">Team size</label>
@@ -264,15 +378,20 @@
         <div id="deck-rows"></div>
         <button id="add-deck" type="button">Add deck</button>
       </div>
-      <div class="actions">
-        <button id="save" type="button">Save</button>
-        <button id="restart" type="button">Save and restart</button>
-      </div>
-      <div id="confirm-box" class="confirm" hidden>
-        <p id="confirm-text"></p>
-        <div class="actions">
-          <button id="confirm-yes" type="button">Restart</button>
-          <button id="confirm-no" type="button">Cancel</button>
+      <div class="save-block">
+        <div class="save-row">
+          <div class="actions">
+            <button id="save" type="button">Save</button>
+            <button id="restart" type="button">Save and restart</button>
+          </div>
+          <p class="save-note">Save leaves the current match running (applied on the next restart or match). Save and restart immediately restarts the server to apply the new settings. If this page cannot restart the container, restart it in Unraid.</p>
+        </div>
+        <div id="confirm-box" class="confirm" hidden>
+          <p id="confirm-text"></p>
+          <div class="actions">
+            <button id="confirm-yes" type="button">Restart</button>
+            <button id="confirm-no" type="button">Cancel</button>
+          </div>
         </div>
       </div>
     </section>
@@ -423,6 +542,53 @@ function fillSelect(id, current) {
     select.appendChild(option);
   });
   select.value = String(current);
+  if (id === "gameType") paintFactionSelect();
+}
+
+function factionParts(text) {
+  const frag = document.createDocumentFragment();
+  String(text).split(/(NATO|PACT)/).forEach((part) => {
+    if (part === "NATO" || part === "PACT") {
+      const side = document.createElement("span");
+      side.className = part === "NATO" ? "side-nato" : "side-pact";
+      side.textContent = part;
+      frag.appendChild(side);
+    } else if (part) {
+      frag.appendChild(document.createTextNode(part));
+    }
+  });
+  return frag;
+}
+
+function closeFactionMenu() {
+  const menu = document.getElementById("gameType-menu");
+  const button = document.getElementById("gameType-button");
+  menu.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+}
+
+function paintFactionSelect() {
+  const select = document.getElementById("gameType");
+  const chosen = select.options[select.selectedIndex];
+  const value = document.querySelector("#gameType-button .faction-value");
+  const menu = document.getElementById("gameType-menu");
+  value.replaceChildren(factionParts(chosen ? chosen.textContent : ""));
+  menu.replaceChildren();
+  Array.from(select.options).forEach((option) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "faction-option";
+    item.setAttribute("role", "option");
+    item.setAttribute("aria-selected", option.selected ? "true" : "false");
+    item.appendChild(factionParts(option.textContent));
+    item.addEventListener("click", () => {
+      select.value = option.value;
+      select.dispatchEvent(new Event("change"));
+      closeFactionMenu();
+      paintFactionSelect();
+    });
+    menu.appendChild(item);
+  });
 }
 
 function lockCombatRule(rule) {
@@ -755,12 +921,36 @@ function render() {
   markSelected();
 }
 
+function portItem(label, value, hint) {
+  const item = document.createElement("span");
+  item.className = "port";
+  const name = document.createElement("span");
+  name.className = "port-label";
+  name.textContent = label;
+  const number = document.createElement("b");
+  number.textContent = String(value);
+  item.append(name, number);
+  if (hint) {
+    const extra = document.createElement("span");
+    extra.className = "port-hint";
+    extra.textContent = hint;
+    item.appendChild(extra);
+  }
+  return item;
+}
+
 function showPorts(state) {
+  const root = document.getElementById("ports");
   const parts = [];
-  if (state.gamePort) parts.push("Game port " + state.gamePort);
-  if (state.webPort) parts.push("WebUI port " + state.webPort);
-  const line = parts.length ? parts.join(". ") + "." : "";
-  document.getElementById("ports").textContent = line;
+  root.replaceChildren();
+  if (state.gamePort) {
+    root.appendChild(portItem("Game port", state.gamePort, "(must be port forwarded TCP/UDP)"));
+    parts.push("Game port " + state.gamePort);
+  }
+  if (state.webPort) {
+    root.appendChild(portItem("WebUI port", state.webPort, ""));
+    parts.push("WebUI port " + state.webPort);
+  }
   if (!parts.length) {
     document.title = "WARHOST WebUI";
     return;
@@ -894,6 +1084,19 @@ document.querySelector(".workshop").addEventListener("change", (event) => {
 document.getElementById("setup").addEventListener("change", () => showSetup());
 document.getElementById("gameType").addEventListener("change", () => {
   if (document.getElementById("setup").value === "pve") fillHumanSide();
+});
+document.getElementById("gameType-button").addEventListener("click", () => {
+  const menu = document.getElementById("gameType-menu");
+  const button = document.getElementById("gameType-button");
+  const open = menu.hidden;
+  menu.hidden = !open;
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+});
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".faction-select")) closeFactionMenu();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeFactionMenu();
 });
 document.getElementById("humanSide").addEventListener("change", () => renderDecks());
 document.getElementById("humans").addEventListener("input", () => updatePveNote());

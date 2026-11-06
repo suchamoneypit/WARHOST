@@ -43,7 +43,7 @@ plant_lobby() {
   map_id=$1
   mod_list=${2-}
   mod_tags=${3-}
-  name=${4-WARHOST - default server name}
+  name=${4-WARHOST - Default Server Name}
   players=${5-4}
   mkdir -p "${server}/settings"
   {
@@ -243,7 +243,7 @@ cmp -s "${settings}/variables.ini" "${ROOT}/samples/variables.ini.example" || fa
 cmp -s "${settings}/params_for_ai.json" "${ROOT}/samples/params_for_ai.json.example" || fail "params_for_ai.json drifted from the sample"
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "upstream entrypoint did not run from the settings directory"
 grep -qx 'args:--from-unraid' "${WORKDIR}/stdout.txt" || fail "arguments were not passed through unchanged"
-grep -qx 'Wrote WARNO settings for WARHOST - default server name on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "default log named a mod list or the wrong server name"
+grep -qx 'Wrote WARNO settings for WARHOST - Default Server Name on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "default log named a mod list or the wrong server name"
 grep -q 'Key last 4 alue' "${WORKDIR}/stdout.txt" || fail "default log did not name the key last 4"
 if grep -qE '^(ModList|ModTagList) =' "${settings}/variables.ini"; then
   fail "default run wrote a workshop mod line"
@@ -597,7 +597,7 @@ reset_fake_steam
 steam_details 3811913066 1791628993
 steam_item 3811913066 27
 make_server
-plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066 Maps-Scenarios "WARHOST - default server name" 8
+plant_lobby RDPort_JungleLaw_2v2_CONQ 3811913066 Maps-Scenarios "WARHOST - Default Server Name" 8
 expect_ok "reads Version from Config.ini for a bare workshop id" \
   PATH="${FAKE_STEAM}/bin:${PATH}" \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
@@ -609,7 +609,7 @@ grep -qx 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "b
 grep -qx 'NbMaxPlayer = 8' "${server}/settings/variables.ini" || fail "a hand-edited player count was replaced"
 grep -qx 'ModTagList = Maps-Scenarios' "${server}/settings/variables.ini" || fail "mod tags were not kept"
 grep -qx 'Workshop item 3811913066 is Version 27, read from its Config.ini.' "${WORKDIR}/stdout.txt" || fail "bare id did not report the Version it read"
-grep -qx 'Kept variables.ini for WARHOST - default server name on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
+grep -qx 'Kept variables.ini for WARHOST - Default Server Name on port 10400. Map RDPort_JungleLaw_2v2_CONQ. ModList 3811913066/27. Key last 4 alue.' "${WORKDIR}/stdout.txt" || fail "log did not name the resolved mod list"
 [ "$(call_count downloader.calls)" = 1 ] || fail "bare id did not download exactly once"
 printf 'Config.ini\n' | cmp -s - "${FAKE_STEAM}/filelist.last" || fail "the download asked for more than Config.ini"
 grep -qx '3811913066 1791628993 27' "${server}/settings/warhost-workshop-versions.txt" || fail "cache did not record id, update time, and Version"
@@ -922,7 +922,7 @@ expect_ok "starts once so the settings lock can be held" \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2
-grep -qx 'ServerName = WARHOST - default server name' "${server}/settings/variables.ini" || fail "first server name was not written"
+grep -qx 'ServerName = WARHOST - Default Server Name' "${server}/settings/variables.ini" || fail "first server name was not written"
 holder_log="${WORKDIR}/holder.out"
 release="${WORKDIR}/release-lock"
 : > "$holder_log"
@@ -955,7 +955,7 @@ grep -q 'Do not copy WARNO or Workshop files into it.' "${WORKDIR}/stderr.txt" |
 if grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt"; then
   fail "a locked settings folder still started the server"
 fi
-grep -qx 'ServerName = WARHOST - default server name' "${server}/settings/variables.ini" || fail "locked folder was overwritten"
+grep -qx 'ServerName = WARHOST - Default Server Name' "${server}/settings/variables.ini" || fail "locked folder was overwritten"
 rm -f "$release"
 wait "$holder" || fail "lock holder did not exit"
 expect_ok "starts again after the other container releases the settings folder" \
@@ -966,7 +966,7 @@ expect_ok "starts again after the other container releases the settings folder" 
   EXPOSEDPORT=10400 \
   MAP=TestScenario_2v2 \
   SERVER_NAME="After Lock"
-grep -qx 'ServerName = WARHOST - default server name' "${server}/settings/variables.ini" || fail "a template server name replaced the lobby file after the lock was released"
+grep -qx 'ServerName = WARHOST - Default Server Name' "${server}/settings/variables.ini" || fail "a template server name replaced the lobby file after the lock was released"
 grep -qx 'Lobby settings on the Docker template are ignored. Change the server in the WebUI.' "${WORKDIR}/stdout.txt" || fail "a template server name was not ignored after the lock was released"
 
 make_server

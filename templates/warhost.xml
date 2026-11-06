@@ -11,7 +11,7 @@
   <Project>https://github.com/suchamoneypit/WARHOST</Project>
   <Overview>
     <![CDATA[
-WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Change the name, map, and mods in the WebUI.
+WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - Default Server Name, with no workshop mods. Change the name, map, and mods in the WebUI.
 
 Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The lobby page uses WebUI Port, 11400 when Game Port is 10400. Each added container needs the next WebUI Port. Do not forward it. The Docker button follows the Advanced View WebUI box and stays on 11400 until that box is changed.]]>
   </Overview>
@@ -28,7 +28,7 @@ Request a login and key from eugsupport@eugensystems.com. One pair runs five ser
   <Requires>A Eugen Systems WARNO dedicated-server login and key. Email eugsupport@eugensystems.com, or reuse a dedicated key from another Eugen game. One pair runs five servers.</Requires>
   <Description>
     <![CDATA[
-WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - default server name, with no workshop mods. Change the name, map, and mods in the WebUI.
+WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - Default Server Name, with no workshop mods. Change the name, map, and mods in the WebUI.
 
 Request a login and key from eugsupport@eugensystems.com. One pair runs five servers. Forward each game port to this Unraid server as TCP and UDP. The lobby page uses WebUI Port, 11400 when Game Port is 10400. Each added container needs the next WebUI Port. Do not forward it. The Docker button follows the Advanced View WebUI box and stays on 11400 until that box is changed.]]>
   </Description>

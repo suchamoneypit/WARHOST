@@ -96,6 +96,11 @@ WRITTEN = {
         "- Eugen's dedicated-server image no longer includes Python.\n"
         "- WARHOST installs Python in its own image, so the lobby page still starts and the container can update onto that Eugen image."
     ),
+    "v1.17": (
+        "- A new server is named WARHOST - Default Server Name until that name is changed. A server that already has a name keeps it.\n"
+        "- The open lobby page lists the game port and the WebUI port. The game port says it must be port forwarded TCP/UDP.\n"
+        "- Map settings and player counts are separate sections. Choosing a map still fills those counts, and they stay editable. Opposition shows NATO in blue and PACT in red."
+    ),
 }
 
 REQUIRED = {
@@ -116,6 +121,7 @@ REQUIRED = {
     "v1.14": "forum thread",
     "v1.15": "WebUI Port",
     "v1.16": "no longer includes Python",
+    "v1.17": "Default Server Name",
 }
 
 

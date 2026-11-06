@@ -2,7 +2,7 @@
 
 WARHOST runs Eugen Systems' official [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server on Unraid, one server per container. The install form takes the login and dedicated key Eugen sends you and writes `login.ini`. The WebUI writes the lobby. The container then starts Eugen's server.
 
-The first start is a 2v2 Conquest lobby on Hesse (`_2x2_Hesse_2vs2_CONQ`), named `WARHOST - default server name`, with no workshop mods. Open the WebUI to change the name, map, player limits, and mods.
+The first start is a 2v2 Conquest lobby on Hesse (`_2x2_Hesse_2vs2_CONQ`), named `WARHOST - Default Server Name`, with no workshop mods. Open the WebUI to change the name, map, player limits, and mods.
 
 If you have hosted game servers before, the field descriptions on the Unraid form and a TCP and UDP port forward are likely all you need. WARHOST is listed in Community Applications: Apps, search WARHOST, Install. The full walkthrough is [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). Workshop mods and scenario IDs are further down this page.
 
@@ -82,7 +82,7 @@ The template on `main` installs `ghcr.io/suchamoneypit/warhost:latest`. The temp
 </tbody>
 </table>
 
-**Show more settings** holds Write Config From Form. Two new containers both use `WARHOST - default server name` until each is changed in its WebUI. Scenario IDs and named mods are in the tables below.
+**Show more settings** holds Write Config From Form. Two new containers both use `WARHOST - Default Server Name` until each is changed in its WebUI. Scenario IDs and named mods are in the tables below.
 
 A container saved from an earlier template can still show Server Name, Map, player counts, combat rule, and the workshop fields. This entrypoint ignores those values and prints `Lobby settings on the Docker template are ignored. Change the server in the WebUI.`
 
@@ -391,7 +391,7 @@ The container name, Game Port, WebUI Port, and Settings Folder are unique. The s
 | WebUI Port | `11400` | `11401` |
 | Advanced View WebUI | `http://[IP]:[PORT:11400]/` | `http://[IP]:[PORT:11401]/` |
 | Settings Folder | `/mnt/user/appdata/warno/10400/settings` | `/mnt/user/appdata/warno/10401/settings` |
-| Server name in the WebUI | `WARHOST - default server name` until you change it | a different name |
+| Server name in the WebUI | `WARHOST - Default Server Name` until you change it | a different name |
 
 The map and workshop mods also belong to each container, so one server can run the Red Dragon map pack while another runs a base-game map. Public WAN IP, Eugen login, and Eugen dedicated key stay the same for up to five servers. A sixth container needs another login and key pair. Forward each Game Port to this Unraid server as TCP and UDP. Players join from the WARNO server browser by server name. They are not given a port to type.
 
@@ -413,7 +413,7 @@ Set **Write Config From Form** to `false` only when you need to edit those files
 
 ## WebUI
 
-The page listens on WebUI Port. The first server is `http://<unraid>:11400/`. The next server, with WebUI Port `11401`, is `http://<unraid>:11401/`. Do not forward that port. A container from before this field still listens on the game port plus 1000. The heading and the browser tab name the game port and the WebUI port, so an open page says which server it is. When the page is up, the log says `WebUI listening on port 11400.`
+The page listens on WebUI Port. The first server is `http://<unraid>:11400/`. The next server, with WebUI Port `11401`, is `http://<unraid>:11401/`. Do not forward that port. A container from before this field still listens on the game port plus 1000. Under the heading, the page lists the game port and the WebUI port as a pair, and the game port says `(must be port forwarded TCP/UDP)`. The browser tab names both ports, so several open pages stay distinct. When the page is up, the log says `WebUI listening on port 11400.`
 
 The Docker button reads the Advanced View WebUI box, `http://[IP]:[PORT:11400]/`. On host networking that number stays 11400 until you change it there and Apply. Set it to the same number as WebUI Port.
 
