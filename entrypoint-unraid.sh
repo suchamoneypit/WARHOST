@@ -1055,9 +1055,17 @@ configure_status_report() {
     fi
   fi
   if [ -d "$status_snapshot" ]; then
-    printf '%s\n' "warning: ${status_snapshot} is a directory, so lobby status is not reported. Remove that path and start the container again."
+    printf '%s\n' "warning: .warhost-status in the settings folder is a directory, so lobby status is not reported. Remove that path and start the container again."
     status_enabled=0
     return 0
+  fi
+  # A file from the previous run is still fresh for 30 seconds and would be reported as the current lobby.
+  if [ -f "$status_snapshot" ]; then
+    if ! rm -f "$status_snapshot" || [ -f "$status_snapshot" ]; then
+      printf '%s\n' "warning: .warhost-status in the settings folder could not be removed, so lobby status is not reported. Remove that path and start the container again."
+      status_enabled=0
+      return 0
+    fi
   fi
   status_extra="-statusfile=${status_snapshot}"
 }
@@ -1130,21 +1138,29 @@ status_summary() {
     fi
   fi
   if [ "$status_stale_now" -eq 1 ]; then
-    status_line='warning: dedicated server status is stale'
+    status_line='warning: dedicated server status is stale. It has not updated for more than 30 seconds.'
     return 0
   fi
   if [ -z "$status_game" ] || [ -z "$status_players" ]; then
     status_line='status: dedicated server has not reported yet'
     return 0
   fi
+  if [ "$status_players" -eq 1 ]; then
+    status_people="1 player, including AI"
+  else
+    status_people="${status_players} players, including AI"
+  fi
   if [ "$status_game" -eq 0 ]; then
     if [ -n "$status_min" ] && [ "$status_players" -ge "$status_min" ]; then
-      status_line="status: lobby, ${status_players} players and AI, minimum ${status_min} reached"
+      status_line="status: lobby, ${status_people}, minimum ${status_min} reached"
+      if [ -n "$status_max" ]; then
+        status_line="${status_line}, maximum ${status_max}"
+      fi
       if [ -n "$status_warmup" ]; then
-        status_line="${status_line}, warmup ${status_warmup}s"
+        status_line="${status_line}, warmup setting ${status_warmup}s"
       fi
     else
-      status_line="status: lobby, ${status_players} players and AI"
+      status_line="status: lobby, ${status_people}"
       if [ -n "$status_min" ]; then
         status_line="${status_line}, minimum ${status_min}"
       fi
@@ -1154,7 +1170,8 @@ status_summary() {
     fi
     return 0
   fi
-  status_line="status: match in progress, GameState ${status_game}, ${status_players} players and AI"
+  # Eugen documents 0 as "no game in progress" and does not define the other numbers.
+  status_line="status: GameState ${status_game}, ${status_people}"
   if [ -n "$status_max" ]; then
     status_line="${status_line}, maximum ${status_max}"
   fi
@@ -1167,7 +1184,7 @@ append_status_history() {
   fi
   if [ -d "$status_history" ]; then
     if [ "$status_history_warned" -eq 0 ]; then
-      printf '%s\n' "warning: ${status_history} is a directory, so status history was not saved."
+      printf '%s\n' "warning: ${status_history} is a directory, so status history was not saved. Remove that path and start the container again."
       status_history_warned=1
     fi
     return 0
@@ -1184,7 +1201,7 @@ append_status_history() {
       fi
       if [ -d "$history_old" ]; then
         if [ "$status_history_warned" -eq 0 ]; then
-          printf '%s\n' "warning: ${history_old} is a directory, so status history was not rotated."
+          printf '%s\n' "warning: ${history_old} is a directory, so status history was not rotated. Remove that path and start the container again."
           status_history_warned=1
         fi
         return 0

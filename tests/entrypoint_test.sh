@@ -1737,8 +1737,8 @@ restart_pid=$!
 wait_for_text "args:-statusfile=${server}/settings/.warhost-status" "${WORKDIR}/status-out.txt" || fail "status file path was not passed"
 status_now=$(date +%s)
 write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 1
-wait_for_text 'status: lobby, 1 players and AI, minimum 2, maximum 4' "${WORKDIR}/status-out.txt" || fail "lobby status was not reported"
-wait_for_text 'status: lobby, 1 players and AI, minimum 2, maximum 4' "${server}/settings/.warhost-status.log" || fail "lobby status was not saved"
+wait_for_text 'status: lobby, 1 player, including AI, minimum 2, maximum 4' "${WORKDIR}/status-out.txt" || fail "lobby status was not reported"
+wait_for_text 'status: lobby, 1 player, including AI, minimum 2, maximum 4' "${server}/settings/.warhost-status.log" || fail "lobby status was not saved"
 if grep -F -q 'host-key-value' "${WORKDIR}/status-out.txt" "${WORKDIR}/status-err.txt" "${server}/settings/.warhost-status.log"; then
   fail "dedicated key appeared in the status log"
 fi
@@ -1746,10 +1746,10 @@ if grep -F -q 'Secret=' "${WORKDIR}/status-out.txt" "${server}/settings/.warhost
   fail "an unrecognized status line was printed"
 fi
 write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 2
-wait_for_text 'status: lobby, 2 players and AI, minimum 2 reached, warmup 60s' "${WORKDIR}/status-out.txt" || fail "minimum reached was not reported"
-wait_for_text 'status: lobby, 2 players and AI, minimum 2 reached, warmup 60s' "${server}/settings/.warhost-status.log" || fail "minimum reached was not saved"
+wait_for_text 'status: lobby, 2 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${WORKDIR}/status-out.txt" || fail "minimum reached was not reported"
+wait_for_text 'status: lobby, 2 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${server}/settings/.warhost-status.log" || fail "minimum reached was not saved"
 write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 3 4
-wait_for_text 'status: match in progress, GameState 3, 4 players and AI, maximum 4' "${WORKDIR}/status-out.txt" || fail "match status was not reported"
+wait_for_text 'status: GameState 3, 4 players, including AI, maximum 4' "${WORKDIR}/status-out.txt" || fail "match status was not reported"
 write_status_snapshot "${server}/settings/.warhost-status" 1 0 1
 wait_for_text 'warning: dedicated server status is stale' "${WORKDIR}/status-out.txt" || fail "stale status was not reported"
 sleep 3
@@ -1762,7 +1762,7 @@ fresh_after_stale=0
 while [ "$i" -lt 80 ]; do
   if awk '
     /warning: dedicated server status is stale/ { seen = 1 }
-    seen && /status: lobby, 1 players and AI, minimum 2, maximum 4/ { found = 1 }
+    seen && /status: lobby, 1 player, including AI, minimum 2, maximum 4/ { found = 1 }
     END { exit !found }
   ' "${server}/settings/.warhost-status.log"; then
     fresh_after_stale=1
@@ -1774,19 +1774,19 @@ done
 [ "$fresh_after_stale" -eq 1 ] || fail "a fresh lobby line did not follow the stale warning"
 dd if=/dev/zero bs=1048576 count=1 of="${server}/settings/.warhost-status.log" status=none
 write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 3
-wait_for_text 'status: lobby, 3 players and AI, minimum 2 reached, warmup 60s' "${WORKDIR}/status-out.txt" || fail "status after rotation was not reported"
+wait_for_text 'status: lobby, 3 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${WORKDIR}/status-out.txt" || fail "status after rotation was not reported"
 [ -f "${server}/settings/.warhost-status.log.1" ] || fail "status history was not rotated"
 rotated_size=$(stat -c '%s' "${server}/settings/.warhost-status.log.1")
 [ "$rotated_size" -ge 1048576 ] || fail "rotated status history was ${rotated_size} bytes"
-grep -F -q 'status: lobby, 3 players and AI, minimum 2 reached, warmup 60s' "${server}/settings/.warhost-status.log" || fail "new status history missed the line after rotation"
+grep -F -q 'status: lobby, 3 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${server}/settings/.warhost-status.log" || fail "new status history missed the line after rotation"
 history_target="${WORKDIR}/status-history-target"
 printf 'untouched-history\n' > "$history_target"
 rm -f "${server}/settings/.warhost-status.log"
 ln -s "$history_target" "${server}/settings/.warhost-status.log"
 write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 4
-wait_for_text 'status: lobby, 4 players and AI, minimum 2 reached, warmup 60s' "${WORKDIR}/status-out.txt" || fail "status was not printed when the history path is a symlink"
+wait_for_text 'status: lobby, 4 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${WORKDIR}/status-out.txt" || fail "status was not printed when the history path is a symlink"
 grep -F -q 'untouched-history' "$history_target" || fail "status history symlink target was replaced"
-if grep -F -q 'players and AI' "$history_target"; then
+if grep -F -q 'including AI' "$history_target"; then
   fail "status history symlink was followed"
 fi
 snapshot_secret="${WORKDIR}/status-snapshot-secret"
@@ -1811,6 +1811,58 @@ done
 wait "$restart_pid" 2>/dev/null || true
 restart_pid=
 printf 'ok dedicated server status lines\n'
+
+make_server
+mkdir -p "${server}/settings"
+status_hold="${WORKDIR}/leftover-status-hold"
+: > "$status_hold"
+cat > "${server}/entrypoint2.sh" << EOF
+#!/bin/sh
+printf '%s\n' reached-upstream
+printf 'args:%s\n' "\$*"
+while [ -f "$status_hold" ]; do
+  sleep 0.05
+done
+exit 0
+EOF
+chmod 755 "${server}/entrypoint2.sh"
+write_status_snapshot "${server}/settings/.warhost-status" "$(date +%s)" 0 9
+: > "${WORKDIR}/leftover-out.txt"
+: > "${WORKDIR}/leftover-err.txt"
+env -i PATH="$PATH" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" \
+  WARHOST_STATUS_POLL=1 \
+  WARHOST_STATUS_HEARTBEAT=300 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21684 \
+  WEB_UI=false \
+  sh "$ENTRY" >"${WORKDIR}/leftover-out.txt" 2>"${WORKDIR}/leftover-err.txt" &
+restart_pid=$!
+wait_for_text 'status: dedicated server has not reported yet' "${WORKDIR}/leftover-out.txt" || fail "a fresh start did not wait for a new status file"
+if grep -F -q '9 players' "${WORKDIR}/leftover-out.txt" "${server}/settings/.warhost-status.log"; then
+  fail "a leftover status file was reported as the current lobby"
+fi
+if [ -f "${server}/settings/.warhost-status" ]; then
+  fail "a leftover status file was kept"
+fi
+status_now=$(date +%s)
+write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 1
+wait_for_text 'status: lobby, 1 player, including AI, minimum 2, maximum 4' "${WORKDIR}/leftover-out.txt" || fail "status after clearing a leftover file was not reported"
+rm -f "$status_hold"
+kill -TERM "$restart_pid" 2>/dev/null || true
+i=0
+while [ "$i" -lt 50 ]; do
+  if ! kill -0 "$restart_pid" 2>/dev/null; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+wait "$restart_pid" 2>/dev/null || true
+restart_pid=
+printf 'ok leftover status file is cleared\n'
 
 make_server
 mkdir -p "${server}/settings"
@@ -1842,7 +1894,7 @@ expect_ok "skips status when the snapshot path is a directory" \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=21682 \
   WEB_UI=false
-grep -F -q "warning: ${server}/settings/.warhost-status is a directory, so lobby status is not reported. Remove that path and start the container again." "${WORKDIR}/stdout.txt" || fail "a status directory did not warn"
+grep -F -q "warning: .warhost-status in the settings folder is a directory, so lobby status is not reported. Remove that path and start the container again." "${WORKDIR}/stdout.txt" || fail "a status directory did not warn"
 grep -qx 'args:' "${WORKDIR}/stdout.txt" || fail "a status directory still passed -statusfile"
 
 make_server
@@ -1878,7 +1930,7 @@ if grep -F -q -- "${server}/settings/.warhost-status" "${WORKDIR}/custom-out.txt
 fi
 status_now=$(date +%s)
 write_status_snapshot "$custom_status" "$status_now" 0 1
-wait_for_text 'status: lobby, 1 players and AI, minimum 2, maximum 4' "${WORKDIR}/custom-out.txt" || fail "a caller status file was not read"
+wait_for_text 'status: lobby, 1 player, including AI, minimum 2, maximum 4' "${WORKDIR}/custom-out.txt" || fail "a caller status file was not read"
 if grep -F -q 'host-key-value' "${WORKDIR}/custom-out.txt" "${WORKDIR}/custom-err.txt" "${server}/settings/.warhost-status.log"; then
   fail "dedicated key appeared while reading a caller status file"
 fi

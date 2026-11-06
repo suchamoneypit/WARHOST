@@ -12,7 +12,7 @@ Unraid form (templates/warhost.xml)
        resolves bare Workshop ids in ModList to id/Version (DepotDownloader, Config.ini only)
        starts webui/launch.sh when WEB_UI=true (fail-open, page on WEB_PORT, or Game Port + 1000 when unset)
        runs /server/entrypoint2.sh (Eugen) in its own session, with -statusfile
-       prints lobby or match lines from .warhost-status into the log and .warhost-status.log
+       prints a lobby line, or the GameState number, from .warhost-status into the log and .warhost-status.log
   <- SIGUSR1 from the WebUI's Save and restart: the wrapper re-execs itself
 ```
 
