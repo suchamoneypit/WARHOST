@@ -151,6 +151,10 @@ if template is not None:
 dockerfile_text = (root / "Dockerfile").read_text()
 if "org.opencontainers.image.licenses" in dockerfile_text:
     fail("Dockerfile must leave the image license unlabeled; LICENSE covers the repository files")
+install_at = dockerfile_text.find("apt-get install")
+unpack_at = dockerfile_text.find("python3 -m zipfile")
+if install_at < 0 or unpack_at < 0 or "python3" not in dockerfile_text[install_at:unpack_at]:
+    fail("Dockerfile must install python3 before unpacking DepotDownloader; Eugen's image does not include it")
 
 allowed_keys = {
     "YOUR_EUGEN_DEDICATED_KEY_HERE",
