@@ -92,6 +92,10 @@ WRITTEN = {
         "- WebUI Port is on the Docker form under Game Port. The first server stays 11400. Each added container needs the next WebUI Port.\n"
         "- The Docker button stays on 11400 until Advanced View WebUI is changed to that port. The open page names the game port and the WebUI port."
     ),
+    "v1.16": (
+        "- Eugen's dedicated-server image no longer includes Python.\n"
+        "- WARHOST installs Python in its own image, so the lobby page still starts and the container can update onto that Eugen image."
+    ),
 }
 
 REQUIRED = {
@@ -111,6 +115,7 @@ REQUIRED = {
     "v1.13": "No change to the server, the Unraid form, or the WebUI.",
     "v1.14": "forum thread",
     "v1.15": "WebUI Port",
+    "v1.16": "no longer includes Python",
 }
 
 
