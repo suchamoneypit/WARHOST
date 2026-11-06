@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>WARHOST</Name>
-  <Repository>ghcr.io/suchamoneypit/warhost:latest</Repository>
+  <Repository>ghcr.io/suchamoneypit/warhost:dev</Repository>
   <Registry>https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost</Registry>
   <Network>host</Network>
   <MyIP/>
