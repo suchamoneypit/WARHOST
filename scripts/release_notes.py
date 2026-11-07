@@ -105,6 +105,10 @@ WRITTEN = {
         "- The Docker log shows who is waiting in the lobby: the player count, including AI, the minimum, and the maximum. When the minimum is reached, the line names the warmup setting saved in the lobby, not a live countdown.\n"
         "- A status file left from the previous run is not reported as the current lobby. If the server stops updating that status for more than 30 seconds, the log says so once."
     ),
+    "v1.19": (
+        "- The settings folder has .warhost-upstream.pid while the server is running. The container removes that file when it exits.\n"
+        "- If the dedicated server stops on its own, the container exits with that server's status."
+    ),
 }
 
 REQUIRED = {
@@ -127,6 +131,7 @@ REQUIRED = {
     "v1.16": "no longer includes Python",
     "v1.17": "Default Server Name",
     "v1.18": "including AI",
+    "v1.19": ".warhost-upstream.pid",
 }
 
 
