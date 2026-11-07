@@ -411,6 +411,14 @@ The faction matchup is NATO vs PACT (`GameType = 0`). Teams must stay the same s
 
 Set **Write Config From Form** to `false` only when you need to edit those files by hand. While it is `true`, the next start still rewrites `login.ini`, leaves an existing `variables.ini` and an existing `params_for_ai.json` in place, and refreshes bare Workshop ids in `variables.ini`. While it is `false`, the three files stay as edited, `login.ini` is set to mode `600`, and no Workshop id is looked up on Steam. Any other file the server itself creates in that folder (for example `admins.ini` or `banned_clients.ini`, if it creates them) is left alone.
 
+## Logs
+
+After the startup lines, the Docker log prints a status line when it changes, and repeats that line about every 5 minutes. `status: dedicated server has not reported yet` is normal until the server writes its first snapshot. A file left from the previous run is removed at start, so it is not reported as the current lobby. The count includes players and computer players, so a PvE lobby can look full before a human joins.
+
+`status: lobby, 1 player, including AI, minimum 2, maximum 4` is a lobby still short of its minimum. Once the count reaches that minimum, the line is `status: lobby, 2 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s`. The warmup number is `WarmupCountdown` in `variables.ini`. It is the saved setting, not seconds remaining. `status: GameState 3, 4 players, including AI, maximum 4` is any state other than the lobby. Eugen documents `0` as no game in progress and does not define the other numbers, so the log prints the number. `warning: dedicated server status is stale. It has not updated for more than 30 seconds.` means the status file stopped changing.
+
+The same lines are appended to `.warhost-status.log` in the settings folder. That file stays when the container is recreated, rotates at 1 MB, and keeps one previous file. The server rewrites `.warhost-status` there with the raw snapshot. A quiet server adds about 1 KB an hour.
+
 ## WebUI
 
 The page listens on WebUI Port. The first server is `http://<unraid>:11400/`. The next server, with WebUI Port `11401`, is `http://<unraid>:11401/`. Do not forward that port. A container from before this field still listens on the game port plus 1000. Under the heading, the page lists the game port and the WebUI port as a pair, and the game port says `(must be port forwarded TCP/UDP)`. The browser tab names both ports, so several open pages stay distinct. When the page is up, the log says `WebUI listening on port 11400.`
@@ -431,7 +439,7 @@ The dedicated key belongs in the Unraid form, which stores it for that container
 
 ## Updates
 
-Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their server launch arguments. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image. It stays the container's main process. Save and restart runs that start again so the saved lobby and Workshop versions load.
+Eugen publishes game updates as `eugensystems/warno:latest`. This repo does not copy their listen, IP, or matchmaking arguments. The wrapper appends `-statusfile` so the log can report the lobby. `entrypoint-unraid.sh` writes the settings files and then runs `/server/entrypoint2.sh` from their image. It stays the container's main process. Save and restart runs that start again so the saved lobby and Workshop versions load.
 
 `.github/workflows/rebuild-image.yml` checks Eugen's image once a day. The workflow also runs when the Dockerfile, `entrypoint-unraid.sh`, `webui/`, or `.github/workflows/rebuild-image.yml` changes, and a push of those paths publishes `:latest` from `main` or `:dev` from `dev`. In Unraid, update each server container. A failed build leaves the previous image in place. Fix the Action and run it again. Players on a new WARNO patch need that rebuild before the dedicated server will match the client.
 

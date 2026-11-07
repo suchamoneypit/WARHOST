@@ -101,6 +101,10 @@ WRITTEN = {
         "- The open lobby page lists the game port and the WebUI port. The game port says it must be port forwarded TCP/UDP.\n"
         "- Map settings and player counts are separate sections. Choosing a map still fills those counts, and they stay editable. Opposition shows NATO in blue and PACT in red."
     ),
+    "v1.18": (
+        "- The Docker log shows who is waiting in the lobby: the player count, including AI, the minimum, and the maximum. When the minimum is reached, the line names the warmup setting saved in the lobby, not a live countdown.\n"
+        "- A status file left from the previous run is not reported as the current lobby. If the server stops updating that status for more than 30 seconds, the log says so once."
+    ),
 }
 
 REQUIRED = {
@@ -122,6 +126,7 @@ REQUIRED = {
     "v1.15": "WebUI Port",
     "v1.16": "no longer includes Python",
     "v1.17": "Default Server Name",
+    "v1.18": "including AI",
 }
 
 

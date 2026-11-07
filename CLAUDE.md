@@ -1,6 +1,6 @@
 # WARHOST
 
-An Unraid template plus a settings wrapper around Eugen Systems' official `eugensystems/warno` dedicated-server image. `entrypoint-unraid.sh` writes `login.ini`, `variables.ini`, and `params_for_ai.json` into `/server/settings`, then runs `/server/entrypoint2.sh`. Eugen's server launch arguments stay in their image. `webui/` is the lobby editor. Cursor and Claude Code both read this file.
+An Unraid template plus a settings wrapper around Eugen Systems' official `eugensystems/warno` dedicated-server image. `entrypoint-unraid.sh` writes `login.ini`, `variables.ini`, and `params_for_ai.json` into `/server/settings`, then runs `/server/entrypoint2.sh`. Eugen's listen, IP, and matchmaking arguments stay in their image. The wrapper appends `-statusfile` for `.warhost-status`. `webui/` is the lobby editor. Cursor and Claude Code both read this file.
 
 ## Look things up before reading widely
 
@@ -11,7 +11,7 @@ An Unraid template plus a settings wrapper around Eugen Systems' official `eugen
 
 ## Do not change unless the task asks for it
 
-Server settings and the fixed `variables.ini` seed (`WARHOST - Default Server Name`, Map `_2x2_Hesse_2vs2_CONQ`, 4/2/2 slots, Conquest, no workshop mods), launch arguments, template defaults (`EXPOSEDPORT` `10400`; the lobby name, map, slots, combat rule, and workshop mods stay off the Docker form), host networking, the settings path `/server/settings`, the host folder `/mnt/user/appdata/warno/10400/settings`, image build logic, and the image names `ghcr.io/suchamoneypit/warhost:latest` (published from `main`) and `ghcr.io/suchamoneypit/warhost:dev` (the dev template). The Red Dragon example stays `RDPort_JungleLaw_2v2_CONQ` with `3811913066` in the README.
+Server settings and the fixed `variables.ini` seed (`WARHOST - Default Server Name`, Map `_2x2_Hesse_2vs2_CONQ`, 4/2/2 slots, Conquest, no workshop mods), Eugen's listen, IP, and matchmaking arguments (the wrapper appends `-statusfile` for `.warhost-status` and does not copy the rest), template defaults (`EXPOSEDPORT` `10400`; the lobby name, map, slots, combat rule, and workshop mods stay off the Docker form), host networking, the settings path `/server/settings`, the host folder `/mnt/user/appdata/warno/10400/settings`, image build logic, and the image names `ghcr.io/suchamoneypit/warhost:latest` (published from `main`) and `ghcr.io/suchamoneypit/warhost:dev` (the dev template). The Red Dragon example stays `RDPort_JungleLaw_2v2_CONQ` with `3811913066` in the README.
 
 ## Evidence
 
