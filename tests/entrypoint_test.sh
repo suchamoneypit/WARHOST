@@ -88,6 +88,9 @@ set_file_mod_list() {
 
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then
+    printf '::error title=entrypoint test::%s\n' "$1" >&2
+  fi
   if [ -f "${WORKDIR}/stdout.txt" ]; then
     printf '%s\n' '--- stdout ---' >&2
     cat "${WORKDIR}/stdout.txt" >&2
@@ -95,6 +98,10 @@ fail() {
   if [ -f "${WORKDIR}/stderr.txt" ]; then
     printf '%s\n' '--- stderr ---' >&2
     cat "${WORKDIR}/stderr.txt" >&2
+  fi
+  if [ -f "${WORKDIR}/fork-out.txt" ]; then
+    printf '%s\n' '--- fork-out ---' >&2
+    cat "${WORKDIR}/fork-out.txt" >&2
   fi
   exit 1
 }
@@ -1700,12 +1707,14 @@ write_status_snapshot() {
   stamp=$2
   game=$3
   players=$4
-  cat > "$dest" << EOF
+  tmp="${dest}.writing"
+  cat > "$tmp" << EOF
 Timestamp=${stamp}
 GameState=${game}
 NbPlayersAndIA=${players}
 Secret=host-key-value
 EOF
+  mv -f "$tmp" "$dest"
 }
 
 make_server
@@ -1775,10 +1784,10 @@ done
 dd if=/dev/zero bs=1048576 count=1 of="${server}/settings/.warhost-status.log" status=none
 write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 3
 wait_for_text 'status: lobby, 3 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${WORKDIR}/status-out.txt" || fail "status after rotation was not reported"
+wait_for_text 'status: lobby, 3 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${server}/settings/.warhost-status.log" || fail "new status history missed the line after rotation"
 [ -f "${server}/settings/.warhost-status.log.1" ] || fail "status history was not rotated"
 rotated_size=$(stat -c '%s' "${server}/settings/.warhost-status.log.1")
 [ "$rotated_size" -ge 1048576 ] || fail "rotated status history was ${rotated_size} bytes"
-grep -F -q 'status: lobby, 3 players, including AI, minimum 2 reached, maximum 4, warmup setting 60s' "${server}/settings/.warhost-status.log" || fail "new status history missed the line after rotation"
 history_target="${WORKDIR}/status-history-target"
 printf 'untouched-history\n' > "$history_target"
 rm -f "${server}/settings/.warhost-status.log"
@@ -1947,6 +1956,85 @@ done
 wait "$restart_pid" 2>/dev/null || true
 restart_pid=
 printf 'ok caller status file\n'
+
+make_server
+real_setsid=$(command -v setsid)
+[ -n "$real_setsid" ] || fail "setsid is missing, so the fork test cannot run"
+fork_bin="${WORKDIR}/fork-setsid-bin"
+mkdir -p "$fork_bin"
+cat > "${fork_bin}/setsid" << EOF
+#!/bin/sh
+exec '${real_setsid}' -f "\$@"
+EOF
+chmod 755 "${fork_bin}/setsid"
+status_hold="${WORKDIR}/fork-setsid-hold"
+: > "$status_hold"
+cat > "${server}/entrypoint2.sh" << EOF
+#!/bin/sh
+printf '%s\n' reached-upstream
+printf 'args:%s\n' "\$*"
+while [ -f "$status_hold" ]; do
+  sleep 0.05
+done
+exit 0
+EOF
+chmod 755 "${server}/entrypoint2.sh"
+: > "${WORKDIR}/fork-out.txt"
+: > "${WORKDIR}/fork-err.txt"
+env -i PATH="${fork_bin}:${PATH}" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" \
+  WARHOST_STATUS_POLL=1 \
+  WARHOST_STATUS_HEARTBEAT=300 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21690 \
+  WEB_UI=false \
+  sh "$ENTRY" >"${WORKDIR}/fork-out.txt" 2>"${WORKDIR}/fork-err.txt" &
+restart_pid=$!
+wait_for_text "args:-statusfile=${server}/settings/.warhost-status" "${WORKDIR}/fork-out.txt" || fail "forking setsid did not pass the status file"
+status_now=$(date +%s)
+write_status_snapshot "${server}/settings/.warhost-status" "$status_now" 0 1
+wait_for_text 'status: lobby, 1 player, including AI, minimum 2, maximum 4' "${WORKDIR}/fork-out.txt" || fail "forking setsid dropped lobby status"
+if grep -F -q 'host-key-value' "${WORKDIR}/fork-out.txt" "${WORKDIR}/fork-err.txt"; then
+  fail "dedicated key appeared when setsid forks"
+fi
+rm -f "$status_hold"
+kill -TERM "$restart_pid" 2>/dev/null || true
+i=0
+while [ "$i" -lt 50 ]; do
+  if ! kill -0 "$restart_pid" 2>/dev/null; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 0.05
+done
+wait "$restart_pid" 2>/dev/null || true
+restart_pid=
+printf 'ok status still reports when setsid forks\n'
+
+make_server
+cat > "${server}/entrypoint2.sh" << 'EOF'
+#!/bin/sh
+exit 7
+EOF
+chmod 755 "${server}/entrypoint2.sh"
+: > "${WORKDIR}/fork-exit-out.txt"
+: > "${WORKDIR}/fork-exit-err.txt"
+fork_exit=0
+env -i PATH="${fork_bin}:${PATH}" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=21691 \
+  WEB_UI=false \
+  sh "$ENTRY" >"${WORKDIR}/fork-exit-out.txt" 2>"${WORKDIR}/fork-exit-err.txt" || fork_exit=$?
+[ "$fork_exit" -eq 7 ] || fail "forking setsid hid the dedicated server exit code ${fork_exit}"
+if grep -F -q 'host-key-value' "${WORKDIR}/fork-exit-out.txt" "${WORKDIR}/fork-exit-err.txt"; then
+  fail "dedicated key appeared when a forking setsid server exited"
+fi
+printf 'ok forking setsid keeps the dedicated server exit code\n'
 
 if grep -R -n 'dedicated_key="' "${ROOT}/samples" "${ROOT}/templates" "${ROOT}/README.md" "${ROOT}/ca_profile.xml" | grep -v 'YOUR_EUGEN_DEDICATED_KEY_HERE'; then
   fail "repository contains a dedicated_key other than the placeholder"

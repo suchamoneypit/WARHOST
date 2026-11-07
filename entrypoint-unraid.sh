@@ -997,6 +997,13 @@ clear_supervisor_pid() {
   fi
 }
 
+clear_upstream_pid() {
+  pid_file="${SETTINGS_DIR}/.warhost-upstream.pid"
+  if [ -f "$pid_file" ] && [ ! -L "$pid_file" ]; then
+    rm -f "$pid_file" || true
+  fi
+}
+
 # Positive whole number, or the default. A bad test seam must not stop the server.
 status_interval() {
   raw=$1
@@ -1098,7 +1105,26 @@ parse_status_snapshot() {
   status_timestamp=
   status_game=
   status_players=
+  status_parse_ok=1
   if [ -z "${status_snapshot:-}" ] || [ -L "$status_snapshot" ] || [ ! -f "$status_snapshot" ]; then
+    return 0
+  fi
+  status_size=$(stat -c '%s' "$status_snapshot" 2>/dev/null || printf '0')
+  case "$status_size" in
+    ''|*[!0-9]*) status_size=0 ;;
+  esac
+  # A rewrite in progress is two different reads. Skip it instead of logging a torn file.
+  if [ "$status_size" -gt 65536 ]; then
+    status_parse_ok=0
+    return 0
+  fi
+  status_first=$(cat "$status_snapshot" 2>/dev/null || true)
+  status_second=$(cat "$status_snapshot" 2>/dev/null || true)
+  if [ "$status_first" != "$status_second" ]; then
+    status_parse_ok=0
+    return 0
+  fi
+  if [ -L "$status_snapshot" ] || [ ! -f "$status_snapshot" ]; then
     return 0
   fi
   status_cr=$(printf '\r')
@@ -1222,6 +1248,9 @@ write_status_line() {
 emit_status() {
   status_now=$(date +%s 2>/dev/null || true)
   status_summary
+  if [ "$status_parse_ok" -eq 0 ]; then
+    return 0
+  fi
   if [ "$status_stale_now" -eq 1 ]; then
     if [ "$status_stale_latched" -eq 0 ]; then
       status_stale_latched=1
@@ -1235,13 +1264,36 @@ emit_status() {
   fi
 }
 
+# setsid forks when it is already a process group leader. $! is then the parent
+# that exits, and the dedicated server is the child. The child records its pid
+# before exec so a forking setsid does not look like the server already quit.
 launch_upstream() {
-  if command -v setsid >/dev/null 2>&1; then
+  upstream_pid=
+  upstream_launcher=
+  upstream_pidfile="${SETTINGS_DIR}/.warhost-upstream.pid"
+  if [ -L "$upstream_pidfile" ]; then
+    rm -f "$upstream_pidfile" || upstream_pidfile=
+  fi
+  if [ -n "$upstream_pidfile" ] && [ -d "$upstream_pidfile" ]; then
+    upstream_pidfile=
+  fi
+  if [ -n "$upstream_pidfile" ]; then
+    rm -f "$upstream_pidfile" || upstream_pidfile=
+  fi
+  if [ -n "$upstream_pidfile" ] && [ -e "$upstream_pidfile" ]; then
+    upstream_pidfile=
+  fi
+  if command -v setsid >/dev/null 2>&1 && [ -n "$upstream_pidfile" ]; then
+    upstream_group=1
+    # $1 is the pid file. shift leaves the server and its arguments.
+    # -w keeps a forked setsid running until the server exits and passes its status through.
+    setsid -w sh -c 'printf "%s\n" "$$" > "$1" || exit 1; shift; exec "$@"' _ "$upstream_pidfile" "$UPSTREAM_ENTRYPOINT" "$@" ${status_extra:+"$status_extra"} &
+  elif command -v setsid >/dev/null 2>&1; then
     upstream_group=1
     if [ -n "$status_extra" ]; then
-      setsid "$UPSTREAM_ENTRYPOINT" "$@" "$status_extra" &
+      setsid -w "$UPSTREAM_ENTRYPOINT" "$@" "$status_extra" &
     else
-      setsid "$UPSTREAM_ENTRYPOINT" "$@" &
+      setsid -w "$UPSTREAM_ENTRYPOINT" "$@" &
     fi
   else
     upstream_group=0
@@ -1251,11 +1303,29 @@ launch_upstream() {
       "$UPSTREAM_ENTRYPOINT" "$@" &
     fi
   fi
-  upstream_pid=$!
+  upstream_launcher=$!
+  if [ -n "$upstream_pidfile" ]; then
+    i=0
+    while [ "$i" -lt 50 ]; do
+      if [ -f "$upstream_pidfile" ] && [ ! -L "$upstream_pidfile" ]; then
+        upstream_pid=$(tr -cd '0-9' < "$upstream_pidfile" 2>/dev/null || true)
+        if [ -n "$upstream_pid" ] && [ "$upstream_pid" -gt 0 ]; then
+          break
+        fi
+      fi
+      upstream_pid=
+      i=$((i + 1))
+      sleep 0.05 || true
+    done
+  fi
+  if [ -z "${upstream_pid:-}" ]; then
+    upstream_pid=$upstream_launcher
+  fi
 }
 
 upstream_pid=
 upstream_group=0
+upstream_launcher=
 stop_requested=0
 
 kill_upstream() {
@@ -1283,7 +1353,7 @@ on_stop() {
 supervise_upstream() {
   # Drop the re-exec marker before the game process starts. launch.sh already saw it.
   unset WARHOST_WEBUI_KEEP
-  trap 'clear_supervisor_pid' EXIT
+  trap 'clear_supervisor_pid; clear_upstream_pid' EXIT
   trap 'on_stop' TERM INT
   trap 'on_usr1' USR1
   write_supervisor_pid
@@ -1308,11 +1378,21 @@ supervise_upstream() {
   status_history_warned=0
   launch_upstream "$@"
   kill_tries=0
+  upstream_miss=0
   while :; do
     state=$(process_state "$upstream_pid" || true)
-    if [ -z "$state" ] || [ "$state" = "Z" ]; then
+    if [ "$state" = "Z" ]; then
       break
     fi
+    if [ -z "$state" ]; then
+      upstream_miss=$((upstream_miss + 1))
+      if [ "$upstream_miss" -ge 3 ]; then
+        break
+      fi
+      sleep 0.05 || true
+      continue
+    fi
+    upstream_miss=0
     if [ "$stop_requested" -eq 1 ] || [ "$restart_requested" -eq 1 ]; then
       kill_tries=$((kill_tries + 1))
       if [ "$kill_tries" -gt 80 ]; then
@@ -1340,8 +1420,14 @@ supervise_upstream() {
     sleep 0.05 || true
   done
   upstream_status=0
-  wait "$upstream_pid" || upstream_status=$?
+  if [ -n "$upstream_launcher" ] && [ "$upstream_launcher" != "$upstream_pid" ]; then
+    # setsid -w is this shell's child and exits with the dedicated server's status.
+    wait "$upstream_launcher" || upstream_status=$?
+  else
+    wait "$upstream_pid" || upstream_status=$?
+  fi
   upstream_pid=
+  upstream_launcher=
   if [ "$stop_requested" -eq 1 ]; then
     exit 143
   fi
