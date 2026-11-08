@@ -345,6 +345,7 @@ sh -n webui/test_page.sh
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/upstream_digest.py").read_text(), "scripts/upstream_digest.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/next_version.py").read_text(), "scripts/next_version.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/release_notes.py").read_text(), "scripts/release_notes.py", "exec")'
+python3 -c 'import pathlib; compile(pathlib.Path("scripts/release_scope.py").read_text(), "scripts/release_scope.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/list_workshop_mods.py").read_text(), "scripts/list_workshop_mods.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("scripts/extract_map_previews.py").read_text(), "scripts/extract_map_previews.py", "exec")'
 python3 -c 'import pathlib; compile(pathlib.Path("webui/lobby.py").read_text(), "webui/lobby.py", "exec")'
@@ -375,6 +376,19 @@ echo "version numbering ok"
 
 python3 scripts/list_workshop_mods.py --self-test
 python3 scripts/release_notes.py --self-test
+python3 scripts/release_scope.py --self-test
+if ! grep -q 'scripts/release_scope.py' .github/workflows/release.yml; then
+  echo "release workflow does not consult release_scope.py" >&2
+  exit 1
+fi
+if ! grep -q 'paths-ignore:' .github/workflows/release.yml || ! grep -q 'README.md' .github/workflows/release.yml; then
+  echo "release workflow no longer ignores a README-only push" >&2
+  exit 1
+fi
+if ! grep -q 'scripts/release_scope.py --publish' .claude/skills/publish/SKILL.md; then
+  echo "publish skill does not ask whether the push will tag" >&2
+  exit 1
+fi
 if ! grep -q 'scripts/release_notes.py --tag' .claude/skills/publish/SKILL.md; then
   echo "publish skill does not require the next release summary before main" >&2
   exit 1

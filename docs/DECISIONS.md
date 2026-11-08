@@ -21,7 +21,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-09 Stage settings in a private directory: files are written in a mode-`700` `.warhost-stage.*` directory and renamed; symlinks are not followed.
 - 2026-10-09 Settings folder path includes the game port: the host folder is `/mnt/user/appdata/warno/<port>/settings`.
 - 2026-10-09 MIT covers the repository, not the container image: MIT `LICENSE` covers repository files; the image has no license label.
-- 2026-10-09 Number each publish to main: each `main` push is tagged `vX.YY` and released; a higher `VERSION` sets the number.
+- 2026-10-09 Number each publish to main: a releasing `main` push is tagged `vX.YY`; a higher `VERSION` sets the number. The 2026-11-08 entry skips a push that does not change the server, the template, the WebUI, or the image.
 - 2026-10-10 Slop review is a command in a new chat: `/slop-review` is a report-only review of what ships, run in a fresh chat.
 - 2026-10-10 Empty mod list only fits a base-game map: an empty `ModList` with a non-base-game map warns and still starts.
 - 2026-10-10 Workshop Version read at container start: a bare Workshop id becomes `id/Version` on each start; DepotDownloader reads only `Config.ini`.
@@ -47,13 +47,14 @@ Durable choices for this repository. Dates are the commit date or the day the de
 - 2026-10-13 Claude handoff effort is set per task: `effort` is `low` through `max`; routine calls use `medium`, and `/slop-review` uses `high`.
 - 2026-10-13 The image workflow does not set package visibility: set `warhost` to Public in the package settings; the rebuild only publishes the image.
 - 2026-10-13 Save and restart leaves the lobby readable: a Workshop version pin sets `variables.ini` back to mode `644`, and `TIME_WAIT` does not count as the page port being in use.
-- 2026-10-14 The publish writes the next release summary before merging: `v1.14` notes the lobby staying readable; `/publish` refuses to merge when that summary is missing.
+- 2026-10-14 The publish writes the next release summary before merging: `v1.14` notes the lobby staying readable; `/publish` refuses to merge when a release is missing its summary. The 2026-11-08 entry skips that check when the push will not tag.
 - 2026-10-31 Choosing a map fills a full minimum: minimum players matches the map's player count; the three counts stay editable.
 - 2026-10-31 Each server has a WebUI Port: the page listens on `WEB_PORT`, the Docker button is the Advanced View WebUI box, and the open page names both ports.
 - 2026-11-05 The image installs python3: Eugen's image no longer includes it; the Dockerfile installs Debian `python3` for the WebUI and the DepotDownloader unpack.
 - 2026-11-06 Seed name and lobby page labels: a new settings folder is named `WARHOST - Default Server Name`. The page lists the game port and the WebUI port as a pair, and player counts sit under their own heading.
 - 2026-11-06 Dedicated server status in the log: the wrapper appends `-statusfile` and prints a lobby line, or the GameState number, from that file.
 - 2026-11-07 Follow the dedicated server when setsid forks: `.warhost-upstream.pid` is the child, because `$!` would be the parent that exits.
+- 2026-11-08 A README edit does not cut a release: a `main` push tags only when the server, the template, the shipped WebUI, or the image changed since the latest tag. A README save does not fail the release job and does not take the next number.
 
 ## 2026-10-09 — Wrap Eugen's image
 
@@ -159,7 +160,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-09 — Number each publish to main
 
-**Decision:** Every push to `main` gets a git tag and a GitHub Release from `.github/workflows/release.yml`. The first is `v0.90`. Later publishes add one to the two-digit minor part (`v0.91`, `v0.99` then `v1.00`, `v1.00` then `v1.01`) unless that publish includes a higher `VERSION` file. `1.0` in that file is `v1.00`. A file that still equals the latest tag increments. A file below the latest tag stops the release. The 2026-10-10 entry "A stale VERSION does not stop the release" replaces that stop. The annotated tag is created when that name is missing. A later run on a commit that already has a version tag keeps the lowest of those tags. The Unraid template stays on `ghcr.io/suchamoneypit/warhost:latest`. Daily and manual image rebuilds do not create a version.
+**Decision:** Every push to `main` gets a git tag and a GitHub Release from `.github/workflows/release.yml`. The first is `v0.90`. Later publishes add one to the two-digit minor part (`v0.91`, `v0.99` then `v1.00`, `v1.00` then `v1.01`) unless that publish includes a higher `VERSION` file. `1.0` in that file is `v1.00`. A file that still equals the latest tag increments. A file below the latest tag stops the release. The 2026-10-10 entry "A stale VERSION does not stop the release" replaces that stop. The annotated tag is created when that name is missing. A later run on a commit that already has a version tag keeps the lowest of those tags. The Unraid template stays on `ghcr.io/suchamoneypit/warhost:latest`. Daily and manual image rebuilds do not create a version. The 2026-11-08 entry "A README edit does not cut a release" tags a push only when the server, the template, the shipped WebUI, or the image differs from the latest version tag.
 
 **Rationale:** Publishes are occasional snapshots of `dev`. The number is how those snapshots are told apart. `:latest` still moves when Eugen's image digest changes between publishes, so a frozen image tag would not be the container Unraid is running.
 
@@ -315,7 +316,7 @@ Durable choices for this repository. Dates are the commit date or the day the de
 
 ## 2026-10-14 — The publish writes the next release summary before merging
 
-**Decision:** The version a push to `main` will tag already has a summary in `scripts/release_notes.py`. `/publish` runs `python3 scripts/next_version.py` and `python3 scripts/release_notes.py --tag v<that>` and does not merge while that command exits 1. The summary is committed with the `:latest` template change. `v1.14` says Save and restart still shows the lobby after a Workshop version pin, and that a page port left in `TIME_WAIT` does not keep the page from starting. The Docker log and the Unraid form descriptions in that same publish are shorter.
+**Decision:** The version a push to `main` will tag already has a summary in `scripts/release_notes.py`. `/publish` runs `python3 scripts/next_version.py` and `python3 scripts/release_notes.py --tag v<that>` and does not merge while that command exits 1. The summary is committed with the `:latest` template change. `v1.14` says Save and restart still shows the lobby after a Workshop version pin, and that a page port left in `TIME_WAIT` does not keep the page from starting. The Docker log and the Unraid form descriptions in that same publish are shorter. The 2026-11-08 entry runs that check only after `scripts/release_scope.py --publish` prints `release`.
 
 **Rationale:** On 2026-10-14 [Actions run 38515026308](https://github.com/suchamoneypit/WARHOST/actions/runs/38515026308) failed in "Tag and publish GitHub Release" on `56166ae`. Decide version had chosen `v1.14`. The summaries stopped at `v1.13`, so `scripts/release_notes.py` exited 1 before `git tag`. `sh scripts/check_repo.sh` only self-tests summaries that already exist, and `.claude/skills/publish/SKILL.md` never asked for the next one. The ubuntu-latest notice on that run is not the failure. The same gap will fail the next push to `main` until the summary is in the commit being tagged.
 
@@ -354,3 +355,9 @@ Durable choices for this repository. Dates are the commit date or the day the de
 **Decision:** The dedicated server records `.warhost-upstream.pid` in the settings folder before it execs. The wrapper signals and follows that pid. `setsid` forks when it is already a process group leader, and the shell's `$!` is then the parent that exits. `setsid -w` stays in that case and the container exits with the dedicated server's status. A torn or oversized status snapshot is skipped for that poll instead of being logged.
 
 **Rationale:** [Actions run 42340563581](https://github.com/suchamoneypit/WARHOST/actions/runs/42340563581) on `main` failed in Test settings entrypoint. The same commit's repository check passed. `setsid -f` reproduces the miss: the upstream script still prints its arguments, and the wrapper stops before any lobby line because it was watching the parent that had already exited.
+
+## 2026-11-08 — A README edit does not cut a release
+
+**Decision:** A push to `main` gets a version tag only when `scripts/release_scope.py` prints `release`. That is when no version tag exists yet, when this commit already has a version tag, or when the tree differs from the latest version tag in `Dockerfile`, `entrypoint-unraid.sh`, `templates/`, a shipped file under `webui/`, `VERSION`, or `LICENSE`. Shipped WebUI files are everything under `webui/` except `test_page.sh`, `make_catalog.py`, `previews/`, and `run/`. `skip` does not choose a number and does not read `scripts/release_notes.py`. The job succeeds. `README.md`, `docs/`, `CLAUDE.md`, `.cursor/`, `.claude/`, `ca_profile.xml`, `icon.png`, `samples/`, `tests/`, and those unshipped WebUI paths do not start the workflow. `scripts/` and `.github/` still start it, and the script then skips the tag when the shipped paths are unchanged. `/publish` runs `python3 scripts/release_scope.py --publish` after the template `Repository` is `:latest`, and it writes the next summary only when that command prints `release`. This narrows "Number each publish to main."
+
+**Rationale:** On 2026-11-08 the GitHub editor saved `README.md` twice (`e6cce66`, then `0f92472`). Each push ran the release workflow. [Actions run 42510827134](https://github.com/suchamoneypit/WARHOST/actions/runs/42510827134) and [Actions run 42510994374](https://github.com/suchamoneypit/WARHOST/actions/runs/42510994374) got through Decide version, which chose `1.20` because the latest tag was `v1.19` and `VERSION` was still `1.10`. Tag and publish GitHub Release then exited 1: `scripts/release_notes.py` has no summary for `v1.20`. The tag was not created. Community Apps reads `README.md` from `main` without a GitHub Release. A wording save is not a new server, and it should not fail the release job or spend the next number.

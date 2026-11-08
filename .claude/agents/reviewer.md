@@ -30,7 +30,7 @@ Do not read a file end to end to orient yourself. `docs/PROJECT-MAP.md` says wha
    - Port, volume path, image, or networking: the template Overview and `README.md`.
    A required pair with zero hits is a mismatch; name the heading (`rg -n "^#"`) where one sentence belongs.
 4. Edge cases the change can break: missing or placeholder variables, host networking versus published ports, the clear-text key versus the last-four log line, placeholder map IDs, and a path, command, or internal link in the docs that does not exist. Check an external URL only when the claim depends on it.
-5. A diff that sets `templates/warhost.xml` `<Repository>` to `ghcr.io/suchamoneypit/warhost:latest` is a publish. Run `python3 scripts/next_version.py`, then `python3 scripts/release_notes.py --tag v<that>`. A missing summary is a defect: that push fails `.github/workflows/release.yml`.
+5. A diff that sets `templates/warhost.xml` `<Repository>` to `ghcr.io/suchamoneypit/warhost:latest` is a publish. Run `python3 scripts/release_scope.py --names` with the paths that differ from the latest version tag once that Repository line is `:latest`. `skip` means the push does not tag. `release` means run `python3 scripts/next_version.py`, then `python3 scripts/release_notes.py --tag v<that>`. A missing summary on `release` is a defect: that push fails `.github/workflows/release.yml`.
 
 ## Return, under 400 words
 
