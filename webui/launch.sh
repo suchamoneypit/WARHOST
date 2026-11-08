@@ -63,10 +63,71 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+# Prints one IPv4, or nothing. WARHOST_WEB_IP is a test seam, not a form field.
+# A set seam that is not a dotted IPv4 does not fall through to the default route.
+page_address() {
+  python3 - << 'PY'
+import os, socket
+
+def usable(value):
+    parts = value.split(".")
+    if len(parts) != 4:
+        return False
+    for part in parts:
+        if not part.isdigit():
+            return False
+        if len(part) > 1 and part.startswith("0"):
+            return False
+        if int(part) > 255:
+            return False
+    return True
+
+if "WARHOST_WEB_IP" in os.environ:
+    value = os.environ["WARHOST_WEB_IP"].strip()
+    if usable(value):
+        print(value)
+    raise SystemExit(0)
+
+addr = ""
+try:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.connect(("192.0.2.1", 9))
+        addr = sock.getsockname()[0]
+    finally:
+        sock.close()
+except OSError:
+    addr = ""
+if usable(addr):
+    print(addr)
+PY
+}
+
+say_listening() {
+  still=$1
+  addr=$(page_address)
+  if [ -n "$still" ]; then
+    if [ -n "$addr" ]; then
+      printf 'WebUI still listening on http://%s:%s/.\n' "$addr" "$web_port"
+    else
+      printf 'WebUI still listening on port %s.\n' "$web_port"
+    fi
+  else
+    if [ -n "$addr" ]; then
+      printf 'WebUI listening on http://%s:%s/.\n' "$addr" "$web_port"
+    else
+      printf 'WebUI listening on port %s.\n' "$web_port"
+    fi
+  fi
+  if [ "$web_port" != 11400 ]; then
+    printf 'If the Docker button opens another server, set Advanced View WebUI to http://[IP]:[PORT:%s]/.\n' "$web_port"
+  fi
+}
+
 pidfile="${SETTINGS_DIR}/.warhost-webui.pid"
 if ! python3 "$here/server.py" --check; then
   if [ "${WARHOST_WEBUI_KEEP:-}" = 1 ] && [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
-    printf 'WebUI still listening on port %s.\n' "$web_port"
+    say_listening still
     exit 0
   fi
   warn "warning: WebUI port ${web_port} is already in use. The game server will still start."
@@ -108,7 +169,7 @@ while [ "$i" -lt 50 ]; do
     if grep -q 'stayed root' "$log"; then
       warn "warning: WebUI could not drop privileges and stayed root."
     fi
-    printf 'WebUI listening on port %s.\n' "$web_port"
+    say_listening ""
     exit 0
   fi
   if [ -f "$pidfile" ] && ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then

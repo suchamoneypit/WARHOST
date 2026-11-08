@@ -49,7 +49,7 @@ The template on `main` installs `ghcr.io/suchamoneypit/warhost:latest`. The temp
 <tbody>
 <tr>
 <td nowrap>Settings Folder</td>
-<td><code>/mnt/user/appdata/warno/10400/settings</code> for the first server. The next container uses this path with the port number plus 1, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only.</td>
+<td><code>/mnt/user/appdata/warno/10400/settings</code> for the first server. The next container uses this path with the port number plus 1, for example <code>/mnt/user/appdata/warno/10401/settings</code>. The folder holds the ini files only. Set Advanced View WebUI to <code>http://[IP]:[PORT:11401]/</code>.</td>
 </tr>
 <tr>
 <td nowrap>Eugen Login</td>
@@ -65,15 +65,15 @@ The template on `main` installs `ghcr.io/suchamoneypit/warhost:latest`. The temp
 </tr>
 <tr>
 <td nowrap>WebUI</td>
-<td><code>true</code> serves the lobby page on WebUI Port. Set the server name, map, and mods there. <code>false</code> leaves the Docker button with nothing listening.</td>
+<td><code>true</code> serves the lobby page on WebUI Port. Set the server name, map, and mods there. For the next container, set Advanced View WebUI to <code>http://[IP]:[PORT:11401]/</code>. <code>false</code> leaves the Docker button with nothing listening.</td>
 </tr>
 <tr>
 <td nowrap>Game Port</td>
-<td><code>10400</code> for the first server. This port must be free on the Unraid host. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Set WebUI Port to this number plus 1000. Players join by the server name set in the WebUI.</td>
+<td><code>10400</code> for the first server. This port must be free on the Unraid host. The next container uses that number plus 1. Forward each number to this Unraid server as TCP and UDP. Set WebUI Port to this number plus 1000. Set Advanced View WebUI to <code>http://[IP]:[PORT:11401]/</code>. Players join by the server name set in the WebUI.</td>
 </tr>
 <tr>
 <td nowrap>WebUI Port</td>
-<td><code>11400</code> for the first server. The next container uses this number plus 1. Do not forward it. The Docker button ignores this field. In Advanced View, change <code>11400</code> in the WebUI box to this number.</td>
+<td>Port the lobby page listens on: <code>11400</code> on the first server, then the next number. Set Advanced View WebUI to <code>http://[IP]:[PORT:11401]/</code> or the Docker button still opens <code>11400</code>. Do not forward it.</td>
 </tr>
 <tr>
 <td nowrap>Write Config From Form (Show more settings)</td>
@@ -421,9 +421,9 @@ The same lines are appended to `.warhost-status.log` in the settings folder. Tha
 
 ## WebUI
 
-The page listens on WebUI Port. The first server is `http://<unraid>:11400/`. The next server, with WebUI Port `11401`, is `http://<unraid>:11401/`. Do not forward that port. A container from before this field still listens on the game port plus 1000. Under the heading, the page lists the game port and the WebUI port as a pair, and the game port says `(must be port forwarded TCP/UDP)`. The browser tab names both ports, so several open pages stay distinct. When the page is up, the log says `WebUI listening on port 11400.`
+The page listens on WebUI Port. The first server is `http://<unraid>:11400/`. The next server, with WebUI Port `11401`, is `http://<unraid>:11401/`. Do not forward that port. A container from before this field still listens on the game port plus 1000. Under the heading, the page lists the game port and the WebUI port as a pair, and the game port says `(must be port forwarded TCP/UDP)`. The browser tab names both ports, so several open pages stay distinct. When the page is up, the log says `WebUI listening on http://10.0.1.50:11400/.` That address is this server's, not the public WAN IP. It can differ from the host in the Docker button when the default route uses another interface. When WebUI Port is not 11400, the next line is `If the Docker button opens another server, set Advanced View WebUI to http://[IP]:[PORT:11401]/.`
 
-The Docker button reads the Advanced View WebUI box, `http://[IP]:[PORT:11400]/`. On host networking that number stays 11400 until you change it there and Apply. Set it to the same number as WebUI Port.
+The first server leaves WebUI Port and the Advanced View WebUI box at `http://[IP]:[PORT:11400]/`. The Docker button already opens that page. A later container's button opens its page only after that box uses the same number as WebUI Port. Changing WebUI Port does not change the box.
 
 `false` leaves nothing listening. The log says `WebUI is off. Nothing is listening on port 11400.` If that port is already taken, it says `WebUI is off. Port 11400 is already in use.` With WebUI left on, a taken page port logs `warning: WebUI port 11400 is already in use. The game server will still start.` The Docker button still opens the port in the Advanced View box.
 
