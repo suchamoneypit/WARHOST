@@ -4,7 +4,7 @@ WARHOST runs Eugen Systems' official [WARNO](https://store.steampowered.com/app/
 
 The first start is a 2v2 Conquest lobby on Hesse (`_2x2_Hesse_2vs2_CONQ`), named `WARHOST - Default Server Name`, with no workshop mods. Open the WebUI to change the name, map, player limits, and mods.
 
-If you have hosted game servers before, the field descriptions on the Unraid form and a TCP and UDP port forward are likely all you need. WARHOST is listed in Community Applications: Apps, search WARHOST, Install. The full walkthrough is [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). Workshop mods and scenario IDs are further down this page.
+If you have hosted game servers before, the field descriptions on the Unraid form and a TCP and UDP port forward are likely all you need. Its like other game servers. Setup the server setups, and make sure the game port is port forwarded to the host. WARHOST is listed in Unraid Community Applications: Apps, search WARHOST, Install. The full walkthrough is [docs/INSTALL-UNRAID.md](docs/INSTALL-UNRAID.md). Workshop mods and scenario IDs are further down this page (but probably unnecessary with the WebUI).
 
 ## What you need
 
