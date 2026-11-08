@@ -1,6 +1,6 @@
 # WARHOST — WARNO Dedicated Server for Unraid
 
-WARHOST runs Eugen Systems' official [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server on Unraid, one server per container. The install form takes the login and dedicated key Eugen sends you and writes `login.ini`. The WebUI writes the lobby. The container then starts Eugen's server.
+WARHOST runs Eugen Systems' official [WARNO](https://store.steampowered.com/app/1611600/WARNO/) dedicated server on Unraid. The install form takes the login and dedicated key Eugen sends you and writes `login.ini`. The WebUI writes the lobby. The container then starts Eugen's server.
 
 The first start is a 2v2 Conquest lobby on Hesse (`_2x2_Hesse_2vs2_CONQ`), named `WARHOST - Default Server Name`, with no workshop mods. Open the WebUI to change the name, map, player limits, and mods.
 
