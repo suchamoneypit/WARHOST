@@ -55,7 +55,7 @@ jobs:
       - name: Decide whether to build
         id: plan
         env:
-          IMAGE: ghcr.io/suchamoneypit/warhost:${{ github.ref_name == 'dev' && 'dev' || 'latest' }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/warhost:${{ github.ref_name == 'dev' && 'dev' || 'latest' }}
           EVENT_NAME: ${{ github.event_name }}
           INPUT_FORCE: ${{ inputs.force }}
           UPSTREAM: ${{ steps.upstream.outputs.digest }}
@@ -90,6 +90,6 @@ jobs:
           platforms: linux/amd64
           provenance: false
           sbom: false
-          tags: ghcr.io/suchamoneypit/warhost:${{ github.ref_name == 'dev' && 'dev' || 'latest' }}
+          tags: ghcr.io/${{ github.repository_owner }}/warhost:${{ github.ref_name == 'dev' && 'dev' || 'latest' }}
           build-args: |
             UPSTREAM_DIGEST=${{ steps.upstream.outputs.digest }}

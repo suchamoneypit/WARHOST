@@ -27,7 +27,7 @@ The container uses **host networking**, which Eugen recommends. That has three c
 
 1. Unraid shows **no port mapping** for this container. That is correct, not a missing field.
 2. The game port must be free on the Unraid server itself. `10400` is this template's default; Eugen's docs use a placeholder. If something else on Unraid already uses `10400`, pick another port and use it everywhere below.
-3. Every additional container needs the previous game port plus 1 and the previous WebUI port plus 1. Forward each game port as TCP and UDP. Do not forward the WebUI port. In Advanced View, change `11400` in the WebUI box to that container's WebUI Port. Players join by the server name set in the WebUI.
+3. Every additional container needs the previous game port plus 1 and the previous WebUI port plus 1. Forward each game port as TCP and UDP. Do not forward the WebUI port. The first server leaves Advanced View WebUI at `11400`. Each added container changes `11400` in that box to its WebUI Port. Players join by the server name set in the WebUI.
 
 On your router, forward the game port **as both TCP and UDP** to your Unraid server's LAN IP. Eugen: "make sure you forward both UDP and the TCP to the exposed port because the server needs both." Give Unraid a fixed LAN IP (DHCP reservation) so the forward does not break.
 
@@ -67,7 +67,7 @@ Usual player counts for each size are in the README. Choosing a map in the WebUI
 
 ## 4. Put the template into Unraid
 
-WARHOST is listed in Community Applications. In the **Apps** tab, search for **WARHOST** and choose **Install**. The Add Container form opens with every field prefilled; continue with step 5. That installs the `main` template and `ghcr.io/suchamoneypit/warhost:latest`.
+WARHOST is listed in Community Applications. In the **Apps** tab, search for **WARHOST** and choose **Install**. The Add Container form opens with every field prefilled; continue with step 5. That installs the `main` template and `ghcr.io/matthewariel/warhost:latest`.
 
 To install the `dev` template, or a template change before Community Applications picks it up, copy the XML onto the flash drive instead. Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so Unraid 7 has no place to paste a template URL.
 
@@ -76,18 +76,18 @@ To install the `dev` template, or a template change before Community Application
 ```sh
 mkdir -p /boot/config/plugins/dockerMan/templates-user
 curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
+  https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml
 ```
 
-The `dev` template is a separate download. It installs `ghcr.io/suchamoneypit/warhost:dev`. The `main` template installs `ghcr.io/suchamoneypit/warhost:latest`. Paste this instead of the `main` command when that is the container you are adding. Wait until **Rebuild WARHOST image** has published that tag, or Apply cannot pull it.
+The `dev` template is a separate download. It installs `ghcr.io/matthewariel/warhost:dev`. The `main` template installs `ghcr.io/matthewariel/warhost:latest`. Paste this instead of the `main` command when that is the container you are adding. Wait until **Rebuild WARHOST image** has published that tag, or Apply cannot pull it.
 
 ```sh
 mkdir -p /boot/config/plugins/dockerMan/templates-user
 curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST-dev.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARHOST/dev/templates/warhost.xml
+  https://raw.githubusercontent.com/matthewariel/WARHOST/dev/templates/warhost.xml
 ```
 
-Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** for the `main` download, or **WARHOST-dev** for the `dev` download, under **User templates**. Every field prefills. The dev entry's repository is `ghcr.io/suchamoneypit/warhost:dev`.
+Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** for the `main` download, or **WARHOST-dev** for the `dev` download, under **User templates**. Every field prefills. The dev entry's repository is `ghcr.io/matthewariel/warhost:dev`.
 
 Unraid labels that menu from the filename, with `my-` removed. The `<Name>` in the XML is `WARHOST`. That string is the Docker container name and the dropdown title. If an earlier download is still in the folder, delete it:
 
@@ -96,17 +96,17 @@ rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
   /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml
 ```
 
-Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. A download of `main` runs `ghcr.io/suchamoneypit/warhost:latest`. A download of `dev` runs `ghcr.io/suchamoneypit/warhost:dev`.
+Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. A download of `main` runs `ghcr.io/matthewariel/warhost:latest`. A download of `dev` runs `ghcr.io/matthewariel/warhost:dev`.
 
 Another flash-drive route: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
 
 ```sh
-mkdir -p /boot/config/plugins/community.applications/private/suchamoneypit
-curl -fsSL -o /boot/config/plugins/community.applications/private/suchamoneypit/warhost.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
+mkdir -p /boot/config/plugins/community.applications/private/matthewariel
+curl -fsSL -o /boot/config/plugins/community.applications/private/matthewariel/warhost.xml \
+  https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml
 ```
 
-This private download has not been tried on this repository. It is meant to appear in the **Apps** tab under **Private**.
+This private download has not been tried on this repository. It is meant to appear in the **Apps** tab under **Private**. If `/boot/config/plugins/community.applications/private/suchamoneypit/` is still on the flash drive, delete that folder. The private list for this account is `matthewariel`.
 
 ## 5. Fill in the form
 
@@ -116,13 +116,13 @@ This private download has not been tried on this repository. It is meant to appe
 | --- | --- | --- |
 | Name | `WARHOST` | Keep for the first server. Each added container needs its own name. |
 | Network Type | `Host` | Keep. |
-| Settings Folder | `/mnt/user/appdata/warno/10400/settings` | Keep when Game Port stays `10400`. If step 2 replaced that port, put the replacement in this path. The next container uses this path with the port number plus 1, for example `/mnt/user/appdata/warno/10401/settings`. These are small ini files. Do not copy the game here. |
+| Settings Folder | `/mnt/user/appdata/warno/10400/settings` | Keep when Game Port stays `10400`. If step 2 replaced that port, put the replacement in this path. The next container uses this path with the port number plus 1, for example `/mnt/user/appdata/warno/10401/settings`. Set Advanced View WebUI to `http://[IP]:[PORT:11401]/`. These are small ini files. Do not copy the game here. |
 | Eugen Login | empty | The login from Eugen's reply. |
 | Eugen Dedicated Key | empty | The key from Eugen's reply. Paste the whole key. The log shows only the last 4 characters. |
 | Public WAN IP | empty | Your public IP address from step 2. |
-| WebUI | `true` | Keep. Serves the lobby page on WebUI Port. Set the server name, map, and mods there. `false` leaves the Docker button with nothing listening. If WebUI is true and that port is taken, the log says `warning: WebUI port 11400 is already in use. The game server will still start.` If WebUI is false, it says `WebUI is off. Nothing is listening on port 11400.` or `WebUI is off. Port 11400 is already in use.` |
-| Game Port | `10400` | Keep for the first server. The next container uses this number plus 1. Forward each number as TCP and UDP. Set WebUI Port to this number plus 1000. Players join by the server name set in the WebUI. You can change a port later by editing that container; the forward must use the same number. |
-| WebUI Port | `11400` | Keep for the first server. The next container uses this number plus 1. Do not forward it. The Docker button ignores this field. Turn on Advanced View and change `11400` in the WebUI box to this number, then Apply. The open page names this port and the Game Port in the heading and the browser tab. |
+| WebUI | `true` | Keep. Serves the lobby page on WebUI Port. Set the server name, map, and mods there. For the next container, set Advanced View WebUI to `http://[IP]:[PORT:11401]/`. `false` leaves the Docker button with nothing listening. If WebUI is true and that port is taken, the log says `warning: WebUI port 11400 is already in use. The game server will still start.` If WebUI is false, it says `WebUI is off. Nothing is listening on port 11400.` or `WebUI is off. Port 11400 is already in use.` |
+| Game Port | `10400` | Keep for the first server. The next container uses this number plus 1. Forward each number as TCP and UDP. Set WebUI Port to this number plus 1000. Set Advanced View WebUI to `http://[IP]:[PORT:11401]/`. Players join by the server name set in the WebUI. You can change a port later by editing that container; the forward must use the same number. |
+| WebUI Port | `11400` | Port the lobby page listens on: 11400 on the first server, then the next number. Set Advanced View WebUI to `http://[IP]:[PORT:11401]/` or the Docker button still opens 11400. Do not forward it. |
 | Write Config From Form (Show more) | `true` | Keep. Rewrites `login.ini` each start, fills in missing lobby files, and refreshes a bare Workshop id to `id/Version`. `false` leaves the file contents in place and sets `login.ini` to mode 600. |
 
 Click **Apply**. Unraid pulls the image and starts the container. A pull error here means Unraid could not fetch the image. The first troubleshooting row says what to check.
@@ -138,10 +138,10 @@ On the **Docker** tab the container shows as started. Click its icon → **Logs*
 ```text
 Wrote WARNO settings for WARHOST - Default Server Name on port 10400. Map _2x2_Hesse_2vs2_CONQ. Key last 4 XXXX.
 Next container on this host: Game Port 10401, WebUI Port 11401, settings folder /mnt/user/appdata/warno/10401/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:11401]/ so the Docker button opens that page.
-WebUI listening on port 11400.
+WebUI listening on http://10.0.1.50:11400/.
 ```
 
-An existing `variables.ini` starts with `Kept variables.ini for` instead of `Wrote WARNO settings`. If the log shows `warning:`, use the troubleshooting table. Eugen's server prints after those wrapper lines. If the container stopped before `Wrote WARNO settings` or `Kept variables.ini`, the last log line is one of the wrapper's own error messages. If it stopped after Eugen's output begins, the wrapper did its job and `warno-server` itself exited.
+The address in that listening line is this Unraid server's, not the public WAN IP. The first server does not print an Advanced View line. An existing `variables.ini` starts with `Kept variables.ini for` instead of `Wrote WARNO settings`. If the log shows `warning:`, use the troubleshooting table. Eugen's server prints after those wrapper lines. If the container stopped before `Wrote WARNO settings` or `Kept variables.ini`, the last log line is one of the wrapper's own error messages. If it stopped after Eugen's output begins, the wrapper did its job and `warno-server` itself exited.
 
 ### 6b. The settings files exist
 
@@ -200,10 +200,10 @@ On start, the log names the next port and its settings folder. If the settings f
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Pull fails on Apply (`denied`, `unauthorized`, `not found`) | Package is private or image name is wrong | Run the check under this table. |
+| Pull fails on Apply (`denied`, `unauthorized`, `not found`) | Package is private, or the repository is still `ghcr.io/suchamoneypit/warhost` | Set Repository to `ghcr.io/matthewariel/warhost:latest`, or `:dev` for a dev template, and Apply. Then run the check under this table. |
 | Container stops at once; log ends with `Set Public WAN IP.`, `Set your Eugen login.`, or `Set your Eugen dedicated key.` | A required field is empty | Edit the container, fill the field, Apply. |
 | Container stops at once; log ends with `Eugen dedicated key must be at least 4 characters.` | The key is shorter than 4 characters | Paste the full key from Eugen's reply, and Apply. |
-| Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Set Map to a scenario ID...` | The container is still running a `ghcr.io/suchamoneypit/warhost:latest` image from before the WebUI publish. That entrypoint reads Map from the Docker form. The current template does not send Map, so that image exits before the WebUI starts | Update the container after **Rebuild WARHOST image** finishes, and confirm the repository is `ghcr.io/suchamoneypit/warhost:latest`, or `:dev` when this container was added from the dev template. The log should say `Wrote WARNO settings` or `Kept variables.ini`, then `WebUI listening on port`. |
+| Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Set Map to a scenario ID...` | The container is still running a `ghcr.io/matthewariel/warhost:latest` image from before the WebUI publish. That entrypoint reads Map from the Docker form. The current template does not send Map, so that image exits before the WebUI starts | Update the container after **Rebuild WARHOST image** finishes, and confirm the repository is `ghcr.io/matthewariel/warhost:latest`, or `:dev` when this container was added from the dev template. The log should say `Wrote WARNO settings` or `Kept variables.ini`, then `WebUI listening on http://`. |
 | Log ends with `Workshop mod list must be empty or Workshop ids such as 3811913066...` | `ModList` in `variables.ini` is not a list of Workshop ids | Open the WebUI and save the checklist, or fix that line. Ids are joined with hyphens. `/Version` is a pin. |
 | Log ends with `Workshop mod list must be empty, none, or look like 3811913066/27...` | The container still runs an image from before bare Workshop ids | On the **Docker** tab, check for updates and update the container. Until then, enter the pin from the README workshop table, such as `3811913066/27`. |
 | Log ends with `Could not read Version for Workshop item ...` | That id has no saved `Version` in this settings folder, and Steam did not send its `Config.ini`. The `DepotDownloader:` lines above it give the reason: no connection to Steam, a wrong id, or a run longer than 300 seconds | Check the id against the number in the Workshop page URL, check the server's internet access, and start the container again. Or pin `id/Version` with the `Version` from the mod's `Config.ini` (step 3). |
@@ -220,8 +220,8 @@ On start, the log names the next port and its settings folder. If the settings f
 | Players are told a mod is missing or incompatible, and that warning is absent | They have not subscribed to and enabled the mod, a pin in the file is behind `Config.ini`, or the author published after this container started | Players: subscribe in Steam and enable the mod in WARNO's Mod Center. Host: save the mod again in the WebUI, which writes the bare id, then restart so the start reads the new `Version`. The client message does not appear in this log. |
 | Hand edits to `variables.ini` disappear after a restart | A bare Workshop id was rewritten as `id/Version`, or a WebUI save replaced the file | Other lines stay. Set Write Config From Form to `false` to skip the version refresh. `false` leaves all three files and sets `login.ini` to mode `600`. |
 | A WebUI save is not loaded yet | Save replaces `variables.ini` and leaves the current match running | Use Save and restart on that page. If it says the page cannot restart the container, restart that container in Unraid. |
-| The browser says the Unraid address refused to connect when the Docker WebUI button is opened | Nothing is listening on WebUI Port. WebUI is `false`, or the container is an image from before the page was published | Set **WebUI** to `true` and Apply. The log must say `WebUI listening on port` followed by WebUI Port. For the first server that is `11400`. If that line is absent and the log also never says `WebUI is off`, update the container. |
-| The Docker WebUI button opens the first server's page | Advanced View WebUI is still `http://[IP]:[PORT:11400]/`. Host networking leaves that number as 11400 | Set **WebUI Port** to the game port plus 1000. Turn on **Advanced View**, change `11400` in the WebUI box to that same number, and Apply. Under the heading, the page lists the game port and the WebUI port as a pair, and the browser tab names both. |
+| The browser says the Unraid address refused to connect when the Docker WebUI button is opened | Nothing is listening on WebUI Port. WebUI is `false`, or the container is an image from before the page was published | Set **WebUI** to `true` and Apply. The log must say `WebUI listening on http://` and this server's address with WebUI Port. For the first server that port is `11400`. A line that says `WebUI listening on port` and no address still names the port to open. If that line is absent and the log also never says `WebUI is off`, update the container. |
+| The Docker WebUI button opens the first server's page | Advanced View WebUI is still `http://[IP]:[PORT:11400]/`. Host networking leaves that number as 11400. The first server can leave both at 11400 | Set **WebUI Port** to the game port plus 1000. Turn on **Advanced View**, change `11400` in the WebUI box to that same number, and Apply. The log line `If the Docker button opens another server` names that box. Under the heading, the page lists the game port and the WebUI port as a pair, and the browser tab names both. |
 | The WebUI opens and every field is blank. `.warhost-webui.log` contains `PermissionError` and `variables.ini` | An image from before this fix left that file root-only after Save and restart pinned a Workshop version. The dedicated server still has the lobby | Update the container. Until that image is running, restart the container in Unraid after the page has been closed for about a minute. |
 | Log ends with `This settings folder is already used by a running container` | Two containers share one settings folder | The log names this Game Port's folder. If that folder is the one in use, it also names the folder for the port plus 1. Use the path that is not already taken. Do not copy WARNO or a Workshop folder into it. |
 | A sixth container on the same login and key fails to come online | Eugen documents a limit of five servers per login and key pair; the exact error has not been observed. This wrapper does not count running servers | Stop one, or request another login and key pair. |
@@ -229,16 +229,16 @@ On start, the log names the next port and its settings folder. If the settings f
 
 ### Pull fails on Apply
 
-The package must be public. Open <https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost>. From any Linux or macOS terminal, this must print `200`. For a `dev` template, change `latest` to `dev` in the last URL.
+The package must be public, and the repository must be `ghcr.io/matthewariel/warhost`. A container still set to `ghcr.io/suchamoneypit/warhost` cannot pull: the registry does not serve that path. Open <https://github.com/matthewariel/WARHOST/pkgs/container/warhost>. From any Linux or macOS terminal, this must print `200`. For a `dev` template, change `latest` to `dev` in the last URL.
 
 ```sh
-TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:suchamoneypit/warhost:pull" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:matthewariel/warhost:pull" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json" \
-  https://ghcr.io/v2/suchamoneypit/warhost/manifests/latest
+  https://ghcr.io/v2/matthewariel/warhost/manifests/latest
 ```
 
-The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. The template ReadMe is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE. A red **Rebuild WARHOST image** run is a failed build, which leaves the previous image. Open an issue.
+The template file must return `200`: <https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml>. The template ReadMe is https://raw.githubusercontent.com/matthewariel/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/matthewariel/WARHOST/main/LICENSE. A red **Rebuild WARHOST image** run is a failed build, which leaves the previous image. Open an issue.
 
 ## Not yet verified
 

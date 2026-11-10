@@ -680,8 +680,10 @@ if sudo -n true 2>/dev/null; then
   mkdir -p "$launch_settings"
   printf 'ServerName = WARHOST - Hesse 2v2\n' > "${launch_settings}/variables.ini"
   sudo -n env SETTINGS_DIR="$launch_settings" EXPOSEDPORT=38524 WARHOST_WEBUI_DROP_FAIL=1 \
+    WARHOST_WEB_IP=10.0.1.50 \
     sh "${ROOT}/webui/launch.sh" >"${WORKDIR}/launch-out.txt" 2>"${WORKDIR}/launch-err.txt"
-  grep -qx 'WebUI listening on port 39524.' "${WORKDIR}/launch-out.txt" || fail "launch did not say it was listening"
+  grep -qx 'WebUI listening on http://10.0.1.50:39524/.' "${WORKDIR}/launch-out.txt" || fail "launch did not say it was listening"
+  grep -Fqx 'If the Docker button opens another server, set Advanced View WebUI to http://[IP]:[PORT:39524]/.' "${WORKDIR}/launch-out.txt" || fail "launch did not name the Docker button"
   grep -q 'stayed root' "${WORKDIR}/launch-err.txt" || fail "launch did not warn on the container log"
   ROOT_PAGE_PID=$(sudo cat "${launch_settings}/.warhost-webui.pid")
   sudo kill -- "-$ROOT_PAGE_PID" 2>/dev/null || sudo kill "$ROOT_PAGE_PID" 2>/dev/null || true

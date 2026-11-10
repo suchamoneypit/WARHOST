@@ -2,7 +2,7 @@
 
 Serve this checkout's WebUI and open it beside the chat for Design Mode. Do not start the Unraid container.
 
-1. Report `git branch --show-current`. If it is not `dev`, say so and still serve this checkout. The page is the files on disk in this working tree, including uncommitted edits. It is not the Unraid image `ghcr.io/suchamoneypit/warhost:dev`.
+1. Report `git branch --show-current`. If it is not `dev`, say so and still serve this checkout. The page is the files on disk in this working tree, including uncommitted edits. It is not the Unraid image `ghcr.io/matthewariel/warhost:dev`.
 2. Use `/tmp/warhost-preview`. Create that directory if it is missing. Copy `samples/variables.ini.example` to `/tmp/warhost-preview/variables.ini` only when that file is missing, so a preview save survives a later restart. Do not use the Unraid settings folder. Do not read or write `login.ini`. Do not print Eugen logins or dedicated keys.
 3. If TCP port 11400 is already this checkout's `webui/server.py`, leave that process running. Restart it only when `webui/server.py` or `webui/lobby.py` changed after that process started, and kill only that process. If a different process holds 11400, do not kill it; say so and stop. Otherwise start the server in the background from the repository root and leave it running (do not kill it when the command finishes):
 

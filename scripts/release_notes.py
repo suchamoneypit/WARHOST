@@ -24,7 +24,7 @@ import tempfile
 
 import next_version
 
-REPO = "https://github.com/suchamoneypit/WARHOST"
+REPO = "https://github.com/matthewariel/WARHOST"
 
 # What a host would notice. A later tag is added here in the publish that
 # creates it. The workflow does not invent notes from commit subjects.
@@ -109,6 +109,11 @@ WRITTEN = {
         "- The settings folder has .warhost-upstream.pid while the server is running. The container removes that file when it exits.\n"
         "- If the dedicated server stops on its own, the container exits with that server's status."
     ),
+    "v1.20": (
+        "- The GitHub account rename updated the recorded names. The image is ghcr.io/matthewariel/warhost. A container still set to ghcr.io/suchamoneypit/warhost needs that repository edited.\n"
+        "- The Docker log names this server's lobby address, such as WebUI listening on http://10.0.1.50:11400/. That address is not the public WAN IP.\n"
+        "- The first server can leave Advanced View WebUI at 11400. Each added container sets that box to its WebUI Port, or the Docker button still opens the first server."
+    ),
 }
 
 REQUIRED = {
@@ -132,6 +137,7 @@ REQUIRED = {
     "v1.17": "Default Server Name",
     "v1.18": "including AI",
     "v1.19": ".warhost-upstream.pid",
+    "v1.20": "ghcr.io/matthewariel/warhost",
 }
 
 

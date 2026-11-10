@@ -1350,17 +1350,54 @@ make_server
 expect_ok "WebUI Port names the page when it is set" \
   WEB_UI=true \
   WEB_PORT=24111 \
+  WARHOST_WEB_IP=10.0.1.50 \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=22111 \
   MAP=_2x2_Hesse_2vs2_CONQ
-grep -qx 'WebUI listening on port 24111.' "${WORKDIR}/stdout.txt" || fail "WebUI Port did not choose the listening port"
-if grep -q 'WebUI listening on port 23111.' "${WORKDIR}/stdout.txt"; then
+grep -qx 'WebUI listening on http://10.0.1.50:24111/.' "${WORKDIR}/stdout.txt" || fail "WebUI Port did not choose the listening port"
+grep -Fqx 'If the Docker button opens another server, set Advanced View WebUI to http://[IP]:[PORT:24111]/.' "${WORKDIR}/stdout.txt" || fail "WebUI Port did not name the Docker button"
+if grep -q '23111' "${WORKDIR}/stdout.txt"; then
   fail "WebUI Port fell back to the game port plus 1000"
 fi
 grep -Fqx 'Next container on this host: Game Port 22112, WebUI Port 24112, settings folder /mnt/user/appdata/warno/22112/settings, and a different server name in the WebUI. In Advanced View, set WebUI to http://[IP]:[PORT:24112]/ so the Docker button opens that page.' "${WORKDIR}/stdout.txt" || fail "WebUI Port did not name the next page port"
+stop_webui
+
+make_server
+expect_ok "an invalid WebUI address falls back to the port" \
+  WEB_UI=true \
+  WEB_PORT=24121 \
+  WARHOST_WEB_IP=not-an-ip \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=22121 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'WebUI listening on port 24121.' "${WORKDIR}/stdout.txt" || fail "invalid WebUI address did not keep the port line"
+if grep -q 'WebUI listening on http://' "${WORKDIR}/stdout.txt"; then
+  fail "invalid WebUI address used a route address"
+fi
+grep -Fqx 'If the Docker button opens another server, set Advanced View WebUI to http://[IP]:[PORT:24121]/.' "${WORKDIR}/stdout.txt" || fail "invalid WebUI address did not name the Docker button"
+stop_webui
+
+make_server
+expect_ok "the first server address has no Docker button line" \
+  WEB_UI=true \
+  WEB_PORT=11400 \
+  WARHOST_WEB_IP=10.0.1.50 \
+  UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
+  EUGEN_LOGIN=host-login \
+  EUGEN_DEDICATED_KEY=host-key-value \
+  EXPOSEDIP=203.0.113.10 \
+  EXPOSEDPORT=10400 \
+  MAP=_2x2_Hesse_2vs2_CONQ
+grep -qx 'WebUI listening on http://10.0.1.50:11400/.' "${WORKDIR}/stdout.txt" || fail "first server did not name its address"
+if grep -q 'If the Docker button opens another server' "${WORKDIR}/stdout.txt"; then
+  fail "first server named the Docker button"
+fi
 stop_webui
 
 make_server
@@ -1434,6 +1471,7 @@ fi
 make_server
 expect_ok "lobby page seeds variables.ini and starts beside the server" \
   WEB_UI=true \
+  WARHOST_WEB_IP=10.0.1.50 \
   UPSTREAM_ENTRYPOINT="${server}/entrypoint2.sh" \
   EUGEN_LOGIN=host-login \
   EUGEN_DEDICATED_KEY=host-key-value \
@@ -1442,7 +1480,8 @@ expect_ok "lobby page seeds variables.ini and starts beside the server" \
   SERVER_NAME="WARHOST - Hesse 2v2" \
   MAP=_2x2_Hesse_2vs2_CONQ
 grep -qx 'reached-upstream' "${WORKDIR}/stdout.txt" || fail "lobby page seed did not reach the upstream entrypoint"
-grep -qx 'WebUI listening on port 22400.' "${WORKDIR}/stdout.txt" || fail "lobby page did not say it was listening"
+grep -qx 'WebUI listening on http://10.0.1.50:22400/.' "${WORKDIR}/stdout.txt" || fail "lobby page did not say it was listening"
+grep -Fqx 'If the Docker button opens another server, set Advanced View WebUI to http://[IP]:[PORT:22400]/.' "${WORKDIR}/stdout.txt" || fail "lobby page did not name the Docker button"
 grep -qx 'Map = _2x2_Hesse_2vs2_CONQ' "${server}/settings/variables.ini" || fail "lobby page seed did not write the map"
 [ -f "${server}/settings/.warhost-webui.ready" ] || fail "lobby page did not become ready"
 python3 - << 'PY' || fail "lobby page was not accepting on 0.0.0.0:22400"
@@ -1632,17 +1671,18 @@ env -i PATH="${WORKDIR}/no-wget:${PATH}" WARHOST_PORT_TABLE="$EMPTY_PORT_TABLE" 
   EXPOSEDIP=203.0.113.10 \
   EXPOSEDPORT=21640 \
   WEB_UI=true \
+  WARHOST_WEB_IP=10.0.1.50 \
   sh "$ENTRY" >"${WORKDIR}/keep-out.txt" 2>"${WORKDIR}/keep-err.txt" &
 restart_pid=$!
 i=0
 while [ "$i" -lt 80 ]; do
-  if grep -q 'WebUI listening on port 22640.' "${WORKDIR}/keep-out.txt"; then
+  if grep -q 'WebUI listening on http://10.0.1.50:22640/.' "${WORKDIR}/keep-out.txt"; then
     break
   fi
   i=$((i + 1))
   sleep 0.05
 done
-grep -q 'WebUI listening on port 22640.' "${WORKDIR}/keep-out.txt" || fail "kept page did not start"
+grep -q 'WebUI listening on http://10.0.1.50:22640/.' "${WORKDIR}/keep-out.txt" || fail "kept page did not start"
 python3 - "${server}/settings/variables.ini" << 'PY'
 import pathlib, sys
 path = pathlib.Path(sys.argv[1])
@@ -1653,13 +1693,13 @@ chmod 644 "${server}/settings/variables.ini"
 kill -USR1 "$restart_pid" || fail "could not signal the kept page restart"
 i=0
 while [ "$i" -lt 80 ]; do
-  if grep -q 'WebUI still listening on port 22640.' "${WORKDIR}/keep-out.txt"; then
+  if grep -q 'WebUI still listening on http://10.0.1.50:22640/.' "${WORKDIR}/keep-out.txt"; then
     break
   fi
   i=$((i + 1))
   sleep 0.05
 done
-grep -q 'WebUI still listening on port 22640.' "${WORKDIR}/keep-out.txt" || fail "workshop restart did not keep the page"
+grep -q 'WebUI still listening on http://10.0.1.50:22640/.' "${WORKDIR}/keep-out.txt" || fail "workshop restart did not keep the page"
 grep -q 'ModList = 3811913066/27' "${server}/settings/variables.ini" || fail "workshop restart did not pin the version"
 kept_mode=$(stat -c '%a' "${server}/settings/variables.ini")
 [ "$kept_mode" = "644" ] || fail "workshop restart left variables.ini mode ${kept_mode}"

@@ -88,8 +88,8 @@ if template is not None:
     if webui != "http://[IP]:[PORT:11400]/":
         fail("template WebUI must stay http://[IP]:[PORT:11400]/")
     repository = (template.findtext("Repository") or "").strip()
-    latest_image = "ghcr.io/suchamoneypit/warhost:latest"
-    dev_image = "ghcr.io/suchamoneypit/warhost:dev"
+    latest_image = "ghcr.io/matthewariel/warhost:latest"
+    dev_image = "ghcr.io/matthewariel/warhost:dev"
     if repository not in (latest_image, dev_image):
         fail(f"template Repository must be {latest_image} or {dev_image}")
     branch = ""
@@ -141,12 +141,22 @@ else:
 if template is not None:
     readme_url = template.find("ReadMe")
     license_url = template.find("License")
-    expected_readme = "https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md"
-    expected_license = "https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE"
+    expected_readme = "https://raw.githubusercontent.com/matthewariel/WARHOST/main/README.md"
+    expected_license = "https://raw.githubusercontent.com/matthewariel/WARHOST/main/LICENSE"
     if readme_url is None or (readme_url.text or "").strip() != expected_readme:
         fail(f"template ReadMe must be {expected_readme}")
     if license_url is None or (license_url.text or "").strip() != expected_license:
         fail(f"template License must be {expected_license}")
+
+workflow_text = (root / ".github/workflows/rebuild-image.yml").read_text()
+owner_image = "ghcr.io/${{ github.repository_owner }}/warhost"
+if workflow_text.count(owner_image) != 2:
+    fail("rebuild-image.yml must tag ghcr.io/${{ github.repository_owner }}/warhost in the pull and the push")
+if "suchamoneypit" in workflow_text or "ghcr.io/matthewariel/" in workflow_text:
+    fail("rebuild-image.yml must not hardcode the image owner")
+for relative in ("templates/warhost.xml", "Dockerfile", "ca_profile.xml", "CLAUDE.md"):
+    if "suchamoneypit" in (root / relative).read_text():
+        fail(f"{relative} still names suchamoneypit")
 
 dockerfile_text = (root / "Dockerfile").read_text()
 if "org.opencontainers.image.licenses" in dockerfile_text:
