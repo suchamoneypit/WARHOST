@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>WARHOST</Name>
-  <Repository>ghcr.io/suchamoneypit/warhost:dev</Repository>
-  <Registry>https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost</Registry>
+  <Repository>ghcr.io/matthewariel/warhost:dev</Repository>
+  <Registry>https://github.com/matthewariel/WARHOST/pkgs/container/warhost</Registry>
   <Network>host</Network>
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
   <Support>https://forums.unraid.net/topic/200981-support-warhost-game-server-for-warno/</Support>
-  <Project>https://github.com/suchamoneypit/WARHOST</Project>
+  <Project>https://github.com/matthewariel/WARHOST</Project>
   <Overview>
     <![CDATA[
 WARHOST runs Eugen's official WARNO dedicated server on Unraid, one server per container. Enter the login and dedicated key Eugen sends you, your public IP, and a game port. The first start opens a base-game Hesse 2v2 lobby named WARHOST - Default Server Name, with no workshop mods. Change the name, map, and mods in the WebUI.
@@ -18,10 +18,10 @@ Request a login and key from eugsupport@eugensystems.com. One pair runs five ser
   <Category>GameServers:</Category>
   <ExtraSearchTerms>WARNO WARNO server dedicated server game server mods modded</ExtraSearchTerms>
   <WebUI>http://[IP]:[PORT:11400]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/icon.png</Icon>
-  <ReadMe>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md</ReadMe>
-  <License>https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE</License>
+  <TemplateURL>https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/matthewariel/WARHOST/main/icon.png</Icon>
+  <ReadMe>https://raw.githubusercontent.com/matthewariel/WARHOST/main/README.md</ReadMe>
+  <License>https://raw.githubusercontent.com/matthewariel/WARHOST/main/LICENSE</License>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>

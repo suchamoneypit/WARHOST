@@ -62,11 +62,11 @@ One-time setup: run `claude install` from the extension's binary so `~/.local/bi
 
 ## Clean slate on Unraid
 
-`/unraid-script` prints a third command, `sh scripts/print_template_fetch.sh --clean --branch main --branch dev`. It stops and removes the `WARHOST` and `WARHOST-dev` containers, drops those names from `/var/lib/docker/unraid-autostart`, deletes the user-template files and the two private files under `/boot/config/plugins/community.applications/private/suchamoneypit/`, and removes each container's settings folder `/mnt/user/appdata/warno/<port>/settings`. That folder holds the login and key. A folder still mounted by another container is left in place. The image is removed only when no container is still using it.
+`/unraid-script` prints a third command, `sh scripts/print_template_fetch.sh --clean --branch main --branch dev`. It stops and removes the `WARHOST` and `WARHOST-dev` containers, drops those names from `/var/lib/docker/unraid-autostart`, deletes the user-template files and the two private files under `/boot/config/plugins/community.applications/private/matthewariel/`, and removes each container's settings folder `/mnt/user/appdata/warno/<port>/settings`. That folder holds the login and key. A folder still mounted by another container is left in place. The image is removed only when no container is still using it. A folder left from the previous account, `/boot/config/plugins/community.applications/private/suchamoneypit/`, is not removed by that command. Delete it if it is still there.
 
 ## Publishing the image
 
-Before merging `dev` into `main`, set `<Repository>` in `templates/warhost.xml` back to `ghcr.io/suchamoneypit/warhost:latest`. The publish procedure is the `/publish` command, and it does that. A fork repeats these steps once the files are on `main`:
+Before merging `dev` into `main`, set `<Repository>` in `templates/warhost.xml` back to `ghcr.io/matthewariel/warhost:latest`. The publish procedure is the `/publish` command, and it does that. A fork repeats these steps once the files are on `main`:
 
 1. In the GitHub repository settings, enable Issues.
 2. Under Actions, allow GitHub Actions, and set workflow permissions to read and write.

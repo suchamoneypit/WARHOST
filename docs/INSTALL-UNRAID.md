@@ -67,7 +67,7 @@ Usual player counts for each size are in the README. Choosing a map in the WebUI
 
 ## 4. Put the template into Unraid
 
-WARHOST is listed in Community Applications. In the **Apps** tab, search for **WARHOST** and choose **Install**. The Add Container form opens with every field prefilled; continue with step 5. That installs the `main` template and `ghcr.io/suchamoneypit/warhost:latest`.
+WARHOST is listed in Community Applications. In the **Apps** tab, search for **WARHOST** and choose **Install**. The Add Container form opens with every field prefilled; continue with step 5. That installs the `main` template and `ghcr.io/matthewariel/warhost:latest`.
 
 To install the `dev` template, or a template change before Community Applications picks it up, copy the XML onto the flash drive instead. Unraid 6.10 removed the **Template Repositories** URL box from the Docker tab, so Unraid 7 has no place to paste a template URL.
 
@@ -76,18 +76,18 @@ To install the `dev` template, or a template change before Community Application
 ```sh
 mkdir -p /boot/config/plugins/dockerMan/templates-user
 curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
+  https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml
 ```
 
-The `dev` template is a separate download. It installs `ghcr.io/suchamoneypit/warhost:dev`. The `main` template installs `ghcr.io/suchamoneypit/warhost:latest`. Paste this instead of the `main` command when that is the container you are adding. Wait until **Rebuild WARHOST image** has published that tag, or Apply cannot pull it.
+The `dev` template is a separate download. It installs `ghcr.io/matthewariel/warhost:dev`. The `main` template installs `ghcr.io/matthewariel/warhost:latest`. Paste this instead of the `main` command when that is the container you are adding. Wait until **Rebuild WARHOST image** has published that tag, or Apply cannot pull it.
 
 ```sh
 mkdir -p /boot/config/plugins/dockerMan/templates-user
 curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST-dev.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARHOST/dev/templates/warhost.xml
+  https://raw.githubusercontent.com/matthewariel/WARHOST/dev/templates/warhost.xml
 ```
 
-Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** for the `main` download, or **WARHOST-dev** for the `dev` download, under **User templates**. Every field prefills. The dev entry's repository is `ghcr.io/suchamoneypit/warhost:dev`.
+Go to **Docker → Add Container**. Open the **Template** dropdown at the top and pick **WARHOST** for the `main` download, or **WARHOST-dev** for the `dev` download, under **User templates**. Every field prefills. The dev entry's repository is `ghcr.io/matthewariel/warhost:dev`.
 
 Unraid labels that menu from the filename, with `my-` removed. The `<Name>` in the XML is `WARHOST`. That string is the Docker container name and the dropdown title. If an earlier download is still in the folder, delete it:
 
@@ -96,17 +96,17 @@ rm -f /boot/config/plugins/dockerMan/templates-user/warno-dedicated-server.xml \
   /boot/config/plugins/dockerMan/templates-user/my-WARNO-Dedicated-Server.xml
 ```
 
-Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. A download of `main` runs `ghcr.io/suchamoneypit/warhost:latest`. A download of `dev` runs `ghcr.io/suchamoneypit/warhost:dev`.
+Close Add Container before curling. Apply on a tab that is already open writes that tab back over the file. A download of `main` runs `ghcr.io/matthewariel/warhost:latest`. A download of `dev` runs `ghcr.io/matthewariel/warhost:dev`.
 
 Another flash-drive route: `sh scripts/print_template_fetch.sh --private` prints the command that saves the file where the Apps tab looks for private templates. Paste that instead:
 
 ```sh
-mkdir -p /boot/config/plugins/community.applications/private/suchamoneypit
-curl -fsSL -o /boot/config/plugins/community.applications/private/suchamoneypit/warhost.xml \
-  https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
+mkdir -p /boot/config/plugins/community.applications/private/matthewariel
+curl -fsSL -o /boot/config/plugins/community.applications/private/matthewariel/warhost.xml \
+  https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml
 ```
 
-This private download has not been tried on this repository. It is meant to appear in the **Apps** tab under **Private**.
+This private download has not been tried on this repository. It is meant to appear in the **Apps** tab under **Private**. If `/boot/config/plugins/community.applications/private/suchamoneypit/` is still on the flash drive, delete that folder. The private list for this account is `matthewariel`.
 
 ## 5. Fill in the form
 
@@ -200,10 +200,10 @@ On start, the log names the next port and its settings folder. If the settings f
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Pull fails on Apply (`denied`, `unauthorized`, `not found`) | Package is private or image name is wrong | Run the check under this table. |
+| Pull fails on Apply (`denied`, `unauthorized`, `not found`) | Package is private, or the repository is still `ghcr.io/suchamoneypit/warhost` | Set Repository to `ghcr.io/matthewariel/warhost:latest`, or `:dev` for a dev template, and Apply. Then run the check under this table. |
 | Container stops at once; log ends with `Set Public WAN IP.`, `Set your Eugen login.`, or `Set your Eugen dedicated key.` | A required field is empty | Edit the container, fill the field, Apply. |
 | Container stops at once; log ends with `Eugen dedicated key must be at least 4 characters.` | The key is shorter than 4 characters | Paste the full key from Eugen's reply, and Apply. |
-| Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Set Map to a scenario ID...` | The container is still running a `ghcr.io/suchamoneypit/warhost:latest` image from before the WebUI publish. That entrypoint reads Map from the Docker form. The current template does not send Map, so that image exits before the WebUI starts | Update the container after **Rebuild WARHOST image** finishes, and confirm the repository is `ghcr.io/suchamoneypit/warhost:latest`, or `:dev` when this container was added from the dev template. The log should say `Wrote WARNO settings` or `Kept variables.ini`, then `WebUI listening on http://`. |
+| Log ends with `Map must be a scenario ID, not the display name Jungle Law...` or `Set Map to a scenario ID...` | The container is still running a `ghcr.io/matthewariel/warhost:latest` image from before the WebUI publish. That entrypoint reads Map from the Docker form. The current template does not send Map, so that image exits before the WebUI starts | Update the container after **Rebuild WARHOST image** finishes, and confirm the repository is `ghcr.io/matthewariel/warhost:latest`, or `:dev` when this container was added from the dev template. The log should say `Wrote WARNO settings` or `Kept variables.ini`, then `WebUI listening on http://`. |
 | Log ends with `Workshop mod list must be empty or Workshop ids such as 3811913066...` | `ModList` in `variables.ini` is not a list of Workshop ids | Open the WebUI and save the checklist, or fix that line. Ids are joined with hyphens. `/Version` is a pin. |
 | Log ends with `Workshop mod list must be empty, none, or look like 3811913066/27...` | The container still runs an image from before bare Workshop ids | On the **Docker** tab, check for updates and update the container. Until then, enter the pin from the README workshop table, such as `3811913066/27`. |
 | Log ends with `Could not read Version for Workshop item ...` | That id has no saved `Version` in this settings folder, and Steam did not send its `Config.ini`. The `DepotDownloader:` lines above it give the reason: no connection to Steam, a wrong id, or a run longer than 300 seconds | Check the id against the number in the Workshop page URL, check the server's internet access, and start the container again. Or pin `id/Version` with the `Version` from the mod's `Config.ini` (step 3). |
@@ -229,16 +229,16 @@ On start, the log names the next port and its settings folder. If the settings f
 
 ### Pull fails on Apply
 
-The package must be public. Open <https://github.com/suchamoneypit/WARHOST/pkgs/container/warhost>. From any Linux or macOS terminal, this must print `200`. For a `dev` template, change `latest` to `dev` in the last URL.
+The package must be public, and the repository must be `ghcr.io/matthewariel/warhost`. A container still set to `ghcr.io/suchamoneypit/warhost` cannot pull: the registry does not serve that path. Open <https://github.com/matthewariel/WARHOST/pkgs/container/warhost>. From any Linux or macOS terminal, this must print `200`. For a `dev` template, change `latest` to `dev` in the last URL.
 
 ```sh
-TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:suchamoneypit/warhost:pull" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+TOKEN=$(curl -s "https://ghcr.io/token?scope=repository:matthewariel/warhost:pull" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json" \
-  https://ghcr.io/v2/suchamoneypit/warhost/manifests/latest
+  https://ghcr.io/v2/matthewariel/warhost/manifests/latest
 ```
 
-The template file must return `200`: <https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml>. The template ReadMe is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/LICENSE. A red **Rebuild WARHOST image** run is a failed build, which leaves the previous image. Open an issue.
+The template file must return `200`: <https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml>. The template ReadMe is https://raw.githubusercontent.com/matthewariel/WARHOST/main/README.md and the template License is https://raw.githubusercontent.com/matthewariel/WARHOST/main/LICENSE. A red **Rebuild WARHOST image** run is a failed build, which leaves the previous image. Open an issue.
 
 ## Not yet verified
 

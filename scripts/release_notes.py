@@ -24,7 +24,7 @@ import tempfile
 
 import next_version
 
-REPO = "https://github.com/suchamoneypit/WARHOST"
+REPO = "https://github.com/matthewariel/WARHOST"
 
 # What a host would notice. A later tag is added here in the publish that
 # creates it. The workflow does not invent notes from commit subjects.

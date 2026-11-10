@@ -15,7 +15,7 @@ If you have hosted game servers before, the field descriptions on the Unraid for
 
 ## Install
 
-WARHOST is listed in Community Applications. In the Unraid **Apps** tab, search for **WARHOST**, choose **Install**, fill in the [form fields](#form-fields), and **Apply**. That installs the `main` template, which runs `ghcr.io/suchamoneypit/warhost:latest`.
+WARHOST is listed in Community Applications. In the Unraid **Apps** tab, search for **WARHOST**, choose **Install**, fill in the [form fields](#form-fields), and **Apply**. That installs the `main` template, which runs `ghcr.io/matthewariel/warhost:latest`.
 
 ### Without Community Applications
 
@@ -28,14 +28,14 @@ In a checkout of this repository, `sh scripts/print_template_fetch.sh` prints th
    ```sh
    mkdir -p /boot/config/plugins/dockerMan/templates-user
    curl -fsSL -o /boot/config/plugins/dockerMan/templates-user/my-WARHOST.xml \
-     https://raw.githubusercontent.com/suchamoneypit/WARHOST/main/templates/warhost.xml
+     https://raw.githubusercontent.com/matthewariel/WARHOST/main/templates/warhost.xml
    ```
 
 2. **Docker → Add Container → Template → User templates**, choose **WARHOST**, fill in the fields below, **Apply**.
 
-The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml` shows **WARHOST**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARHOST`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARHOST**. Delete `warno-dedicated-server.xml` or `my-WARNO-Dedicated-Server.xml` if either is still in that folder. `sh scripts/print_template_fetch.sh --private` saves `warhost.xml` under `/boot/config/plugins/community.applications/private/suchamoneypit/`. The full command is in the install guide.
+The dropdown label is the flash filename with `my-` removed, so `my-WARHOST.xml` shows **WARHOST**. On Apply, Unraid writes `/boot/config/plugins/dockerMan/templates-user/my-<Name>.xml` from the Name on the form. With Name left as `WARHOST`, that is this download. A different Name leaves this file in the dropdown as a second entry, still labeled **WARHOST**. Delete `warno-dedicated-server.xml` or `my-WARNO-Dedicated-Server.xml` if either is still in that folder. `sh scripts/print_template_fetch.sh --private` saves `warhost.xml` under `/boot/config/plugins/community.applications/private/matthewariel/`. The full command is in the install guide.
 
-The template on `main` installs `ghcr.io/suchamoneypit/warhost:latest`. The template on `dev` installs `ghcr.io/suchamoneypit/warhost:dev`. If Apply cannot pull the image, use the pull check in the install guide's troubleshooting table. The first server's settings folder is `/mnt/user/appdata/warno/10400/settings`.
+The template on `main` installs `ghcr.io/matthewariel/warhost:latest`. The template on `dev` installs `ghcr.io/matthewariel/warhost:dev`. A container whose repository is still `ghcr.io/suchamoneypit/warhost` cannot pull that path. Edit it to `ghcr.io/matthewariel/warhost:latest`, or `:dev` for the dev template, then Apply. If Apply cannot pull the image, use the pull check in the install guide's troubleshooting table. The first server's settings folder is `/mnt/user/appdata/warno/10400/settings`.
 
 ### Form fields
 
