@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>WARHOST</Name>
-  <Repository>ghcr.io/matthewariel/warhost:dev</Repository>
+  <Repository>ghcr.io/matthewariel/warhost:latest</Repository>
   <Registry>https://github.com/matthewariel/WARHOST/pkgs/container/warhost</Registry>
   <Network>host</Network>
   <MyIP/>
