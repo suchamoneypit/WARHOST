@@ -403,6 +403,22 @@ if ! grep -q 'scripts/release_notes.py --tag' .claude/skills/publish/SKILL.md; t
   echo "publish skill does not require the next release summary before main" >&2
   exit 1
 fi
+if ! grep -q 'secrets.RELEASE_TOKEN' .github/workflows/release.yml; then
+  echo "release workflow does not publish with RELEASE_TOKEN" >&2
+  exit 1
+fi
+if grep -q 'secrets.GITHUB_TOKEN' .github/workflows/release.yml; then
+  echo "release workflow still authenticates gh with the workflow token" >&2
+  exit 1
+fi
+if ! grep -q '!= "matthewariel"' .github/workflows/release.yml; then
+  echo "release workflow does not require the matthewariel account" >&2
+  exit 1
+fi
+if ! grep -q 'RELEASE_TOKEN' .claude/skills/publish/SKILL.md; then
+  echo "publish skill does not name the RELEASE_TOKEN secret" >&2
+  exit 1
+fi
 python3 scripts/extract_map_previews.py --self-test
 
 sh tests/entrypoint_test.sh

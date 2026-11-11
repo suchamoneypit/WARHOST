@@ -69,10 +69,13 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=v${version}" >> "$GITHUB_OUTPUT"
 
+      # gh uses RELEASE_TOKEN, so the Releases page names that account.
+      # git push keeps the checkout credential. Events from that credential
+      # do not start another workflow run.
       - name: Tag and publish GitHub Release
         if: steps.scope.outputs.scope == 'release'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -eu
@@ -84,6 +87,27 @@ jobs:
             echo "${detail}" >&2
             exit 1
           fi
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error title=Missing RELEASE_TOKEN::Add a fine-grained personal access token for matthewariel as the RELEASE_TOKEN secret. Contents needs read and write. Workflows needs read and write when the released commit changes .github/workflows."
+            exit 1
+          fi
+          if ! publisher_line="$(gh api user --jq '[.login, (.id|tostring)] | @tsv')"; then
+            echo "::error title=RELEASE_TOKEN was rejected::The secret did not authenticate."
+            exit 1
+          fi
+          publisher="${publisher_line%%$'\t'*}"
+          publisher_id="${publisher_line#*$'\t'}"
+          case "${publisher_id}" in
+            ''|*[!0-9]*)
+              echo "::error title=Release token is not matthewariel::RELEASE_TOKEN authenticated as ${publisher:-unknown}."
+              exit 1
+              ;;
+          esac
+          if [ "${publisher}" != "matthewariel" ]; then
+            echo "::error title=Release token is not matthewariel::RELEASE_TOKEN authenticated as ${publisher}."
+            exit 1
+          fi
+          echo "Publishing ${TAG} as ${publisher}."
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             existing="$(git rev-parse "${TAG}^{}")"
             if [ "$existing" != "$GITHUB_SHA" ]; then
@@ -92,8 +116,8 @@ jobs:
             fi
             echo "Tag ${TAG} already points at this commit."
           else
-            git -c user.name='github-actions[bot]' \
-              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            git -c user.name="${publisher}" \
+              -c user.email="${publisher_id}+${publisher}@users.noreply.github.com" \
               tag -a "${TAG}" -m "WARHOST ${TAG}"
             git push origin "refs/tags/${TAG}"
           fi
