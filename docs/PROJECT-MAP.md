@@ -37,7 +37,7 @@ Unraid form (templates/warhost.xml)
 | `scripts/extract_map_previews.py` | Copies map pictures from a local WARNO install into gitignored `webui/previews/` |
 | `scripts/upstream_digest.py`, `scripts/next_version.py`, `scripts/release_notes.py`, `scripts/release_scope.py` | Eugen digest, release number, release notes, whether a `main` push tags |
 | `scripts/ask_claude.sh` | Cursor's bridge to `claude -p` |
-| `.github/workflows/` | `check-repo.yml`, `rebuild-image.yml` (`:latest` from `main`, `:dev` from `dev`), `release.yml` (tags a `main` push that changes the server, the template, the WebUI, or the image) |
+| `.github/workflows/` | `check-repo.yml`, `rebuild-image.yml` (`:latest` from `main`, `:dev` from `dev`), `release.yml` (tags a `main` push that changes the server, the template, the WebUI, or the image, and publishes that release as `matthewariel`) |
 | `CLAUDE.md`, `.claude/`, `.cursor/` | Agent instructions, subagents, skills, and Cursor-only rules and commands. See `docs/AI-WORKFLOW.md` |
 
 ## Where each topic is documented
